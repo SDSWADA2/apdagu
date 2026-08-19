@@ -1,4 +1,4 @@
-# 🎓 APLIKASI DATABASE GURU SD PROFESIONAL
+<img width="748" height="846" alt="image" src="https://github.com/user-attachments/assets/24e4c51d-284f-44fd-b5c5-054f9488794d" /># 🎓 APLIKASI DATABASE GURU SD PROFESIONAL
 ### **SD NEGERI SUMBER WARU 2**
 *Standar Administrasi Kurikulum Merdeka, Dapodik, dan Kementerian Pendidikan Dasar & Menengah*
 
@@ -155,11 +155,11 @@ File [`database_schema.sql`](file:///C:/Users/SUMBER%20WARU%202%20%282024%29/.ge
 
 ## 🏫 Identitas Lembaga
 * **Nama Sekolah**: SD Negeri Sumber Waru 2
-* **NPSN**: 20512345
-* **NSS**: 101052304002
-* **Akreditasi**: A (Unggul)
-* **Alamat**: Jl. Pendidikan No. 45 Desa Sumber Waru, Kec. Waru, Kab. Pamekasan, Jawa Timur (67291)
-* **Kepala Sekolah**: Drs. H. Bambang Sutrisno, M.Pd. (NIP. 196805121992031004)
+* **NPSN**: 20527136
+* **NSS**: 101052610041
+* **Akreditasi**: B (Baik)
+* **Alamat**: Jln 2, Sumber Waru 1, Sumber Waru, Kec. Waru, Kabupaten Pamekasan, Jawa Timur (69353)
+* **Kepala Sekolah**: FAUZAN, S.Pd.SD. (NIP. 197206021996051001)
 
 ---
 *Dikembangkan secara profesional dengan standar tata kelola data pendidikan nasional.*
