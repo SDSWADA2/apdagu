@@ -1,4 +1,4 @@
-<img width="748" height="846" alt="image" src="https://github.com/user-attachments/assets/24e4c51d-284f-44fd-b5c5-054f9488794d" /># 🎓 APLIKASI DATABASE GURU SD PROFESIONAL
+# 🎓 APLIKASI DATABASE GURU SD PROFESIONAL
 ### **SD NEGERI SUMBER WARU 2**
 *Standar Administrasi Kurikulum Merdeka, Dapodik, dan Kementerian Pendidikan Dasar & Menengah*
 
