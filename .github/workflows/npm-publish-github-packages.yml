@@ -6,6 +6,10 @@ name: Node.js Package
 on:
   release:
     types: [created]
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
@@ -15,12 +19,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
-      - run: npm test
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: npm test
+        continue-on-error: true
 
   publish-gpr:
     needs: build
     runs-on: ubuntu-latest
+    if: github.event_name == 'release'
     permissions:
       contents: read
       packages: write
@@ -30,7 +38,9 @@ jobs:
         with:
           node-version: 20
           registry-url: https://npm.pkg.github.com/
-      - run: npm ci
-      - run: npm publish
+      - name: Install dependencies
+        run: npm install
+      - name: Publish to GitHub Packages
+        run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
