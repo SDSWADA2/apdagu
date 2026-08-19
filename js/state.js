@@ -142,7 +142,7 @@ const INITIAL_STATE = {
     {
       id: 1,
       nuptk: '3445746648200032',
-      nip: '196805121992031004',
+      nip: '19720602 199605 1 001',
       nama_lengkap: 'Abdul Adim',
       gelar_depan: '',
       gelar_belakang: 'S.Pd.SD.',
@@ -163,7 +163,7 @@ const INITIAL_STATE = {
       kode_pos: '67291',
       no_hp: '081234567890',
       email: 'bambang.sutrisno@guru.sd.belajar.id',
-      foto_url: generateAvatar('Bambang Sutrisno', '#1e3a8a'),
+      foto_url: generateAvatar('Abdul Adim', '#1e3a8a'),
       tanda_tangan_url: DEFAULT_SIGNATURE,
       status_keaktifan: 'Aktif'
     },
@@ -563,8 +563,8 @@ const INITIAL_STATE = {
       skor_kehadiran: 96.0,
       nilai_akhir: 93.5,
       predikat: 'Amat Baik',
-      nama_penilai: 'Drs. H. Bambang Sutrisno, M.Pd.',
-      nip_penilai: '196805121992031004',
+      nama_penilai: 'Fauzan, S.Pd.SD.',
+      nip_penilai: '19720602 199605 1 001',
       catatan_rekomendasi: 'Sangat inovatif dalam memanfaatkan media ajar digital berbasis Kurikulum Merdeka.'
     },
     {
@@ -579,8 +579,8 @@ const INITIAL_STATE = {
       skor_kehadiran: 92.0,
       nilai_akhir: 87.7,
       predikat: 'Baik',
-      nama_penilai: 'Drs. H. Bambang Sutrisno, M.Pd.',
-      nip_penilai: '196805121992031004',
+      nama_penilai: 'Fauzan, S.Pd.SD.',
+      nip_penilai: '19720602 199605 1 001',
       catatan_rekomendasi: 'Tingkatkan asesmen formatif berdiferensiasi pada modul ajar matematika.'
     },
     {
@@ -595,8 +595,8 @@ const INITIAL_STATE = {
       skor_kehadiran: 95.0,
       nilai_akhir: 90.8,
       predikat: 'Baik',
-      nama_penilai: 'Drs. H. Bambang Sutrisno, M.Pd.',
-      nip_penilai: '196805121992031004',
+      nama_penilai: 'Fauzan, S.Pd.SD.',
+      nip_penilai: '19720602 199605 1 001',
       catatan_rekomendasi: 'Pendekatan transisi PAUD ke SD sangat baik dan menyenangkan bagi siswa kelas 1.'
     },
     {
@@ -611,8 +611,8 @@ const INITIAL_STATE = {
       skor_kehadiran: 94.0,
       nilai_akhir: 90.7,
       predikat: 'Baik',
-      nama_penilai: 'Drs. H. Bambang Sutrisno, M.Pd.',
-      nip_penilai: '196805121992031004',
+      nama_penilai: 'Fauzan, S.Pd.SD.',
+      nip_penilai: '19720602 199605 1 001',
       catatan_rekomendasi: 'Penguatan Profil Pelajar Pancasila dimensi Beriman & Bertakwa terlaksana optimal.'
     },
     {
@@ -627,8 +627,8 @@ const INITIAL_STATE = {
       skor_kehadiran: 93.0,
       nilai_akhir: 89.6,
       predikat: 'Baik',
-      nama_penilai: 'Drs. H. Bambang Sutrisno, M.Pd.',
-      nip_penilai: '196805121992031004',
+      nama_penilai: 'Fauzan, S.Pd.SD.',
+      nip_penilai: '19720602 199605 1 001',
       catatan_rekomendasi: 'Kinerja pengelolaan Dapodik dan pembelajaran kelas 3 seimbang dan sangat tertib.'
     },
     {
@@ -643,8 +643,8 @@ const INITIAL_STATE = {
       skor_kehadiran: 95.0,
       nilai_akhir: 89.4,
       predikat: 'Baik',
-      nama_penilai: 'Drs. H. Bambang Sutrisno, M.Pd.',
-      nip_penilai: '196805121992031004',
+      nama_penilai: 'Fauzan, S.Pd.SD.',
+      nip_penilai: '19720602 199605 1 001',
       catatan_rekomendasi: 'Dedikasi tinggi dalam pembinaan atlet siswa hingga menembus prestasi tingkat provinsi.'
     },
     {
@@ -659,8 +659,8 @@ const INITIAL_STATE = {
       skor_kehadiran: 94.0,
       nilai_akhir: 88.1,
       predikat: 'Baik',
-      nama_penilai: 'Drs. H. Bambang Sutrisno, M.Pd.',
-      nip_penilai: '196805121992031004',
+      nama_penilai: 'Fauzan, S.Pd.SD.',
+      nip_penilai: '19720602 199605 1 001',
       catatan_rekomendasi: 'Pengelolaan pojok baca dan perpustakaan sekolah sangat membantu peningkatan literasi.'
     }
   ],
