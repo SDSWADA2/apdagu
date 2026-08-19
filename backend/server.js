@@ -1,10 +1,3 @@
-/**
- * ============================================================================
- * SERVER UTAMA — REST API Backend
- * Aplikasi Database Guru SD Negeri Sumber Waru 2
- * ============================================================================
- */
-
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -36,13 +29,16 @@ app.use(helmet({
   contentSecurityPolicy: false,     // Dikelola di frontend
 }));
 
-// CORS Configuration
-const allowedOrigins = [
-  'http://localhost:5500',   // Live Server VSCode
-  'http://127.0.0.1:5500',
-  'http://localhost:3000',
-  'null',                    // file:// protocol (untuk buka HTML langsung)
-];
+// CORS Configuration - read allowed origins from ENV (CSV) with a development fallback
+const rawAllowed = process.env.ALLOWED_ORIGINS || '';
+const allowedOrigins = rawAllowed
+  ? rawAllowed.split(',').map(s => s.trim()).filter(Boolean)
+  : [
+      'http://localhost:5500',   // Live Server VSCode
+      'http://127.0.0.1:5500',
+      'http://localhost:3000',
+      'null',                    // file:// protocol (untuk buka HTML langsung)
+    ];
 
 app.use(cors({
   origin: (origin, callback) => {
