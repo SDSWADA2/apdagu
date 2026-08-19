@@ -1,0 +1,3 @@
+const syncRoutes = require('./routes/sync');
+
+// ... existing requires and code above unchanged ...

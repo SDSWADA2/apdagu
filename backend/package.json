@@ -7,7 +7,11 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "audit": "npm audit --audit-level=moderate",
-    "audit:fix": "npm audit fix"
+    "audit:fix": "npm audit fix",
+    "docs": "NODE_ENV=development node server.js",
+    "migrate": "npx knex migrate:latest --knexfile knexfile.js",
+    "migrate:rollback": "npx knex migrate:rollback --knexfile knexfile.js",
+    "seed": "npx knex seed:run --knexfile knexfile.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -17,7 +21,10 @@
     "express-rate-limit": "^7.3.1",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.9.7"
+    "mysql2": "^3.9.7",
+    "swagger-ui-express": "^4.6.3",
+    "yamljs": "^0.3.0",
+    "knex": "^2.4.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
