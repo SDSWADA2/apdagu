@@ -14,6 +14,10 @@ const kepegawaianRoutes = require('./routes/kepegawaian');
 const jadwalRoutes = require('./routes/jadwal');
 const genericRoutes = require('./routes/generic');
 const authRoutes = require('./routes/auth');
+const syncRoutes = require('./routes/sync');
+
+// Middleware
+const authMiddleware = require('./middleware/auth');
 
 // Swagger / OpenAPI (optional)
 const swaggerUi = require('swagger-ui-express');
@@ -105,13 +109,15 @@ if (NODE_ENV === 'development') {
 // API Routes
 // ============================================================================
 
-
 // Auth: rate limit ketat hanya di endpoint login
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/guru', guruRoutes);
 app.use('/api/kepegawaian', kepegawaianRoutes);
 app.use('/api/data', genericRoutes);
+
+// Sync endpoints: protected by authMiddleware
+app.use('/api/sync', authMiddleware, syncRoutes);
 
 // ============================================================================
 // Swagger UI (optional, disabled in production)
@@ -146,6 +152,7 @@ app.get('/', (req, res) => {
       guru: '/api/guru [GET, POST, PUT, DELETE]',
       kepegawaian: '/api/kepegawaian [GET, POST, PUT, DELETE]',
       data: '/api/data/:table [GET, POST, PUT, DELETE]',
+      sync: '/api/sync/changes [POST, GET]'
     },
     timestamp: new Date().toISOString(),
   });
