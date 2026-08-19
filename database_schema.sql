@@ -296,10 +296,10 @@ INSERT INTO profil_sekolah (
     desa_kelurahan, kecamatan, kabupaten_kota, provinsi, kode_pos, telepon, email,
     nama_kepala_sekolah, nip_kepala_sekolah
 ) VALUES (
-    '20512345', '101052304002', 'SD NEGERI SUMBER WARU 2', 'Negeri', 'A',
-    'Jl. Pendidikan No. 45 Sumber Waru', 'Sumber Waru', 'Waru', 'Kabupaten Pamekasan',
-    'Jawa Timur', '67291', '(0335) 841234', 'sdnsumberwaru2@kemdikbud.go.id',
-    'Drs. H. Bambang Sutrisno, M.Pd.', '196805121992031004'
+    '20527136', '101052610041', 'SD NEGERI SUMBER WARU 2', 'Negeri', 'B',
+    'ln 2, Sumber Waru 1, Sumber Waru, Kec. Waru, Kabupaten Pamekasan, Jawa Timur', 'Sumber Waru', 'Waru', 'Kabupaten Pamekasan',
+    'Jawa Timur', '69353', '0819-5381-2155', 'sdnegerisumberwaru2@gmail.com',
+    'FAUZAN, S.Pd.SD.', '19720602 199605 1 001'
 );
 
 INSERT INTO users (username, password_hash, nama_lengkap, email, role) VALUES
