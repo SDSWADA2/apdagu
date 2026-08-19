@@ -102,7 +102,7 @@ const LaporanModule = {
             <div class="id-card-qr-box" id="idcard-qr-front"></div>
             <div class="id-card-barcode-box">
               <div class="id-card-barcode-lines"></div>
-              <div class="id-card-barcode-text">ID: ${sekolah.npsn || '20512345'}-${guru.id}-${guru.nuptk ? guru.nuptk.slice(-4) : '2026'}</div>
+              <div class="id-card-barcode-text">ID: ${sekolah.npsn || '20527136'}-${guru.id}-${guru.nuptk ? guru.nuptk.slice(-4) : '2026'}</div>
             </div>
           </div>
         </div>
@@ -133,7 +133,7 @@ const LaporanModule = {
           </div>
 
           <div class="id-card-back-footer">
-            NPSN: ${sekolah.npsn || '20512345'} &bull; KEMDIKBUDRISTEK
+            NPSN: ${sekolah.npsn || '20527136'} &bull; KEMDIKBUDRISTEK
           </div>
         </div>
       </div>
