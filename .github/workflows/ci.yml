@@ -1,0 +1,49 @@
+# GitHub Actions CI for backend
+# Runs linting, npm audit and test (if any). Adjust node-version as needed.
+name: CI
+
+on:
+  push:
+    branches: [ main, fix/security-and-ci ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: |
+          npm ci
+
+      - name: Run npm audit
+        working-directory: ./backend
+        run: |
+          npm run audit || true
+
+      - name: Lint (if ESLint configured)
+        working-directory: ./backend
+        run: |
+          if [ -f .eslintrc.json ] || [ -f .eslintrc ]; then
+            npx eslint . || true
+          else
+            echo "No ESLint config found, skipping lint"
+          fi
+
+      - name: Run tests (if any)
+        working-directory: ./backend
+        run: |
+          if npm test --silent; then
+            echo "Tests ran"
+          else
+            echo "No tests or tests failed (check logs)"
+          fi

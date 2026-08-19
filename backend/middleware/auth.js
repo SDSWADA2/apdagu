@@ -1,16 +1,7 @@
-/**
- * ============================================================================
- * MIDDLEWARE: Verifikasi Token JWT
- * Aplikasi Database Guru SD Negeri Sumber Waru 2
- * ============================================================================
- */
-
 const jwt = require('jsonwebtoken');
 
-/**
- * Middleware untuk memverifikasi token JWT pada setiap request yang dilindungi.
- * Token harus dikirim di header: Authorization: Bearer <token>
- */
+const JWT_SECRET = process.env.JWT_SECRET || 'please_set_a_strong_jwt_secret_in_production';
+
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
@@ -24,35 +15,21 @@ const verifyToken = (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      return res.status(403).json({
-        error: 'Sesi Anda telah berakhir. Silakan login kembali.',
-        code: 'TOKEN_EXPIRED'
-      });
+      return res.status(403).json({ error: 'Sesi Anda telah berakhir. Silakan login kembali.', code: 'TOKEN_EXPIRED' });
     }
-    return res.status(403).json({
-      error: 'Token tidak valid.',
-      code: 'INVALID_TOKEN'
-    });
+    return res.status(403).json({ error: 'Token tidak valid.', code: 'INVALID_TOKEN' });
   }
 };
 
-/**
- * Middleware untuk membatasi akses hanya untuk role tertentu.
- * Gunakan setelah verifyToken.
- * @param {...string} roles - Role yang diizinkan (contoh: 'admin', 'operator')
- */
 const requireRole = (...roles) => {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({
-        error: `Akses ditolak. Halaman ini hanya untuk: ${roles.join(', ')}.`,
-        code: 'INSUFFICIENT_ROLE'
-      });
+      return res.status(403).json({ error: `Akses ditolak. Halaman ini hanya untuk: ${roles.join(', ')}.`, code: 'INSUFFICIENT_ROLE' });
     }
     next();
   };
