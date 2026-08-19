@@ -1,0 +1,410 @@
+openapi: 3.0.3
+info:
+  title: Aplikasi Database Guru SD - API
+  description: REST API untuk Aplikasi Database Guru SD Negeri Sumber Waru 2
+  version: "1.1.0"
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+security:
+  - bearerAuth: []
+paths:
+  /:
+    get:
+      summary: Root API info
+      responses:
+        '200':
+          description: API information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Info'
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  uptime:
+                    type: number
+  /api/auth/login:
+    post:
+      summary: Login user and receive JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+              required: [username, password]
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+  /api/auth/me:
+    get:
+      summary: Current authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+  /api/auth/change-password:
+    post:
+      summary: Change password for current user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldPassword:
+                  type: string
+                newPassword:
+                  type: string
+              required: [oldPassword, newPassword]
+      responses:
+        '200':
+          description: Password changed
+        '400':
+          description: Bad request
+  /api/guru:
+    get:
+      summary: List guru (paginated)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 25
+        - in: query
+          name: q
+          schema:
+            type: string
+            description: Search term (nama, NUPTK, NIP)
+      responses:
+        '200':
+          description: List of guru
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedGuru'
+    post:
+      summary: Create a new guru
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuruCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guru'
+        '400':
+          description: Validation error
+  /api/guru/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+    get:
+      summary: Get guru by ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Guru found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guru'
+        '404':
+          description: Not found
+    put:
+      summary: Update guru by ID
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuruUpdate'
+      responses:
+        '200':
+          description: Updated
+        '400':
+          description: Validation error
+    delete:
+      summary: Delete guru by ID
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Not found
+  /api/kepegawaian:
+    get:
+      summary: List kepegawaian records
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List kepegawaian
+    post:
+      summary: Create kepegawaian record
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KepegawaianCreate'
+      responses:
+        '201':
+          description: Created
+  /api/kepegawaian/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+    get:
+      summary: Get kepegawaian by ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Kepegawaian record
+    put:
+      summary: Update kepegawaian by ID
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KepegawaianUpdate'
+      responses:
+        '200':
+          description: Updated
+    delete:
+      summary: Delete kepegawaian by ID
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Deleted
+  /api/data/{table}:
+    parameters:
+      - in: path
+        name: table
+        required: true
+        schema:
+          type: string
+          description: Table name (generic data endpoint)
+    get:
+      summary: Generic read from a table
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Table data
+    post:
+      summary: Generic insert into table
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Created
+    put:
+      summary: Generic update
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+    delete:
+      summary: Generic delete
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Deleted
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Info:
+      type: object
+      properties:
+        message:
+          type: string
+        version:
+          type: string
+        status:
+          type: string
+        environment:
+          type: string
+        endpoints:
+          type: object
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        expiresIn:
+          type: integer
+          description: Seconds until expiration
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        nama_lengkap:
+          type: string
+        role:
+          type: string
+          description: one of admin, operator, guru
+        email:
+          type: string
+    Guru:
+      type: object
+      properties:
+        id:
+          type: integer
+        nuptk:
+          type: string
+        nip:
+          type: string
+        nama_lengkap:
+          type: string
+        ttl:
+          type: string
+        agama:
+          type: string
+        kontak:
+          type: string
+        alamat:
+          type: string
+        pendidikan_terakhir:
+          type: string
+    GuruCreate:
+      type: object
+      required: [nama_lengkap]
+      properties:
+        nuptk:
+          type: string
+        nip:
+          type: string
+        nama_lengkap:
+          type: string
+        ttl:
+          type: string
+    GuruUpdate:
+      type: object
+      properties:
+        nama_lengkap:
+          type: string
+        kontak:
+          type: string
+    KepegawaianCreate:
+      type: object
+      properties:
+        guru_id:
+          type: integer
+        status_pegawai:
+          type: string
+        tmt_pengangkatan:
+          type: string
+    KepegawaianUpdate:
+      type: object
+      properties:
+        status_pegawai:
+          type: string
+    PaginatedGuru:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Guru'
+    GenericError:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
