@@ -1,0 +1,444 @@
+/* ==========================================================================
+   KARTU IDENTITAS GURU (ID CARD GURU 2 SISI) - SD NEGERI SUMBER WARU 2
+   Ukuran Standar ID Card Vertikal (320px × 510px display)
+   ========================================================================== */
+
+/* ---- Wrapper ---- */
+.idcard-preview-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem 1rem;
+}
+
+/* ---- Kartu Dasar ---- */
+.id-card {
+  width: 320px;
+  min-height: 510px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow:
+    0 20px 40px rgba(0,0,0,0.14),
+    0 6px 18px rgba(0,0,0,0.08),
+    0 0 0 1px rgba(148,163,184,0.3);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: #1e293b;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.id-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow:
+    0 28px 55px rgba(37,99,235,0.18),
+    0 10px 28px rgba(0,0,0,0.10);
+}
+
+/* ---- HEADER DEPAN ---- */
+.id-card-header {
+  background: linear-gradient(
+    150deg,
+    var(--bs-primary, #1e40af) 0%,
+    color-mix(in srgb, var(--bs-primary, #1e40af) 70%, #0f172a 30%) 60%,
+    #0f172a 100%
+  );
+  color: #ffffff;
+  padding: 1.2rem 1rem 2.2rem 1rem;
+  text-align: center;
+  position: relative;
+  clip-path: polygon(0 0, 100% 0, 100% 82%, 50% 100%, 0 82%);
+  z-index: 1;
+}
+
+/* Efek pola dekoratif di header */
+.id-card-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='15' cy='15' r='1.5' fill='rgba(255,255,255,0.08)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* Logo Sekolah di header */
+.id-card-logo-ring {
+  width: 58px;
+  height: 58px;
+  background: rgba(255,255,255,0.15);
+  border: 2.5px solid rgba(255,255,255,0.5);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  padding: 4px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+
+.id-card-logo-ring img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.id-card-logo-ring i {
+  font-size: 1.6rem;
+  color: #ffffff;
+}
+
+.id-card-header .school-name {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin: 0;
+  text-transform: uppercase;
+  line-height: 1.3;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.id-card-header .card-subtitle {
+  font-size: 0.6rem;
+  margin: 0.2rem 0 0;
+  opacity: 0.85;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ---- BODY DEPAN ---- */
+.id-card-body-front {
+  padding: 0.5rem 1.2rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  position: relative;
+  z-index: 0;
+}
+
+/* Foto Guru */
+.id-card-photo-wrapper {
+  margin-top: -18px;
+  margin-bottom: 0.65rem;
+  position: relative;
+}
+
+.id-card-photo-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--bs-primary, #1e40af), #38bdf8);
+  z-index: -1;
+}
+
+.id-card-photo {
+  width: 100px;
+  height: 125px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 3px solid #ffffff;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  background: #f1f5f9;
+  display: block;
+}
+
+/* Nama & Jabatan */
+.id-card-guru-name {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0.1rem 0 0.15rem;
+  line-height: 1.25;
+}
+
+.id-card-guru-role {
+  display: inline-block;
+  font-size: 0.63rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--bs-primary, #1e40af);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.7rem;
+  border-radius: 50px;
+  margin-bottom: 0.75rem;
+}
+
+/* Tabel Data */
+.id-card-details-table {
+  width: 100%;
+  font-size: 0.685rem;
+  text-align: left;
+  border-collapse: collapse;
+  margin-bottom: 0.4rem;
+}
+
+.id-card-details-table tr:not(:last-child) td {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.id-card-details-table td {
+  padding: 0.25rem 0.25rem;
+}
+
+.id-card-details-table .label {
+  font-weight: 600;
+  color: #64748b;
+  width: 32%;
+  white-space: nowrap;
+}
+
+.id-card-details-table .colon {
+  width: 5%;
+  color: #94a3b8;
+}
+
+.id-card-details-table .value {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* ---- FOOTER DEPAN ---- */
+.id-card-footer {
+  padding: 0.55rem 1rem;
+  background: #f8fafc;
+  border-top: 1.5px dashed #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.id-card-qr-box {
+  width: 52px;
+  height: 52px;
+  background: #ffffff;
+  padding: 3px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.id-card-qr-box canvas,
+.id-card-qr-box img {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.id-card-barcode-box {
+  flex: 1;
+  text-align: right;
+}
+
+.id-card-barcode-lines {
+  height: 22px;
+  background: repeating-linear-gradient(90deg,
+    #0f172a 0px, #0f172a 2px,
+    transparent 2px, transparent 4px,
+    #0f172a 4px, #0f172a 5px,
+    transparent 5px, transparent 9px,
+    #0f172a 9px, #0f172a 10px,
+    transparent 10px, transparent 13px
+  );
+  border-radius: 2px;
+  margin-bottom: 3px;
+}
+
+.id-card-barcode-text {
+  font-size: 0.6rem;
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: #475569;
+  letter-spacing: 0.04em;
+}
+
+/* ---- MASA BERLAKU STRIP ---- */
+.id-card-validity {
+  background: linear-gradient(90deg, var(--bs-primary, #1e40af), #0ea5e9);
+  color: #ffffff;
+  text-align: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.28rem 0.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---- KARTU BELAKANG ---- */
+.id-card-back {
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.id-card-back-header {
+  background: linear-gradient(
+    150deg,
+    var(--bs-primary, #1e40af) 0%,
+    color-mix(in srgb, var(--bs-primary, #1e40af) 70%, #0f172a 30%) 100%
+  );
+  color: #ffffff;
+  padding: 0.8rem 1rem;
+  text-align: center;
+  clip-path: polygon(0 0, 100% 0, 100% 80%, 0 100%);
+  padding-bottom: 2rem;
+}
+
+.id-card-back-header h6 {
+  font-size: 0.72rem;
+  font-weight: 800;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Body Belakang */
+.id-card-back-body {
+  padding: 0.75rem 1.2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.695rem;
+  color: #334155;
+}
+
+.id-card-terms {
+  margin: 0 0 0.75rem 0;
+  padding-left: 1.1rem;
+  line-height: 1.5;
+}
+
+.id-card-terms li {
+  margin-bottom: 0.3rem;
+}
+
+/* Area Tanda Tangan Belakang */
+.id-card-back-sign {
+  margin-top: auto;
+  text-align: center;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+}
+
+.id-card-back-sign .sign-date {
+  font-size: 0.64rem;
+  color: #64748b;
+  margin-bottom: 0.2rem;
+}
+
+.id-card-back-sign .sign-title {
+  font-size: 0.69rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.id-card-back-sign .sign-img-placeholder {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.2rem 0;
+}
+
+.id-card-back-sign .sign-img-placeholder img {
+  max-height: 48px;
+  max-width: 130px;
+  object-fit: contain;
+}
+
+.id-card-back-sign .sign-name {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #0f172a;
+  text-decoration: underline;
+  margin: 0.1rem 0 0;
+}
+
+.id-card-back-sign .sign-nip {
+  font-size: 0.63rem;
+  color: #64748b;
+  margin: 0.1rem 0 0;
+}
+
+/* Footer Belakang */
+.id-card-back-footer {
+  background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%);
+  color: #94a3b8;
+  text-align: center;
+  font-size: 0.6rem;
+  padding: 0.4rem 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ---- STATUS BADGE ---- */
+.id-card-status-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(16,185,129,0.85);
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 50px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+}
+
+/* ============================================================================
+ * PRINT MEDIA QUERIES (OPTIMISASI CETAK ID CARD)
+ * ============================================================================ */
+@media print {
+  /* Sembunyikan elemen UI yang tidak perlu dicetak */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Hanya tampilkan area cetak ID Card */
+  #id-card-preview-container, 
+  #id-card-preview-container * {
+    visibility: visible;
+  }
+  
+  #id-card-preview-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: flex-start;
+  }
+
+  /* Hilangkan bayangan & margin cetak */
+  .id-card-wrapper {
+    box-shadow: none !important;
+    margin: 0 !important;
+    page-break-inside: avoid; /* Cegah kartu terpotong di halaman baru */
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Pastikan background gradient dan warna tetap tercetak */
+  .id-card-header, .id-card-back-header, .id-card-footer, .id-card-back-footer {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "env": {
+    "browser": true,
+    "es2022": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "script"
+  },
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-var": "error",
+    "prefer-const": "error",
+    "eqeqeq": ["error", "always"],
+    "semi": ["error", "always"],
+    "quotes": ["error", "single", { "avoidEscape": true }]
+  },
+  "globals": {
+    "App": "writable",
+    "Auth": "readonly",
+    "DB": "readonly",
+    "Helpers": "readonly",
+    "ThemeUtil": "readonly",
+    "ToastUtil": "readonly",
+    "RouterUtil": "readonly",
+    "DashboardModule": "readonly",
+    "GuruModule": "readonly",
+    "PendidikanModule": "readonly",
+    "SertifikasiModule": "readonly",
+    "KepegawaianModule": "readonly",
+    "JadwalModule": "readonly",
+    "BebanMengajarModule": "readonly",
+    "AbsensiModule": "readonly",
+    "PKGModule": "readonly",
+    "PrestasiModule": "readonly",
+    "PelatihanModule": "readonly",
+    "DokumenModule": "readonly",
+    "LaporanModule": "readonly",
+    "PengaturanModule": "readonly"
+  }
+}

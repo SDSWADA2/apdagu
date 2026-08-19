@@ -1,0 +1,133 @@
+/* ==========================================================================
+   PRINT STYLESHEET - CETAK RESMI STANDAR A4 DINAS PENDIDIKAN
+   ========================================================================== */
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Sembunyikan elemen navigasi UI */
+  #sidebar,
+  #topbar,
+  .btn,
+  .toast-container,
+  .modal-backdrop,
+  .no-print,
+  .nav-tabs,
+  .pagination,
+  .dataTables_filter,
+  .dataTables_length {
+    display: none !important;
+  }
+
+  #main-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  #content-container {
+    padding: 0 !important;
+  }
+
+  .card-glass {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  /* Kop Surat Dinas Resmi */
+  .kop-surat-resmi {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 3px double #000000;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .kop-logo {
+    width: 75px;
+    height: 75px;
+    margin-right: 15px;
+  }
+
+  .kop-text h4 {
+    font-size: 14pt;
+    font-weight: bold;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  .kop-text h3 {
+    font-size: 16pt;
+    font-weight: 800;
+    margin: 2px 0;
+    text-transform: uppercase;
+  }
+
+  .kop-text p {
+    font-size: 9pt;
+    margin: 0;
+  }
+
+  /* Tabel Biodata A4 */
+  .table-biodata-print {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 15px;
+    font-size: 10.5pt;
+  }
+
+  .table-biodata-print td {
+    padding: 6px 8px !important;
+    border: 1px solid #94a3b8 !important;
+    vertical-align: top;
+  }
+
+  .table-biodata-print .bg-head {
+    background-color: #f1f5f9 !important;
+    font-weight: bold;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Tanda Tangan Cetak */
+  .ttd-container-print {
+    margin-top: 35px;
+    display: flex;
+    justify-content: space-between;
+    page-break-inside: avoid;
+  }
+
+  .ttd-box {
+    width: 250px;
+    text-align: center;
+  }
+
+  .ttd-space {
+    height: 70px;
+  }
+
+  /* Cetak ID Card Khusus */
+  .print-idcard-only {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 30px !important;
+    padding: 20px !important;
+  }
+
+  .id-card {
+    box-shadow: none !important;
+    border: 1px solid #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

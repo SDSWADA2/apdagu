@@ -1,0 +1,3127 @@
+<!DOCTYPE html>
+<html lang="id" data-bs-theme="light">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplikasi Database Guru SD Profesional — SD Negeri Sumber Waru 2</title>
+  <meta name="description"
+    content="Sistem Informasi Database Guru & Tenaga Kependidikan SD Negeri Sumber Waru 2 Berbasis Kurikulum Merdeka dan Standar Dapodik.">
+  <meta name="theme-color" content="#2563eb">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/icon-192.svg">
+
+  <!-- Google Fonts (Plus Jakarta Sans & Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Bootstrap 5.3 CSS & Bootstrap Icons CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- Custom Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/idcard.css">
+  <link rel="stylesheet" href="css/print.css">
+</head>
+
+<body>
+
+  <!-- Backdrop for Mobile Sidebar -->
+  <div class="sidebar-backdrop"></div>
+
+  <div id="app-layout">
+    <!-- ====================================================================
+         SIDEBAR NAVIGATION
+         ==================================================================== -->
+    <aside id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo">
+          <i class="bi bi-mortarboard-fill"></i>
+        </div>
+        <div class="brand-text">
+          <h6>SDN SUMBER WARU 2</h6>
+          <small>Database Guru & PTK</small>
+        </div>
+      </div>
+
+      <div class="sidebar-menu-wrapper">
+        <div class="nav-section-title">Menu Utama</div>
+        <ul class="nav-menu">
+          <li class="nav-menu-item">
+            <a href="#" class="nav-menu-link active" data-view="view-dashboard">
+              <i class="bi bi-grid-1x2-fill"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-menu-item">
+            <a href="#" class="nav-menu-link" data-view="view-guru">
+              <i class="bi bi-person-lines-fill"></i>
+              <span>Data Guru</span>
+              <span class="badge bg-primary" id="sidebar-badge-guru">8</span>
+            </a>
+          </li>
+          <li class="nav-menu-item">
+            <a href="#" class="nav-menu-link" data-view="view-pendidikan">
+              <i class="bi bi-mortarboard"></i>
+              <span>Riwayat Pendidikan</span>
+            </a>
+          </li>
+          <li class="nav-menu-item">
+            <a href="#" class="nav-menu-link" data-view="view-sertifikasi">
+              <i class="bi bi-patch-check"></i>
+              <span>Sertifikasi Guru</span>
+            </a>
+          </li>
+          <li class="nav-menu-item">
+            <a href="#" class="nav-menu-link" data-view="view-kepegawaian">
+              <i class="bi bi-briefcase"></i>
+              <span>Kepegawaian</span>
+            </a>
+          </li>
+        </ul>
+
+        <div class="nav-section-title">Akademik & Kinerja</div>
+        <ul class="nav-menu">
+          <li class="nav-menu-item">
+            <a href="#" class="nav-menu-link" data-view="view-jadwal">
+              <i class="bi bi-calendar3"></i>
+              <span>Jadwal Mengajar</span>
+            </a>
+          </li>
+          <li class="nav-menu-item">
+            <a href="#" class="nav-menu-link" data-view="view-beban">
+              <i class="bi bi-clock-history"></i>
+              <span>Beban Mengajar (24 JP)</span>
+            </a>
+          </li>
+          <li class="nav-menu-item">
+            <a href="#" class="nav-menu-link" data-view="view-absensi">
+              <i class="bi bi-calendar-check"></i>
+              <span>Absensi Guru</span>
+            </a>
+          </li>
+          <li class="nav-menu-item">
+            <a href="#" class="nav-menu-link" data-view="view-pkg">
+              <i class="bi bi-graph-up-arrow"></i>
+              <span>Penilaian Kinerja (PKG)</span>
+            </a>
+          </li>
+          <li class="nav-menu-item">
+            <a href="#" class="nav-menu-link" data-view="view-prestasi">
+              <i class="bi bi-trophy"></i>
+              <span>Prestasi</span>
+            </a>
+          </li>
+          <li class="nav-menu-item">
+            <a href="#" class="nav-menu-link" data-view="view-pelatihan">
+              <i class="bi bi-journal-bookmark"></i>
+              <span>Pelatihan & PMM</span>
+            </a>
+          </li>
+        </ul>
+
+        <div class="nav-section-title">Dokumen & Sistem</div>
+        <ul class="nav-menu">
+          <li class="nav-menu-item">
+            <a href="#" class="nav-menu-link" data-view="view-dokumen">
+              <i class="bi bi-folder2-open"></i>
+              <span>Dokumen Digital</span>
+            </a>
+          </li>
+          <li class="nav-menu-item">
+            <a href="#" class="nav-menu-link" data-view="view-laporan">
+              <i class="bi bi-file-earmark-pdf"></i>
+              <span>Laporan & ID Card</span>
+            </a>
+          </li>
+          <li class="nav-menu-item">
+            <a href="#" class="nav-menu-link" data-view="view-pengaturan">
+              <i class="bi bi-gear"></i>
+              <span>Pengaturan</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- User Card di Bawah Sidebar -->
+      <div class="sidebar-user-card">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <img src="" id="user-profile-avatar" class="avatar-teacher" alt="User" onerror="this.style.display='none'">
+          <div class="overflow-hidden flex-grow-1">
+            <div class="fw-bold text-truncate" id="user-profile-name" style="font-size: 0.85rem;">Administrator</div>
+            <div id="user-profile-role"><span class="badge bg-danger">ADMIN</span></div>
+          </div>
+        </div>
+        <div class="d-flex gap-1">
+          <button class="btn btn-sm btn-outline-secondary flex-grow-1" id="btn-change-password-sidebar"
+            title="Ganti Password" style="font-size:0.75rem;">
+            <i class="bi bi-key-fill me-1"></i>Ganti Sandi
+          </button>
+          <button class="btn btn-sm btn-outline-danger" id="btn-logout" title="Keluar dari Sistem"
+            style="font-size:0.75rem;">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ====================================================================
+         MAIN WRAPPER & TOPBAR
+         ==================================================================== -->
+    <div id="main-wrapper">
+      <header id="topbar">
+        <div class="topbar-left">
+          <button class="btn btn-sm btn-light border d-lg-none" id="btn-mobile-sidebar">
+            <i class="bi bi-list fs-5"></i>
+          </button>
+          <div class="topbar-title">
+            <h5 id="topbar-view-title">Dashboard Utama</h5>
+            <span id="topbar-view-desc">Statistik & Monitoring Kinerja Guru SD Negeri Sumber Waru 2</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Quick Search -->
+          <div class="input-group d-none d-md-flex" style="width: 240px;">
+            <span class="input-group-text border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="global-search-input" class="form-control border-start-0 ps-0"
+              placeholder="Cari guru... (Enter)">
+          </div>
+
+          <!-- Role Simulation Switcher -->
+          <div class="d-flex align-items-center gap-1">
+            <span class="text-muted small d-none d-xl-inline">Peran:</span>
+            <select class="form-select form-select-sm" id="select-simulasi-role" style="width: 125px;">
+              <option value="admin">Admin</option>
+              <option value="operator">Operator</option>
+              <option value="guru">Guru</option>
+            </select>
+          </div>
+
+          <!-- Dark/Light Mode Switcher -->
+          <button class="btn btn-sm btn-light border rounded-circle p-2" id="btn-theme-toggle"
+            title="Ganti Mode Terang/Gelap">
+            <i class="bi bi-moon-stars-fill" id="theme-toggle-icon"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- ====================================================================
+           BODY CONTAINER / 14 SPA VIEWS
+           ==================================================================== -->
+      <main id="content-container">
+
+        <!-- 1. VIEW DASHBOARD -->
+        <section id="view-dashboard" class="app-view active">
+          <!-- Expiring alert banner -->
+          <div id="dashboard-expiring-alert" class="mb-4"></div>
+
+          <!-- KPI Cards -->
+          <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+              <div class="stat-card">
+                <div class="stat-info">
+                  <p>Total Guru</p>
+                  <h3 id="stat-total-guru">8</h3>
+                  <small class="text-success"><i class="bi bi-check-circle me-1"></i>SDN Sumber Waru 2</small>
+                </div>
+                <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="stat-card stat-accent">
+                <div class="stat-info">
+                  <p>Guru PNS</p>
+                  <h3 id="stat-guru-pns">4</h3>
+                  <small class="text-muted">Aparatur Sipil Negara</small>
+                </div>
+                <div class="stat-icon"><i class="bi bi-person-badge-fill"></i></div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="stat-card stat-warning">
+                <div class="stat-info">
+                  <p>Guru PPPK</p>
+                  <h3 id="stat-guru-pppk">2</h3>
+                  <small class="text-muted">PPPK Fungsional</small>
+                </div>
+                <div class="stat-icon"><i class="bi bi-award-fill"></i></div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="stat-card stat-purple">
+                <div class="stat-info">
+                  <p>Sertifikasi Pendidik</p>
+                  <h3 id="stat-guru-sertifikasi">5</h3>
+                  <small class="text-success"><i class="bi bi-patch-check-fill me-1"></i>Lulus PPG</small>
+                </div>
+                <div class="stat-icon"><i class="bi bi-patch-check-fill"></i></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="row g-3 mb-4">
+            <div class="col-lg-6">
+              <div class="card card-glass h-100">
+                <div class="card-header-glass">
+                  <h5><i class="bi bi-pie-chart-fill text-primary"></i> Status Kepegawaian</h5>
+                </div>
+                <div class="card-body-glass" style="height: 280px;">
+                  <canvas id="chart-status-kepegawaian"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-6">
+              <div class="card card-glass h-100">
+                <div class="card-header-glass">
+                  <h5><i class="bi bi-bar-chart-fill text-accent"></i> Distribusi Usia Guru</h5>
+                </div>
+                <div class="card-body-glass" style="height: 280px;">
+                  <canvas id="chart-usia-guru"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-6">
+              <div class="card card-glass h-100">
+                <div class="card-header-glass">
+                  <h5><i class="bi bi-mortarboard-fill text-purple"></i> Jenjang Pendidikan Terakhir</h5>
+                </div>
+                <div class="card-body-glass" style="height: 280px;">
+                  <canvas id="chart-pendidikan-guru"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-6">
+              <div class="card card-glass h-100">
+                <div class="card-header-glass">
+                  <h5><i class="bi bi-graph-up text-success"></i> Tren Kehadiran Mingguan (%)</h5>
+                </div>
+                <div class="card-body-glass" style="height: 280px;">
+                  <canvas id="chart-tren-kehadiran"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Radar Ulang Tahun & Masa Kerja Terlama -->
+          <div class="row g-3">
+            <div class="col-lg-6">
+              <div class="card card-glass h-100">
+                <div class="card-header-glass">
+                  <h5><i class="bi bi-cake2-fill text-danger"></i> Guru Ulang Tahun Bulan Ini</h5>
+                </div>
+                <div class="card-body-glass" id="dashboard-birthday-list">
+                  <!-- Rendered via JS -->
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-6">
+              <div class="card card-glass h-100">
+                <div class="card-header-glass">
+                  <h5><i class="bi bi-hourglass-split text-info"></i> Guru Masa Pengabdian Terlama</h5>
+                </div>
+                <div class="card-body-glass" id="dashboard-tenure-list">
+                  <!-- Rendered via JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. VIEW DATA GURU -->
+        <section id="view-guru" class="app-view">
+          <div class="card card-glass mb-4">
+            <div class="card-header-glass flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-person-lines-fill text-primary fs-5"></i>
+                <h5 class="mb-0">Daftar Pendidik & Tenaga Kependidikan</h5>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-secondary btn-sm" onclick="GuruModule.downloadTemplate()"
+                  title="Unduh format spreadsheet standar untuk import guru">
+                  <i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh Template
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="LaporanModule.exportGuruExcel()"
+                  title="Ekspor data guru ke format Excel">
+                  <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="GuruModule.openImportModal()"
+                  title="Import data guru dari file Excel / CSV">
+                  <i class="bi bi-file-earmark-arrow-up me-1"></i>Import Excel
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="GuruModule.openAddModal()">
+                  <i class="bi bi-person-plus-fill me-1"></i>Tambah Guru Baru
+                </button>
+              </div>
+            </div>
+
+            <!-- Filter & Search Controls -->
+            <div class="p-3 border-bottom bg-light bg-opacity-50">
+              <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="search-guru-input" class="form-control"
+                      placeholder="Cari Nama, NUPTK, NIP...">
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <select class="form-select form-select-sm" id="filter-guru-status">
+                    <option value="all">-- Semua Status Kepegawaian --</option>
+                    <option value="PNS">PNS</option>
+                    <option value="PPPK">PPPK</option>
+                    <option value="Honorer Sekolah (BOS)">Honorer BOS</option>
+                    <option value="Honorer Daerah">Honorer Daerah</option>
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <select class="form-select form-select-sm" id="filter-guru-gender">
+                    <option value="all">-- Semua Gender --</option>
+                    <option value="Laki-laki">Laki-laki</option>
+                    <option value="Perempuan">Perempuan</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <select class="form-select form-select-sm" id="sort-guru-select">
+                    <option value="nama_asc">Urutkan: Nama (A - Z)</option>
+                    <option value="nama_desc">Urutkan: Nama (Z - A)</option>
+                    <option value="usia_asc">Urutkan: Usia Tertua</option>
+                    <option value="usia_desc">Urutkan: Usia Termuda</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th width="4%" class="text-center">No</th>
+                    <th width="28%">Nama Guru & NUPTK</th>
+                    <th width="22%">NIP & TTL</th>
+                    <th width="18%">Jabatan & Pangkat</th>
+                    <th width="12%">Status</th>
+                    <th width="10%">Sertifikasi</th>
+                    <th width="6%" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="guru-table-body">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="p-3 d-flex justify-content-between align-items-center border-top">
+              <small class="text-muted">Menampilkan data guru SD Negeri Sumber Waru 2</small>
+              <ul class="pagination pagination-sm mb-0" id="guru-pagination"></ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. VIEW RIWAYAT PENDIDIKAN (DISEMPURNAKAN) -->
+        <section id="view-pendidikan" class="app-view">
+          <!-- Summary Row -->
+          <div class="row g-2 mb-3">
+            <div class="col-6 col-md-4">
+              <div class="card p-3 border text-center bg-light h-100 shadow-sm">
+                <small class="text-muted fw-semibold">Lulusan Magister (S2)</small>
+                <h4 class="text-primary fw-bold mb-0 mt-1" id="stat-pendidikan-s2">0</h4>
+              </div>
+            </div>
+            <div class="col-6 col-md-4">
+              <div class="card p-3 border text-center bg-light h-100 shadow-sm">
+                <small class="text-muted fw-semibold">Lulusan Sarjana (S1 / D4)</small>
+                <h4 class="text-success fw-bold mb-0 mt-1" id="stat-pendidikan-s1">0</h4>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="card p-3 border text-center bg-info-subtle border-info text-info-emphasis h-100 shadow-sm">
+                <small class="fw-semibold">Kualifikasi S1/S2 Sesuai UU Guru</small>
+                <h4 class="fw-bold mb-0 mt-1">100%</h4>
+              </div>
+            </div>
+          </div>
+
+          <div class="card card-glass">
+            <div class="card-header-glass flex-wrap gap-2 justify-content-between align-items-center">
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <h5><i class="bi bi-mortarboard-fill text-primary"></i> Riwayat Pendidikan Formal Guru</h5>
+                <select class="form-select form-select-sm" id="filter-pendidikan-guru"
+                  style="max-width: 220px;"></select>
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-outline-dark btn-sm" onclick="PendidikanModule.printPendidikan()">
+                  <i class="bi bi-printer me-1"></i>Cetak Rekap
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="PendidikanModule.exportExcel()">
+                  <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="PendidikanModule.openAddModal()">
+                  <i class="bi bi-plus-circle me-1"></i>Tambah Pendidikan
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th width="4%" class="text-center">No</th>
+                    <th width="22%">Nama Guru</th>
+                    <th width="8%">Jenjang</th>
+                    <th width="25%">Institusi Perguruan Tinggi</th>
+                    <th width="18%">Program Studi</th>
+                    <th width="10%">Tahun</th>
+                    <th width="6%">IPK</th>
+                    <th width="7%" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="pendidikan-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. VIEW SERTIFIKASI GURU (DISEMPURNAKAN) -->
+        <section id="view-sertifikasi" class="app-view">
+          <div class="card card-glass">
+            <div class="card-header-glass flex-wrap gap-2 justify-content-between align-items-center">
+              <h5><i class="bi bi-patch-check-fill text-primary"></i> Data Sertifikasi Pendidik (PPG) & NRG</h5>
+              <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-outline-dark btn-sm" onclick="SertifikasiModule.printSertifikasi()">
+                  <i class="bi bi-printer me-1"></i>Cetak Rekap
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="SertifikasiModule.exportExcel()">
+                  <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="SertifikasiModule.openAddModal()">
+                  <i class="bi bi-plus-circle me-1"></i>Tambah Sertifikasi
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th width="4%" class="text-center">No</th>
+                    <th width="20%">Nama Guru</th>
+                    <th width="20%">Bidang Studi</th>
+                    <th width="16%">Nomor Sertifikat</th>
+                    <th width="14%">NRG</th>
+                    <th width="14%">LPTK / Tahun</th>
+                    <th width="6%">Status</th>
+                    <th width="6%" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="sertifikasi-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. VIEW KEPEGAWAIAN (DISEMPURNAKAN) -->
+        <section id="view-kepegawaian" class="app-view">
+          <!-- KPI Summary Row -->
+          <div class="row g-2 mb-3">
+            <div class="col-6 col-md-3">
+              <div class="card p-3 border text-center bg-light h-100 shadow-sm">
+                <small class="text-muted fw-semibold">Guru PNS</small>
+                <h4 class="text-primary fw-bold mb-0 mt-1" id="kep-total-pns">0</h4>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card p-3 border text-center bg-light h-100 shadow-sm">
+                <small class="text-muted fw-semibold">Guru PPPK</small>
+                <h4 class="text-success fw-bold mb-0 mt-1" id="kep-total-pppk">0</h4>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card p-3 border text-center bg-light h-100 shadow-sm">
+                <small class="text-muted fw-semibold">Honorer / GTT</small>
+                <h4 class="text-warning fw-bold mb-0 mt-1" id="kep-total-honorer">0</h4>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card p-3 border text-center bg-info-subtle border-info text-info-emphasis h-100 shadow-sm">
+                <small class="fw-semibold">Estimasi KGB & KP (Tahun Ini)</small>
+                <h4 class="fw-bold mb-0 mt-1" id="kep-total-kgb-kp">0</h4>
+              </div>
+            </div>
+          </div>
+
+          <div class="card card-glass">
+            <div class="card-header-glass flex-wrap gap-2 justify-content-between align-items-center">
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <h5><i class="bi bi-briefcase-fill text-primary"></i> Data Kepegawaian & Masa Kerja Guru</h5>
+                <select class="form-select form-select-sm" id="filter-kepegawaian-status" style="width: 160px;"
+                  onchange="KepegawaianModule.renderList()">
+                  <option value="all">-- Semua Status --</option>
+                  <option value="PNS">PNS</option>
+                  <option value="PPPK">PPPK</option>
+                  <option value="Honorer">Honorer / GTT</option>
+                </select>
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-outline-dark btn-sm" onclick="KepegawaianModule.printKepegawaian()">
+                  <i class="bi bi-printer me-1"></i>Cetak Rekap
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="KepegawaianModule.exportExcel()">
+                  <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="KepegawaianModule.openAddModal()">
+                  <i class="bi bi-plus-circle me-1"></i>Tambah Kepegawaian
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th width="4%" class="text-center">No</th>
+                    <th width="20%">Nama Lengkap</th>
+                    <th width="10%">Status</th>
+                    <th width="16%">Jabatan</th>
+                    <th width="12%">Pangkat/Gol.</th>
+                    <th width="10%">TMT</th>
+                    <th width="12%">Masa Kerja</th>
+                    <th width="10%">Estimasi KGB/KP</th>
+                    <th width="6%" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="kepegawaian-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. VIEW JADWAL MENGAJAR -->
+        <section id="view-jadwal" class="app-view">
+          <!-- KPI Jadwal -->
+          <div id="jadwal-kpi-container"></div>
+
+          <div class="card card-glass">
+            <div class="card-header-glass flex-wrap gap-2">
+              <h5><i class="bi bi-calendar3 text-primary"></i> Jadwal Pembelajaran (Kurikulum Merdeka)</h5>
+              <div class="d-flex flex-wrap gap-2">
+                <select class="form-select form-select-sm" id="filter-jadwal-hari" style="min-width: 130px;">
+                  <option value="all">-- Semua Hari --</option>
+                  <option value="Senin">Senin</option>
+                  <option value="Selasa">Selasa</option>
+                  <option value="Rabu">Rabu</option>
+                  <option value="Kamis">Kamis</option>
+                  <option value="Jumat">Jumat</option>
+                  <option value="Sabtu">Sabtu</option>
+                </select>
+                <select class="form-select form-select-sm" id="filter-jadwal-kelas" style="min-width: 130px;">
+                  <option value="all">-- Semua Kelas --</option>
+                  <option value="Kelas 1">Kelas 1</option>
+                  <option value="Kelas 2">Kelas 2</option>
+                  <option value="Kelas 3">Kelas 3</option>
+                  <option value="Kelas 4">Kelas 4</option>
+                  <option value="Kelas 5">Kelas 5</option>
+                  <option value="Kelas 6">Kelas 6</option>
+                </select>
+                <select class="form-select form-select-sm" id="filter-jadwal-guru" style="min-width: 160px;"></select>
+                <button class="btn btn-outline-dark btn-sm" onclick="JadwalModule.printJadwal()">
+                  <i class="bi bi-printer me-1"></i>Cetak Jadwal
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="JadwalModule.exportExcel()">
+                  <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="JadwalModule.openAddModal()">
+                  <i class="bi bi-plus-circle me-1"></i>Tambah Jadwal
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th width="4%" class="text-center">No</th>
+                    <th width="9%">Hari</th>
+                    <th width="14%">Waktu / Jam</th>
+                    <th width="9%">Kelas</th>
+                    <th width="21%">Mata Pelajaran</th>
+                    <th width="18%">Guru Pengajar</th>
+                    <th width="7%">JP</th>
+                    <th width="10%" class="text-center">Status</th>
+                    <th width="8%" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="jadwal-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7. VIEW BEBAN MENGAJAR (24 JP) -->
+        <section id="view-beban" class="app-view">
+          <div class="card card-glass">
+            <div class="card-header-glass flex-wrap gap-2">
+              <h5><i class="bi bi-clock-history text-primary"></i> Beban Kerja & Validasi 24 JP Guru</h5>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-success btn-sm" onclick="BebanMengajarModule.exportExcel()">
+                  <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="BebanMengajarModule.openAddModal()">
+                  <i class="bi bi-plus-circle me-1"></i>Tambah Beban Mengajar
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th width="4%" class="text-center">No</th>
+                    <th width="20%">Nama Guru</th>
+                    <th width="9%">Tatap Muka</th>
+                    <th width="18%">Tugas Tambahan</th>
+                    <th width="15%">Ekstrakurikuler</th>
+                    <th width="9%">Total JP</th>
+                    <th width="10%">Validasi 24 JP</th>
+                    <th width="8%">Keterangan</th>
+                    <th width="7%" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="beban-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 8. VIEW ABSENSI GURU (DISEMPURNAKAN) -->
+        <section id="view-absensi" class="app-view">
+          <!-- Absensi Tab Navigation -->
+          <div class="card card-glass mb-3 p-2">
+            <ul class="nav nav-pills absensi-nav-pills gap-2 flex-wrap" id="absensi-tabs" role="tablist">
+              <li class="nav-item">
+                <button class="nav-link active" id="tab-btn-absensi-harian" data-bs-toggle="pill"
+                  data-bs-target="#tab-content-absensi-harian" type="button" role="tab">
+                  <i class="bi bi-calendar-check me-1"></i>Presensi Harian
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" id="tab-btn-absensi-bulanan" data-bs-toggle="pill"
+                  data-bs-target="#tab-content-absensi-bulanan" type="button" role="tab"
+                  onclick="AbsensiModule.renderMonthlyMatrix()">
+                  <i class="bi bi-calendar3 me-1"></i>Rekap Bulanan (Matrix)
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" id="tab-btn-absensi-statistik" data-bs-toggle="pill"
+                  data-bs-target="#tab-content-absensi-statistik" type="button" role="tab"
+                  onclick="AbsensiModule.renderStatistics()">
+                  <i class="bi bi-graph-up me-1"></i>Statistik & Kedisiplinan
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" id="tab-btn-absensi-pengaturan" data-bs-toggle="pill"
+                  data-bs-target="#tab-content-absensi-pengaturan" type="button" role="tab">
+                  <i class="bi bi-clock-history me-1"></i>Pengaturan Jam Kerja
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          <div class="tab-content" id="absensi-tabs-content">
+            <!-- TAB 1: PRESENSI HARIAN -->
+            <div class="tab-pane fade show active" id="tab-content-absensi-harian" role="tabpanel">
+              <!-- Summary Cards Row -->
+              <div class="row g-2 mb-3">
+                <div class="col-6 col-md-3 col-xl-2">
+                  <div class="card p-2 p-md-3 border text-center bg-light h-100 shadow-sm">
+                    <small class="text-muted fw-semibold">Hadir Tepat Waktu</small>
+                    <h4 class="text-success fw-bold mb-0 mt-1" id="absensi-total-hadir">0</h4>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3 col-xl-2">
+                  <div class="card p-2 p-md-3 border text-center bg-light h-100 shadow-sm">
+                    <small class="text-muted fw-semibold">Terlambat</small>
+                    <h4 class="text-warning fw-bold mb-0 mt-1" id="absensi-total-terlambat">0</h4>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3 col-xl-2">
+                  <div class="card p-2 p-md-3 border text-center bg-light h-100 shadow-sm">
+                    <small class="text-muted fw-semibold">Izin & Sakit</small>
+                    <h4 class="text-info fw-bold mb-0 mt-1" id="absensi-total-izin-sakit">0</h4>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3 col-xl-2">
+                  <div class="card p-2 p-md-3 border text-center bg-light h-100 shadow-sm">
+                    <small class="text-muted fw-semibold">Dinas Luar & Cuti</small>
+                    <h4 class="text-primary fw-bold mb-0 mt-1" id="absensi-total-dinas-cuti">0</h4>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3 col-xl-2">
+                  <div class="card p-2 p-md-3 border text-center bg-light h-100 shadow-sm">
+                    <small class="text-muted fw-semibold">Alpha / Belum</small>
+                    <h4 class="text-danger fw-bold mb-0 mt-1" id="absensi-total-alpha">0</h4>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3 col-xl-2">
+                  <div class="card p-2 p-md-3 border text-center bg-primary text-white h-100 shadow-sm">
+                    <small class="text-white-50 fw-semibold">% Kehadiran</small>
+                    <h4 class="text-white fw-bold mb-0 mt-1" id="absensi-total-persentase">100%</h4>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Main Table Card -->
+              <div class="card card-glass">
+                <div class="card-header-glass flex-wrap gap-2 justify-content-between align-items-center">
+                  <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-secondary" onclick="AbsensiModule.navigateDate(-1)"
+                        title="Hari Sebelumnya"><i class="bi bi-chevron-left"></i></button>
+                      <button class="btn btn-outline-primary" onclick="AbsensiModule.setTodayDate()">Hari Ini</button>
+                      <button class="btn btn-outline-secondary" onclick="AbsensiModule.navigateDate(1)"
+                        title="Hari Berikutnya"><i class="bi bi-chevron-right"></i></button>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                      <input type="date" class="form-control form-control-sm" id="filter-absensi-tanggal"
+                        style="width: 150px;">
+                      <span id="absensi-hari-label" class="badge bg-light text-dark border px-2 py-1 small"></span>
+                    </div>
+                    <select class="form-select form-select-sm" id="filter-absensi-status" style="width: 150px;">
+                      <option value="all">-- Semua Status --</option>
+                      <option value="Hadir">Hadir (Tepat Waktu)</option>
+                      <option value="Terlambat">Terlambat</option>
+                      <option value="Izin">Izin</option>
+                      <option value="Sakit">Sakit</option>
+                      <option value="Dinas Luar">Dinas Luar</option>
+                      <option value="Cuti">Cuti</option>
+                      <option value="Alpha">Alpha</option>
+                      <option value="Belum Absen">Belum Absen</option>
+                    </select>
+                  </div>
+
+                  <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-warning btn-sm text-dark fw-bold" onclick="AbsensiModule.openBatchModal()">
+                      <i class="bi bi-lightning-charge-fill me-1"></i>Tandai Semua Hadir
+                    </button>
+                    <button class="btn btn-info btn-sm text-white fw-bold" onclick="AbsensiModule.openMandiriModal()">
+                      <i class="bi bi-qr-code-scan me-1"></i>Presensi Mandiri
+                    </button>
+                    <button class="btn btn-outline-dark btn-sm" onclick="AbsensiModule.printDailySheet()">
+                      <i class="bi bi-printer me-1"></i>Cetak Harian
+                    </button>
+                    <button class="btn btn-outline-success btn-sm" onclick="AbsensiModule.exportDailyExcel()">
+                      <i class="bi bi-file-earmark-excel me-1"></i>Export
+                    </button>
+                  </div>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table-custom">
+                    <thead>
+                      <tr>
+                        <th width="4%" class="text-center">No</th>
+                        <th width="26%">Identitas Guru & PTK</th>
+                        <th width="14%">Status Kehadiran</th>
+                        <th width="12%">Jam Datang</th>
+                        <th width="12%">Jam Pulang</th>
+                        <th width="16%">Keterangan / Dokumen</th>
+                        <th width="16%" class="text-center">Aksi Cepat & Detail</th>
+                      </tr>
+                    </thead>
+                    <tbody id="absensi-table-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 2: REKAPITULASI BULANAN MATRIX -->
+            <div class="tab-pane fade" id="tab-content-absensi-bulanan" role="tabpanel">
+              <div class="card card-glass">
+                <div class="card-header-glass flex-wrap gap-2 justify-content-between align-items-center">
+                  <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <label class="small text-muted fw-bold">Pilih Bulan & Tahun:</label>
+                    <select class="form-select form-select-sm" id="filter-matrix-bulan" style="width: 140px;"
+                      onchange="AbsensiModule.renderMonthlyMatrix()">
+                      <option value="1">Januari</option>
+                      <option value="2">Februari</option>
+                      <option value="3">Maret</option>
+                      <option value="4">April</option>
+                      <option value="5">Mei</option>
+                      <option value="6">Juni</option>
+                      <option value="7">Juli</option>
+                      <option value="8" selected>Agustus</option>
+                      <option value="9">September</option>
+                      <option value="10">Oktober</option>
+                      <option value="11">November</option>
+                      <option value="12">Desember</option>
+                    </select>
+                    <select class="form-select form-select-sm" id="filter-matrix-tahun" style="width: 100px;"
+                      onchange="AbsensiModule.renderMonthlyMatrix()">
+                      <option value="2024">2024</option>
+                      <option value="2026">2026</option>
+                      <option value="2026" selected>2026</option>
+                      <option value="2027">2027</option>
+                    </select>
+                    <select class="form-select form-select-sm" id="filter-matrix-status-guru" style="width: 150px;"
+                      onchange="AbsensiModule.renderMonthlyMatrix()">
+                      <option value="all">-- Semua PTK --</option>
+                      <option value="PNS">PNS</option>
+                      <option value="PPPK">PPPK</option>
+                      <option value="Honorer">Honorer / GTT</option>
+                    </select>
+                  </div>
+
+                  <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-outline-dark btn-sm" onclick="AbsensiModule.printMonthlyMatrix()">
+                      <i class="bi bi-printer-fill me-1"></i>Cetak Rekap A4 Landscape
+                    </button>
+                    <button class="btn btn-outline-success btn-sm" onclick="AbsensiModule.exportMonthlyExcel()">
+                      <i class="bi bi-file-earmark-excel-fill me-1"></i>Export Matrix Excel
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Legend status code -->
+                <div class="p-3 bg-light border-bottom d-flex gap-3 flex-wrap align-items-center small">
+                  <span class="fw-bold text-muted"><i class="bi bi-info-circle me-1"></i>Keterangan Kode:</span>
+                  <span><strong class="badge bg-success">H</strong> Hadir Tepat Waktu</span>
+                  <span><strong class="badge bg-warning text-dark">T</strong> Terlambat</span>
+                  <span><strong class="badge bg-info text-white">I</strong> Izin</span>
+                  <span><strong class="badge bg-warning">S</strong> Sakit</span>
+                  <span><strong class="badge text-white" style="background: #8b5cf6;">D</strong> Dinas Luar</span>
+                  <span><strong class="badge bg-primary">C</strong> Cuti</span>
+                  <span><strong class="badge bg-danger">A</strong> Alpha</span>
+                  <span><strong class="badge bg-secondary">L</strong> Libur / Minggu</span>
+                </div>
+
+                <div class="matrix-container p-2">
+                  <table class="table-custom table-matrix" id="table-matrix-absensi">
+                    <thead id="matrix-head"></thead>
+                    <tbody id="matrix-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 3: STATISTIK & ANALISIS KEDISIPLINAN -->
+            <div class="tab-pane fade" id="tab-content-absensi-statistik" role="tabpanel">
+              <div class="row g-3 mb-3">
+                <div class="col-lg-5">
+                  <div class="card card-glass h-100 p-3">
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-pie-chart-fill me-2"></i>Komposisi Kehadiran
+                      Bulan Ini</h6>
+                    <div style="position: relative; height: 260px;">
+                      <canvas id="chart-absensi-status"></canvas>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-7">
+                  <div class="card card-glass h-100 p-3">
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-bar-chart-line-fill me-2"></i>Tingkat
+                      Kehadiran Bulanan Guru (%)</h6>
+                    <div style="position: relative; height: 260px;">
+                      <canvas id="chart-absensi-bulanan"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card card-glass">
+                <div class="card-header-glass d-flex justify-content-between align-items-center">
+                  <h6 class="fw-bold text-primary mb-0"><i class="bi bi-award-fill text-warning me-2"></i>Peringkat
+                    Kedisiplinan & Kehadiran Guru</h6>
+                  <button class="btn btn-sm btn-outline-primary" onclick="AbsensiModule.syncToPKG()">
+                    <i class="bi bi-arrow-repeat me-1"></i>Sinkronisasi Skor ke Modul PKG
+                  </button>
+                </div>
+                <div class="table-responsive">
+                  <table class="table-custom">
+                    <thead>
+                      <tr>
+                        <th width="6%" class="text-center">Peringkat</th>
+                        <th width="30%">Nama Guru & NUPTK</th>
+                        <th width="12%" class="text-center">Hari Hadir</th>
+                        <th width="12%" class="text-center">Terlambat</th>
+                        <th width="12%" class="text-center">Izin / Sakit</th>
+                        <th width="14%" class="text-center">% Kehadiran</th>
+                        <th width="14%" class="text-center">Predikat Disiplin</th>
+                      </tr>
+                    </thead>
+                    <tbody id="absensi-leaderboard-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 4: PENGATURAN JAM KERJA -->
+            <div class="tab-pane fade" id="tab-content-absensi-pengaturan" role="tabpanel">
+              <div class="card card-glass">
+                <div class="card-header-glass">
+                  <h6 class="fw-bold text-primary mb-0"><i class="bi bi-clock-history me-2"></i>Pengaturan Standar Jam
+                    Kerja & Toleransi Presensi</h6>
+                </div>
+                <div class="card-body p-4">
+                  <form id="form-pengaturan-absensi" onsubmit="AbsensiModule.saveSettings(event)">
+                    <div class="row g-3 mb-3">
+                      <div class="col-md-6">
+                        <label class="form-label small fw-bold">Jam Masuk Standar</label>
+                        <input type="time" class="form-control" id="setting-jam-masuk" value="07:00" required>
+                        <div class="form-text small">Waktu batas guru sudah harus berada di sekolah.</div>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label small fw-bold">Batas Waktu Toleransi Keterlambatan</label>
+                        <input type="time" class="form-control" id="setting-jam-toleransi" value="07:15" required>
+                        <div class="form-text small">Lewat dari jam ini sistem otomatis menetapkan status 'Terlambat'.
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label small fw-bold">Jam Pulang (Senin - Kamis)</label>
+                        <input type="time" class="form-control" id="setting-jam-pulang-reguler" value="14:30" required>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label small fw-bold">Jam Pulang (Jumat)</label>
+                        <input type="time" class="form-control" id="setting-jam-pulang-jumat" value="11:30" required>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label small fw-bold">Jam Pulang (Sabtu)</label>
+                        <input type="time" class="form-control" id="setting-jam-pulang-sabtu" value="13:00" required>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label small fw-bold">Hari Kerja Aktif</label>
+                      <div class="d-flex gap-3">
+                        <div class="form-check">
+                          <input class="form-check-input" type="radio" name="setting-hari-kerja" id="hk6" value="6"
+                            checked>
+                          <label class="form-check-label" for="hk6">6 Hari Kerja (Senin - Sabtu)</label>
+                        </div>
+                        <div class="form-check">
+                          <input class="form-check-input" type="radio" name="setting-hari-kerja" id="hk5" value="5">
+                          <label class="form-check-label" for="hk5">5 Hari Kerja (Senin - Jumat)</label>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                      <button type="submit" class="btn btn-primary fw-bold px-4">
+                        <i class="bi bi-save me-1"></i>Simpan Pengaturan
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 9. VIEW PENILAIAN KINERJA (PKG) -->
+        <section id="view-pkg" class="app-view">
+          <div class="card card-glass">
+            <div class="card-header-glass flex-wrap gap-2">
+              <h5><i class="bi bi-graph-up-arrow text-primary"></i> Penilaian Kinerja Guru (PKG / SKP)</h5>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-success btn-sm" onclick="LaporanModule.exportPKGExcel()">
+                  <i class="bi bi-file-earmark-excel me-1"></i>Export
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="PKGModule.openAddModal()">
+                  <i class="bi bi-plus-circle me-1"></i>Input Nilai PKG
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th width="4%" class="text-center">No</th>
+                    <th width="24%">Nama Guru & Tahun</th>
+                    <th width="10%">Perencanaan</th>
+                    <th width="10%">Pelaksanaan</th>
+                    <th width="10%">Evaluasi</th>
+                    <th width="10%">Profesional</th>
+                    <th width="10%">Nilai Akhir</th>
+                    <th width="14%">Predikat Kinerja</th>
+                    <th width="8%" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="pkg-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 10. VIEW PRESTASI -->
+        <section id="view-prestasi" class="app-view">
+          <div class="card card-glass">
+            <div class="card-header-glass flex-wrap gap-2 justify-content-between align-items-center">
+              <h5><i class="bi bi-trophy-fill text-warning"></i> Catatan Prestasi Guru & Pembimbing</h5>
+              <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-outline-dark btn-sm" onclick="PrestasiModule.printPrestasi()">
+                  <i class="bi bi-printer me-1"></i>Cetak Rekap
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="PrestasiModule.exportExcel()">
+                  <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="PrestasiModule.openAddModal()">
+                  <i class="bi bi-plus-circle me-1"></i>Tambah Prestasi
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th width="4%" class="text-center">No</th>
+                    <th width="22%">Nama Guru</th>
+                    <th width="26%">Nama Prestasi / Event</th>
+                    <th width="12%">Tingkat</th>
+                    <th width="12%">Peringkat</th>
+                    <th width="6%">Tahun</th>
+                    <th width="12%">Penyelenggara</th>
+                    <th width="6%" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="prestasi-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 11. VIEW PELATIHAN & PMM -->
+        <section id="view-pelatihan" class="app-view">
+          <div class="card card-glass">
+            <div class="card-header-glass flex-wrap gap-2 justify-content-between align-items-center">
+              <h5><i class="bi bi-journal-bookmark-fill text-primary"></i> Pelatihan Mandiri (PMM) & Diklat Dinas</h5>
+              <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-outline-dark btn-sm" onclick="PelatihanModule.printPelatihan()">
+                  <i class="bi bi-printer me-1"></i>Cetak Rekap
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="PelatihanModule.exportExcel()">
+                  <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="PelatihanModule.openAddModal()">
+                  <i class="bi bi-plus-circle me-1"></i>Tambah Pelatihan
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th width="4%" class="text-center">No</th>
+                    <th width="20%">Nama Guru</th>
+                    <th width="26%">Nama Diklat / Topik PMM</th>
+                    <th width="14%">Jenis</th>
+                    <th width="8%">Pola JP</th>
+                    <th width="14%">Penyelenggara</th>
+                    <th width="8%">Periode</th>
+                    <th width="6%" class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="pelatihan-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 12. VIEW DOKUMEN DIGITAL -->
+        <section id="view-dokumen" class="app-view">
+          <div class="card card-glass mb-4">
+            <div class="card-header-glass flex-wrap gap-2">
+              <h5><i class="bi bi-folder2-open text-primary"></i> E-Arsip Dokumen Digital Guru</h5>
+              <div class="d-flex gap-2">
+                <select class="form-select form-select-sm" id="filter-dokumen-kategori">
+                  <option value="all">-- Semua Kategori Berkas --</option>
+                  <option value="KTP">KTP</option>
+                  <option value="KK">Kartu Keluarga</option>
+                  <option value="NPWP">NPWP</option>
+                  <option value="Ijazah">Ijazah & Transkrip</option>
+                  <option value="Sertifikat Pendidik">Sertifikat Pendidik</option>
+                  <option value="SK Kepegawaian">SK Kepegawaian</option>
+                  <option value="Pakta Integritas">Pakta Integritas</option>
+                </select>
+                <button class="btn btn-outline-success btn-sm" onclick="DokumenModule.exportExcel()">
+                  <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="DokumenModule.openAddModal()">
+                  <i class="bi bi-upload me-1"></i>Unggah Berkas Baru
+                </button>
+              </div>
+            </div>
+            <div class="card-body-glass">
+              <div class="row" id="dokumen-grid-container">
+                <!-- Rendered dynamically -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 13. VIEW LAPORAN & PUSAT EKSPOR -->
+        <section id="view-laporan" class="app-view">
+          <!-- Banner Hero Ekspor Master -->
+          <div class="card card-glass mb-4 bg-primary text-white border-0 shadow"
+            style="background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%);">
+            <div class="card-body p-4">
+              <div class="row align-items-center">
+                <div class="col-lg-8">
+                  <div class="d-flex align-items-center gap-3 mb-2">
+                    <div class="p-3 bg-white bg-opacity-20 rounded-circle text-white">
+                      <i class="bi bi-file-earmark-spreadsheet-fill fs-2"></i>
+                    </div>
+                    <div>
+                      <h4 class="fw-bold mb-1 text-white">Pusat Ekspor & Laporan Sekolah</h4>
+                      <p class="mb-0 text-white-50 small">Download seluruh arsip database guru, jadwal, presensi,
+                        sertifikasi, dan PKG dalam format standar Excel (.xlsx) dan PDF resmi.</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                  <button class="btn btn-light btn-lg fw-bold shadow-sm"
+                    onclick="LaporanModule.exportMultiSheetMasterExcel()">
+                    <i class="bi bi-file-earmark-excel-fill text-success me-2"></i>Ekspor Multi-Sheet Excel
+                  </button>
+                  <div class="text-white-50 small mt-1"><i class="bi bi-layers me-1"></i>1 File Berisi Seluruh Lembar
+                    Data</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kategori Ekspor Grid -->
+          <h6 class="fw-bold text-muted mb-3"><i class="bi bi-grid-fill text-primary me-2"></i>Pilihan Ekspor
+            Berdasarkan Modul</h6>
+          <div class="row g-3 mb-4">
+            <!-- 1. Master Data Guru -->
+            <div class="col-md-6 col-lg-3">
+              <div class="card card-glass p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-people-fill fs-3 text-primary"></i>
+                  <h6 class="fw-bold mb-0">Data Master Guru</h6>
+                </div>
+                <p class="small text-muted mb-3">Biodata lengkap, NIK, KK, NPWP, kontak, dan alamat guru.</p>
+                <button class="btn btn-outline-primary btn-sm w-100" onclick="LaporanModule.exportGuruExcel()">
+                  <i class="bi bi-download me-1"></i>Ekspor Guru (.xlsx)
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Kepegawaian & NIP -->
+            <div class="col-md-6 col-lg-3">
+              <div class="card card-glass p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-briefcase-fill fs-3 text-info"></i>
+                  <h6 class="fw-bold mb-0">Kepegawaian & NIP</h6>
+                </div>
+                <p class="small text-muted mb-3">Rekap status PNS, PPPK, Honorer, pangkat, golongan & masa kerja.</p>
+                <button class="btn btn-outline-info btn-sm w-100" onclick="LaporanModule.exportNIPExcel()">
+                  <i class="bi bi-download me-1"></i>Ekspor NIP (.xlsx)
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. Daftar NUPTK -->
+            <div class="col-md-6 col-lg-3">
+              <div class="card card-glass p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-person-badge-fill fs-3 text-success"></i>
+                  <h6 class="fw-bold mb-0">Daftar NUPTK</h6>
+                </div>
+                <p class="small text-muted mb-3">Rekapitulasi nomor registrasi pendidik dan status keaktifan.</p>
+                <button class="btn btn-outline-success btn-sm w-100" onclick="LaporanModule.exportNUPTKExcel()">
+                  <i class="bi bi-download me-1"></i>Ekspor NUPTK (.xlsx)
+                </button>
+              </div>
+            </div>
+
+            <!-- 4. Pendidikan Formal -->
+            <div class="col-md-6 col-lg-3">
+              <div class="card card-glass p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-mortarboard-fill fs-3 text-purple"></i>
+                  <h6 class="fw-bold mb-0">Riwayat Pendidikan</h6>
+                </div>
+                <p class="small text-muted mb-3">Ijazah S1/S2/S3, universitas, program studi, dan nilai IPK.</p>
+                <button class="btn btn-outline-secondary btn-sm w-100" onclick="LaporanModule.exportPendidikanExcel()">
+                  <i class="bi bi-download me-1"></i>Ekspor Pendidikan (.xlsx)
+                </button>
+              </div>
+            </div>
+
+            <!-- 5. Sertifikasi PPG -->
+            <div class="col-md-6 col-lg-3">
+              <div class="card card-glass p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-patch-check-fill fs-3 text-success"></i>
+                  <h6 class="fw-bold mb-0">Sertifikasi Pendidik</h6>
+                </div>
+                <p class="small text-muted mb-3">Sertifikat pendidik, NRG, bidang studi PPG, dan LPTK.</p>
+                <button class="btn btn-outline-success btn-sm w-100" onclick="LaporanModule.exportSertifikasiExcel()">
+                  <i class="bi bi-download me-1"></i>Ekspor Sertifikasi (.xlsx)
+                </button>
+              </div>
+            </div>
+
+            <!-- 6. Jadwal Mengajar -->
+            <div class="col-md-6 col-lg-3">
+              <div class="card card-glass p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-calendar3 fs-3 text-primary"></i>
+                  <h6 class="fw-bold mb-0">Jadwal Mengajar</h6>
+                </div>
+                <p class="small text-muted mb-3">Jadwal pelajaran Kurikulum Merdeka Fase A, B, C & JP mingguan.</p>
+                <button class="btn btn-outline-primary btn-sm w-100" onclick="LaporanModule.exportJadwalExcel()">
+                  <i class="bi bi-download me-1"></i>Ekspor Jadwal (.xlsx)
+                </button>
+              </div>
+            </div>
+
+            <!-- 7. Beban Mengajar 24 JP -->
+            <div class="col-md-6 col-lg-3">
+              <div class="card card-glass p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-clock-history fs-3 text-warning"></i>
+                  <h6 class="fw-bold mb-0">Beban Kerja 24 JP</h6>
+                </div>
+                <p class="small text-muted mb-3">Validasi pemenuhan 24 JP tatap muka & tugas tambahan guru.</p>
+                <button class="btn btn-outline-warning text-dark btn-sm w-100"
+                  onclick="LaporanModule.exportBebanExcel()">
+                  <i class="bi bi-download me-1"></i>Ekspor Beban 24 JP (.xlsx)
+                </button>
+              </div>
+            </div>
+
+            <!-- 8. Presensi Kehadiran -->
+            <div class="col-md-6 col-lg-3">
+              <div class="card card-glass p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-calendar-check-fill fs-3 text-success"></i>
+                  <h6 class="fw-bold mb-0">Rekapitulasi Presensi</h6>
+                </div>
+                <p class="small text-muted mb-3">Rekap kehadiran harian, waktu masuk, pulang & keterangan izin.</p>
+                <button class="btn btn-outline-success btn-sm w-100" onclick="LaporanModule.exportAbsensiExcel()">
+                  <i class="bi bi-download me-1"></i>Ekspor Presensi (.xlsx)
+                </button>
+              </div>
+            </div>
+
+            <!-- 9. Nilai PKG / SKP -->
+            <div class="col-md-6 col-lg-3">
+              <div class="card card-glass p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-award-fill fs-3 text-danger"></i>
+                  <h6 class="fw-bold mb-0">Penilaian PKG & SKP</h6>
+                </div>
+                <p class="small text-muted mb-3">Skor 5 komponen penilaian kinerja, predikat & nama penilai.</p>
+                <button class="btn btn-outline-danger btn-sm w-100" onclick="LaporanModule.exportPKGExcel()">
+                  <i class="bi bi-download me-1"></i>Ekspor PKG (.xlsx)
+                </button>
+              </div>
+            </div>
+
+            <!-- 10. Prestasi & Penghargaan -->
+            <div class="col-md-6 col-lg-3">
+              <div class="card card-glass p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-trophy-fill fs-3 text-warning"></i>
+                  <h6 class="fw-bold mb-0">Prestasi & Lomba</h6>
+                </div>
+                <p class="small text-muted mb-3">Penghargaan guru dan bimbingan lomba tingkat kab/prov/nasional.</p>
+                <button class="btn btn-outline-warning text-dark btn-sm w-100"
+                  onclick="LaporanModule.exportPrestasiExcel()">
+                  <i class="bi bi-download me-1"></i>Ekspor Prestasi (.xlsx)
+                </button>
+              </div>
+            </div>
+
+            <!-- 11. Pelatihan Mandiri PMM -->
+            <div class="col-md-6 col-lg-3">
+              <div class="card card-glass p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-book-half fs-3 text-info"></i>
+                  <h6 class="fw-bold mb-0">Pelatihan PMM & Diklat</h6>
+                </div>
+                <p class="small text-muted mb-3">Aksi Nyata PMM, Guru Penggerak, Diklat fungsional & sertifikat.</p>
+                <button class="btn btn-outline-info btn-sm w-100" onclick="LaporanModule.exportPelatihanExcel()">
+                  <i class="bi bi-download me-1"></i>Ekspor Pelatihan (.xlsx)
+                </button>
+              </div>
+            </div>
+
+            <!-- 12. E-Arsip Dokumen -->
+            <div class="col-md-6 col-lg-3">
+              <div class="card card-glass p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-folder2-open fs-3 text-primary"></i>
+                  <h6 class="fw-bold mb-0">Daftar E-Arsip Berkas</h6>
+                </div>
+                <p class="small text-muted mb-3">Inventaris dokumen digital, masa berlaku SK & tanggal kadaluarsa.</p>
+                <button class="btn btn-outline-primary btn-sm w-100" onclick="LaporanModule.exportDokumenExcel()">
+                  <i class="bi bi-download me-1"></i>Ekspor Dokumen (.xlsx)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Generator ID Card 2 Sisi -->
+          <div class="card card-glass">
+            <div class="card-header-glass flex-wrap gap-2">
+              <div>
+                <h5 class="mb-0"><i class="bi bi-card-heading text-primary me-2"></i>Generator ID Card Guru 2 Sisi
+                  (CR80)</h5>
+                <small class="text-muted">Siap cetak & unduh kartu identitas resmi SD Negeri Sumber Waru 2</small>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <select class="form-select form-select-sm" id="laporan-guru-select" style="min-width: 220px;"></select>
+                <button class="btn btn-outline-primary btn-sm" onclick="LaporanModule.downloadIDCardPDF()"
+                  title="Unduh ID Card dalam file PDF">
+                  <i class="bi bi-file-earmark-pdf me-1"></i>Unduh PDF
+                </button>
+                <button class="btn btn-success btn-sm" onclick="LaporanModule.downloadIDCardImage()"
+                  title="Unduh gambar PNG beresolusi tinggi">
+                  <i class="bi bi-image me-1"></i>Unduh PNG
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="LaporanModule.printIDCard()">
+                  <i class="bi bi-printer me-1"></i>Cetak Kartu
+                </button>
+              </div>
+            </div>
+            <div class="card-body-glass">
+              <div id="idcard-preview-container">
+                <!-- Rendered dynamically -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 14. VIEW PENGATURAN -->
+        <section id="view-pengaturan" class="app-view">
+          <div class="row g-3">
+            <div class="col-12">
+              <div class="card card-glass mb-3">
+                <div class="card-header-glass">
+                  <ul class="nav nav-pills nav-fill bg-white p-2 rounded shadow-sm border flex-column flex-md-row gap-1" id="pills-tab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link active fw-bold" id="pills-profil-tab" data-bs-toggle="pill"
+                        data-bs-target="#pills-profil" type="button" role="tab"><i
+                          class="bi bi-building me-1"></i>Profil</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link fw-bold" id="pills-visual-tab" data-bs-toggle="pill"
+                        data-bs-target="#pills-visual" type="button" role="tab"><i
+                          class="bi bi-images me-1"></i>Visual</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link fw-bold" id="pills-users-tab" data-bs-toggle="pill"
+                        data-bs-target="#pills-users" type="button" role="tab"><i
+                          class="bi bi-shield-lock me-1"></i>User & Log</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link fw-bold" id="pills-advanced-tab" data-bs-toggle="pill"
+                        data-bs-target="#pills-advanced" type="button" role="tab"><i
+                          class="bi bi-gear-wide-connected me-1"></i>Lanjutan</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link fw-bold" id="pills-integrasi-tab" data-bs-toggle="pill"
+                        data-bs-target="#pills-integrasi" type="button" role="tab"><i
+                          class="bi bi-plug me-1"></i>Integrasi</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link fw-bold" id="pills-backup-tab" data-bs-toggle="pill"
+                        data-bs-target="#pills-backup" type="button" role="tab"><i
+                          class="bi bi-cloud-arrow-down me-1"></i>Backup</button>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="tab-content" id="pills-tabContent">
+
+                <!-- Tab Profil Lembaga -->
+                <div class="tab-pane fade show active" id="pills-profil" role="tabpanel">
+                  <div class="card card-glass mb-4">
+                    <div class="card-header-glass">
+                      <h5><i class="bi bi-building text-primary"></i> Profil Lembaga (Informasi Resmi)</h5>
+                    </div>
+                    <div class="card-body-glass">
+                      <form id="form-profil-sekolah">
+                        <div class="row g-2 mb-2">
+                          <div class="col-md-6">
+                            <label class="form-label small fw-bold">NPSN</label>
+                            <input type="text" id="profil-npsn" class="form-control form-control-sm" required>
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label small fw-bold">NSS</label>
+                            <input type="text" id="profil-nss" class="form-control form-control-sm">
+                          </div>
+                        </div>
+
+                        <div class="mb-2">
+                          <label class="form-label small fw-bold">Nama Resmi Sekolah</label>
+                          <input type="text" id="profil-nama" class="form-control form-control-sm" required>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                          <div class="col-md-6">
+                            <label class="form-label small fw-bold">Bentuk Pendidikan</label>
+                            <input type="text" id="profil-bentuk" class="form-control form-control-sm">
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label small fw-bold">Akreditasi</label>
+                            <select id="profil-akreditasi" class="form-select form-select-sm">
+                              <option value="A">A (Unggul)</option>
+                              <option value="B">B (Baik)</option>
+                              <option value="C">C (Cukup)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="mb-2">
+                          <label class="form-label small fw-bold">Alamat Lengkap</label>
+                          <textarea id="profil-alamat" class="form-control form-control-sm" rows="2"></textarea>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                          <div class="col-md-4">
+                            <label class="form-label small fw-bold">Desa/Kelurahan</label>
+                            <input type="text" id="profil-desa" class="form-control form-control-sm">
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label small fw-bold">Kecamatan</label>
+                            <input type="text" id="profil-kecamatan" class="form-control form-control-sm">
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label small fw-bold">Kabupaten</label>
+                            <input type="text" id="profil-kabupaten" class="form-control form-control-sm">
+                          </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                          <div class="col-md-4">
+                            <label class="form-label small fw-bold">Provinsi</label>
+                            <input type="text" id="profil-provinsi" class="form-control form-control-sm">
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label small fw-bold">Kode Pos</label>
+                            <input type="text" id="profil-kodepos" class="form-control form-control-sm">
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label small fw-bold">Telepon</label>
+                            <input type="text" id="profil-telp" class="form-control form-control-sm">
+                          </div>
+                        </div>
+
+                        <div class="mb-2">
+                          <label class="form-label small fw-bold">Email Sekolah</label>
+                          <input type="email" id="profil-email" class="form-control form-control-sm">
+                        </div>
+
+                        <hr class="my-3">
+
+                        <div class="row g-2 mb-3">
+                          <div class="col-md-6">
+                            <label class="form-label small fw-bold">Nama Kepala Sekolah</label>
+                            <input type="text" id="profil-ks-nama" class="form-control form-control-sm" required>
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label small fw-bold">NIP Kepala Sekolah</label>
+                            <input type="text" id="profil-ks-nip" class="form-control form-control-sm">
+                          </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                          <i class="bi bi-save me-1"></i>Simpan Perubahan Profil
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tab Identitas Visual & Tema -->
+                <div class="tab-pane fade" id="pills-visual" role="tabpanel">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <div class="card card-glass h-100">
+                        <div class="card-header-glass">
+                          <h5><i class="bi bi-image text-success"></i> Pengaturan Logo & Tanda Tangan</h5>
+                        </div>
+                        <div class="card-body-glass">
+                          <form id="form-identitas-visual">
+                            <div class="mb-3 text-center">
+                              <label class="form-label small fw-bold d-block text-start">Logo Sekolah (PNG/JPG)</label>
+                              <img id="preview-logo-sekolah" src="assets/logo-placeholder.png" alt="Logo Preview"
+                                class="img-thumbnail mb-2" style="max-height: 100px; object-fit: contain;">
+                              <input type="file" id="input-logo-sekolah" class="form-control form-control-sm"
+                                accept="image/png, image/jpeg">
+                              <small class="text-muted d-block mt-1">Logo ini akan digunakan pada Kop Surat Cetak dan
+                                Header ID Card.</small>
+                            </div>
+
+                            <hr>
+
+                            <div class="mb-3 text-center">
+                              <label class="form-label small fw-bold d-block text-start">Tanda Tangan Kepala Sekolah
+                                (PNG Transparan)</label>
+                              <div class="bg-light p-2 rounded mb-2 border">
+                                <img id="preview-ttd-ks" src="assets/ttd-placeholder.png" alt="TTD Preview"
+                                  style="max-height: 80px; object-fit: contain;">
+                              </div>
+                              <input type="file" id="input-ttd-ks" class="form-control form-control-sm"
+                                accept="image/png">
+                              <small class="text-muted d-block mt-1">Gunakan gambar PNG transparan (tanpa background)
+                                untuk hasil terbaik pada ID Card dan Surat.</small>
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100">
+                              <i class="bi bi-check-circle me-1"></i>Simpan Aset Visual
+                            </button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="col-md-6">
+                      <div class="card card-glass h-100">
+                        <div class="card-header-glass">
+                          <h5><i class="bi bi-palette text-primary"></i> Pengaturan Tema Warna</h5>
+                        </div>
+                        <div class="card-body-glass">
+                          <form id="form-tema-warna">
+                            <div class="mb-4">
+                              <label class="form-label fw-bold">Warna Utama Aplikasi</label>
+                              <div class="d-flex align-items-center gap-3">
+                                <input type="color" id="input-warna-aplikasi" class="form-control form-control-color"
+                                  value="#2563eb" title="Pilih Warna Utama Aplikasi">
+                                <div>
+                                  <small class="d-block text-muted">Akan mengubah warna tombol, header tabel, dan elemen
+                                    interaktif lainnya (Default: #2563eb).</small>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="mb-4">
+                              <label class="form-label fw-bold">Warna Tema ID Card</label>
+                              <div class="d-flex align-items-center gap-3">
+                                <input type="color" id="input-warna-idcard" class="form-control form-control-color"
+                                  value="#0f172a" title="Pilih Warna ID Card">
+                                <div>
+                                  <small class="d-block text-muted">Akan mengubah warna background sisi belakang dan
+                                    aksen pada sisi depan ID Card (Default: #0f172a).</small>
+                                </div>
+                              </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 mb-2">
+                              <i class="bi bi-palette me-1"></i>Terapkan Tema Warna
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary w-100" id="btn-reset-tema">
+                              Kembalikan Tema Bawaan
+                            </button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tab Keamanan & Pengguna -->
+                <div class="tab-pane fade" id="pills-users" role="tabpanel">
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <div class="card card-glass">
+                        <div class="card-header-glass">
+                          <h5><i class="bi bi-shield-lock text-primary"></i> Pengguna &amp; Hak Akses</h5>
+                        </div>
+                        <div class="card-body p-3" id="users-management-container">
+                          <!-- Diisi oleh PengaturanModule.renderUsers() -->
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-6">
+                      <div class="card card-glass h-100">
+                        <div class="card-header-glass d-flex justify-content-between align-items-center">
+                          <h5 class="mb-0"><i class="bi bi-clock-history text-info"></i> Audit Log</h5>
+                          <div class="d-flex gap-2">
+                             <input type="text" class="form-control form-control-sm" id="search-audit-log" placeholder="Cari log..." style="width:150px;">
+                             <button class="btn btn-sm btn-outline-secondary" onclick="PengaturanModule.renderAuditLog()"><i class="bi bi-arrow-clockwise"></i></button>
+                          </div>
+                        </div>
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                          <table class="table-custom table-hover">
+                            <thead>
+                              <tr>
+                                <th width="20%">Waktu</th>
+                                <th width="25%">Pengguna</th>
+                                <th width="55%">Aktivitas</th>
+                              </tr>
+                            </thead>
+                            <tbody id="audit-log-table-body"></tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tab Konfigurasi Lanjutan -->
+                <div class="tab-pane fade" id="pills-advanced" role="tabpanel">
+                  <div class="row g-4">
+                    <div class="col-md-6">
+                       <div class="card card-glass h-100">
+                          <div class="card-header-glass">
+                            <h5><i class="bi bi-sliders text-warning"></i> Preferensi Sistem</h5>
+                          </div>
+                          <div class="card-body-glass">
+                             <form id="form-konfigurasi-sistem" onsubmit="event.preventDefault(); PengaturanModule.saveAdvancedConfig();">
+                                <div class="mb-3">
+                                   <label class="form-label fw-bold small">Zona Waktu</label>
+                                   <select class="form-select" id="adv-timezone">
+                                      <option value="Asia/Jakarta">WIB (Asia/Jakarta)</option>
+                                      <option value="Asia/Makassar">WITA (Asia/Makassar)</option>
+                                      <option value="Asia/Jayapura">WIT (Asia/Jayapura)</option>
+                                   </select>
+                                </div>
+                                <div class="mb-3">
+                                   <label class="form-label fw-bold small">Format Tanggal</label>
+                                   <select class="form-select" id="adv-date-format">
+                                      <option value="DD MMMM YYYY">DD MMMM YYYY (e.g. 17 Agustus 2026)</option>
+                                      <option value="DD/MM/YYYY">DD/MM/YYYY (e.g. 17/08/2026)</option>
+                                      <option value="YYYY-MM-DD">YYYY-MM-DD (e.g. 2026-08-17)</option>
+                                   </select>
+                                </div>
+                                <div class="mb-3">
+                                   <label class="form-label fw-bold small">Bahasa Antarmuka</label>
+                                   <select class="form-select" id="adv-language">
+                                      <option value="id">Bahasa Indonesia</option>
+                                      <option value="en">English (US)</option>
+                                   </select>
+                                </div>
+                                <hr>
+                                <div class="mb-3">
+                                   <label class="form-label fw-bold small">Session Timeout (Menit)</label>
+                                   <input type="range" class="form-range" min="15" max="120" step="15" id="adv-session-timeout" oninput="document.getElementById('timeout-val').innerText = this.value">
+                                   <small class="text-muted">Logout otomatis setelah <span id="timeout-val" class="fw-bold text-primary">60</span> menit tidak aktif.</small>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-save me-2"></i>Simpan Preferensi</button>
+                             </form>
+                          </div>
+                       </div>
+                    </div>
+                    <div class="col-md-6">
+                       <div class="card card-glass h-100">
+                          <div class="card-header-glass">
+                            <h5><i class="bi bi-shield-check text-success"></i> Kebijakan Keamanan Lanjutan</h5>
+                          </div>
+                          <div class="card-body-glass">
+                             <div class="mb-3">
+                                <div class="form-check form-switch form-check-reverse d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                                  <label class="form-check-label fw-bold" for="sec-strong-pwd">Wajibkan Password Kuat (Simbol & Angka)</label>
+                                  <input class="form-check-input" type="checkbox" id="sec-strong-pwd" checked>
+                                </div>
+                                <div class="form-check form-switch form-check-reverse d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                                  <label class="form-check-label fw-bold" for="sec-2fa">Two-Factor Authentication (2FA) <span class="badge bg-secondary ms-2">Coming Soon</span></label>
+                                  <input class="form-check-input" type="checkbox" id="sec-2fa" disabled>
+                                </div>
+                                <div class="form-check form-switch form-check-reverse d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                                  <label class="form-check-label fw-bold" for="sec-force-logout">Paksa Logout Sesi Lain saat Login</label>
+                                  <input class="form-check-input" type="checkbox" id="sec-force-logout" checked>
+                                </div>
+                                <div class="form-check form-switch form-check-reverse d-flex justify-content-between align-items-center">
+                                  <label class="form-check-label fw-bold" for="sec-api-lock">Kunci API Publik</label>
+                                  <input class="form-check-input" type="checkbox" id="sec-api-lock">
+                                </div>
+                             </div>
+                             <div class="alert alert-info small mt-4">
+                               <i class="bi bi-info-circle-fill me-2"></i> Pengaturan di atas memengaruhi seluruh pengguna secara global (berlaku instan).
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tab Integrasi -->
+                <div class="tab-pane fade" id="pills-integrasi" role="tabpanel">
+                  <div class="row g-4">
+                    <div class="col-md-6">
+                       <div class="card card-glass h-100">
+                          <div class="card-header-glass">
+                             <h5><i class="bi bi-envelope-at text-danger"></i> Notifikasi Email (SMTP)</h5>
+                          </div>
+                          <div class="card-body-glass">
+                             <form id="form-smtp" onsubmit="event.preventDefault(); PengaturanModule.saveIntegration('smtp');">
+                                <div class="mb-3">
+                                   <label class="form-label small fw-bold">SMTP Host</label>
+                                   <input type="text" class="form-control" placeholder="smtp.gmail.com" id="int-smtp-host">
+                                </div>
+                                <div class="row g-3 mb-3">
+                                   <div class="col-md-6">
+                                      <label class="form-label small fw-bold">Port</label>
+                                      <input type="number" class="form-control" placeholder="465" id="int-smtp-port">
+                                   </div>
+                                   <div class="col-md-6">
+                                      <label class="form-label small fw-bold">Enkripsi</label>
+                                      <select class="form-select" id="int-smtp-sec">
+                                         <option value="ssl">SSL / TLS</option>
+                                         <option value="starttls">STARTTLS</option>
+                                      </select>
+                                   </div>
+                                </div>
+                                <div class="mb-3">
+                                   <label class="form-label small fw-bold">Username / Email</label>
+                                   <input type="text" class="form-control" placeholder="email@sekolah.sch.id" id="int-smtp-user">
+                                </div>
+                                <div class="mb-4">
+                                   <label class="form-label small fw-bold">Password / App Password</label>
+                                   <input type="password" class="form-control" id="int-smtp-pass">
+                                </div>
+                                <button type="submit" class="btn btn-outline-danger w-100"><i class="bi bi-envelope-paper me-2"></i>Simpan Konfigurasi Email</button>
+                             </form>
+                          </div>
+                       </div>
+                    </div>
+                    <div class="col-md-6">
+                       <div class="card card-glass h-100">
+                          <div class="card-header-glass">
+                             <h5><i class="bi bi-whatsapp text-success"></i> Integrasi WhatsApp Gateway</h5>
+                          </div>
+                          <div class="card-body-glass">
+                             <form id="form-wa" onsubmit="event.preventDefault(); PengaturanModule.saveIntegration('wa');">
+                                <div class="alert alert-warning small">
+                                   <i class="bi bi-exclamation-triangle-fill me-2"></i> Fitur WhatsApp Gateway digunakan untuk mengirimkan notifikasi absensi dan jadwal kepada guru secara otomatis.
+                                </div>
+                                <div class="mb-3">
+                                   <label class="form-label small fw-bold">API Endpoint URL</label>
+                                   <input type="url" class="form-control" placeholder="https://api.fonnte.com/send" id="int-wa-url">
+                                </div>
+                                <div class="mb-3">
+                                   <label class="form-label small fw-bold">API Token / Key</label>
+                                   <input type="password" class="form-control" id="int-wa-token">
+                                </div>
+                                <div class="form-check form-switch mb-4">
+                                  <input class="form-check-input" type="checkbox" id="int-wa-active">
+                                  <label class="form-check-label fw-bold" for="int-wa-active">Aktifkan Notifikasi WhatsApp</label>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100"><i class="bi bi-whatsapp me-2"></i>Simpan Konfigurasi WA</button>
+                             </form>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tab Data & Backup -->
+                <div class="tab-pane fade" id="pills-backup" role="tabpanel">
+                  <div class="card card-glass mb-4">
+                    <div class="card-header-glass">
+                      <h5><i class="bi bi-database-down text-success"></i> Backup & Restore Database Lokal</h5>
+                    </div>
+                    <div class="card-body-glass">
+                      <!-- Progress bar Backup -->
+                      <div class="progress mb-4 d-none" id="backup-progress-container" style="height: 25px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary fw-bold" id="backup-progress-bar" role="progressbar" style="width: 0%;">Memproses Data... 0%</div>
+                      </div>
+
+                      <div class="row g-4">
+                        <div class="col-md-4 border-end">
+                          <h6 class="fw-bold mb-3"><i class="bi bi-download me-1"></i> Manual Backup</h6>
+                          <p class="small text-muted mb-3">Unduh cadangan data Anda.</p>
+                          <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary text-start"
+                              onclick="PengaturanModule.downloadJSONBackup()">
+                              <i class="bi bi-filetype-json text-primary me-2"></i><strong>Unduh JSON (.json)</strong>
+                            </button>
+                            <button class="btn btn-outline-success text-start"
+                              onclick="PengaturanModule.downloadSQLBackup()">
+                              <i class="bi bi-filetype-sql text-success me-2"></i><strong>Unduh SQL (.sql)</strong>
+                            </button>
+                            <button class="btn btn-outline-info text-start"
+                              onclick="PengaturanModule.downloadExcelFullBackup()">
+                              <i class="bi bi-file-earmark-excel text-info me-2"></i><strong>Unduh Excel (.xlsx)</strong>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div class="col-md-4 border-end px-3">
+                          <h6 class="fw-bold mb-3"><i class="bi bi-cloud-check text-primary me-1"></i> Auto & Cloud Backup</h6>
+                          <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="backup-auto" checked>
+                            <label class="form-check-label small fw-bold" for="backup-auto">Auto-Backup Harian (Local)</label>
+                          </div>
+                          <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="backup-gdrive">
+                            <label class="form-check-label small fw-bold" for="backup-gdrive">Sinkronisasi Google Drive</label>
+                          </div>
+                          <button class="btn btn-sm btn-dark w-100" onclick="alert('Fitur sinkronisasi Google Drive membutuhkan verifikasi OAUTH2.')"><i class="bi bi-google me-2"></i>Hubungkan G-Drive</button>
+                        </div>
+
+                        <div class="col-md-4 px-3">
+                          <h6 class="fw-bold mb-3"><i class="bi bi-upload me-1"></i> Pulihkan Data (Restore)</h6>
+                          <div class="mb-3">
+                            <label class="form-label small fw-bold">Restore dari File Backup JSON:</label>
+                            <input type="file" id="input-restore-json" class="form-control form-control-sm" accept=".json">
+                            <small class="text-danger d-block mt-1"><i class="bi bi-exclamation-triangle"></i>
+                              Menimpa seluruh data.</small>
+                          </div>
+
+                          <hr class="my-3">
+
+                          <h6 class="fw-bold text-danger mb-2"><i class="bi bi-exclamation-octagon text-danger me-1"></i> Danger Zone</h6>
+                          <button class="btn btn-sm btn-outline-danger w-100" onclick="PengaturanModule.resetDatabase()">
+                            <i class="bi bi-trash3-fill me-1"></i>Reset Database ke Semula
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODALS CONTAINER
+       ==================================================================== -->
+
+  <!-- Modal Tambah / Edit Guru -->
+  <div class="modal fade" id="modal-guru-form" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modal-guru-title">Tambah Data Guru Baru</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-guru">
+            <input type="hidden" id="form-guru-id">
+
+            <div class="row g-3">
+              <!-- A. Identitas Pribadi -->
+              <div class="col-12">
+                <h6 class="fw-bold text-primary border-bottom pb-1"><i class="bi bi-person-fill me-1"></i>A. Identitas
+                  Lengkap</h6>
+              </div>
+
+              <div class="col-md-2">
+                <label class="form-label small fw-bold">Gelar Depan</label>
+                <input type="text" id="form-guru-gelar-depan" class="form-control form-control-sm"
+                  placeholder="Drs. / Dr.">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Nama Lengkap (Tanpa Gelar) <span
+                    class="text-danger">*</span></label>
+                <input type="text" id="form-guru-nama" class="form-control form-control-sm" placeholder="Nama Lengkap"
+                  required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Gelar Belakang</label>
+                <input type="text" id="form-guru-gelar-belakang" class="form-control form-control-sm"
+                  placeholder="S.Pd. / M.Pd.">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">NUPTK</label>
+                <input type="text" id="form-guru-nuptk" class="form-control form-control-sm"
+                  placeholder="16 digit NUPTK">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">NIP</label>
+                <input type="text" id="form-guru-nip" class="form-control form-control-sm"
+                  placeholder="18 digit NIP (jika PNS/PPPK)">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Jenis Kelamin</label>
+                <select id="form-guru-gender" class="form-select form-select-sm">
+                  <option value="Laki-laki">Laki-laki</option>
+                  <option value="Perempuan">Perempuan</option>
+                </select>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Tempat Lahir</label>
+                <input type="text" id="form-guru-tempat-lahir" class="form-control form-control-sm"
+                  placeholder="Kota/Kab Tempat Lahir">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Tanggal Lahir</label>
+                <input type="date" id="form-guru-tanggal-lahir" class="form-control form-control-sm">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Agama</label>
+                <select id="form-guru-agama" class="form-select form-select-sm">
+                  <option value="Islam">Islam</option>
+                  <option value="Kristen">Kristen</option>
+                  <option value="Katolik">Katolik</option>
+                  <option value="Hindu">Hindu</option>
+                  <option value="Buddha">Buddha</option>
+                  <option value="Konghucu">Konghucu</option>
+                </select>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Status Pernikahan</label>
+                <select id="form-guru-status-nikah" class="form-select form-select-sm">
+                  <option value="Menikah">Menikah</option>
+                  <option value="Belum Menikah">Belum Menikah</option>
+                  <option value="Duda/Janda">Duda / Janda</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">NIK KTP (16 Digit)</label>
+                <input type="text" id="form-guru-nik" class="form-control form-control-sm" placeholder="3513...">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">No. Kartu Keluarga (KK)</label>
+                <input type="text" id="form-guru-no-kk" class="form-control form-control-sm">
+              </div>
+
+              <!-- B. Kontak & Alamat -->
+              <div class="col-12 mt-4">
+                <h6 class="fw-bold text-primary border-bottom pb-1"><i class="bi bi-geo-alt-fill me-1"></i>B. Kontak &
+                  Domisili</h6>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Nomor HP / WhatsApp</label>
+                <input type="text" id="form-guru-hp" class="form-control form-control-sm" placeholder="08...">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Email Belajar.id / Aktif</label>
+                <input type="email" id="form-guru-email" class="form-control form-control-sm"
+                  placeholder="nama@guru.sd.belajar.id">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">NPWP</label>
+                <input type="text" id="form-guru-npwp" class="form-control form-control-sm">
+              </div>
+
+              <div class="col-md-8">
+                <label class="form-label small fw-bold">Alamat Jalan / Dusun</label>
+                <input type="text" id="form-guru-alamat" class="form-control form-control-sm"
+                  placeholder="Jl. Raya / Dusun...">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">RT / RW</label>
+                <input type="text" id="form-guru-rt-rw" class="form-control form-control-sm" placeholder="001/002">
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Desa / Kelurahan</label>
+                <input type="text" id="form-guru-desa" class="form-control form-control-sm" value="Sumber Waru">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Kecamatan</label>
+                <input type="text" id="form-guru-kecamatan" class="form-control form-control-sm" value="Waru">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Kabupaten/Kota</label>
+                <input type="text" id="form-guru-kabupaten" class="form-control form-control-sm"
+                  value="Kabupaten Pamekasan">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Provinsi</label>
+                <input type="text" id="form-guru-provinsi" class="form-control form-control-sm" value="Jawa Timur">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Kode Pos</label>
+                <input type="text" id="form-guru-kode-pos" class="form-control form-control-sm" value="67291">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Status Keaktifan</label>
+                <select id="form-guru-status-aktif" class="form-select form-select-sm">
+                  <option value="Aktif">Aktif</option>
+                  <option value="Cuti">Cuti</option>
+                  <option value="Pensiun">Pensiun</option>
+                  <option value="Mutasi">Mutasi</option>
+                </select>
+              </div>
+
+              <!-- C. Kepegawaian -->
+              <div class="col-12 mt-4">
+                <h6 class="fw-bold text-primary border-bottom pb-1"><i class="bi bi-briefcase-fill me-1"></i>C.
+                  Kepegawaian Awal</h6>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Status Kepegawaian</label>
+                <select id="form-guru-status-pegawai" class="form-select form-select-sm">
+                  <option value="PNS">PNS</option>
+                  <option value="PPPK">PPPK</option>
+                  <option value="Honorer Sekolah (BOS)">Honorer Sekolah (BOS)</option>
+                  <option value="Honorer Daerah">Honorer Daerah</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Jabatan</label>
+                <input type="text" id="form-guru-jabatan" class="form-control form-control-sm"
+                  placeholder="Guru Kelas / Guru Mapel PAI">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Pangkat / Golongan</label>
+                <input type="text" id="form-guru-pangkat" class="form-control form-control-sm"
+                  placeholder="Penata Muda Tk. I, III/b">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">TMT Pengangkatan</label>
+                <input type="date" id="form-guru-tmt" class="form-control form-control-sm">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Nomor SK Pengangkatan</label>
+                <input type="text" id="form-guru-no-sk" class="form-control form-control-sm" placeholder="813/...">
+              </div>
+
+              <!-- D. Tanda Tangan Digital -->
+              <div class="col-12 mt-4">
+                <h6 class="fw-bold text-primary border-bottom pb-1"><i class="bi bi-pen-fill me-1"></i>D. Tanda Tangan
+                  Digital Guru</h6>
+              </div>
+              <div class="col-12">
+                <p class="small text-muted mb-1">Goreskan tanda tangan guru pada kanvas di bawah menggunakan mouse /
+                  layar sentuh:</p>
+                <div class="signature-pad-container mb-2">
+                  <canvas id="canvas-signature-pad" class="signature-canvas"></canvas>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-clear-signature">
+                  <i class="bi bi-eraser me-1"></i>Hapus & Gambar Ulang
+                </button>
+              </div>
+            </div>
+
+            <div class="modal-footer mt-4 pb-0">
+              <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Simpan Data Guru</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detail Guru Lengkap -->
+  <div class="modal fade" id="modal-guru-detail" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold"><i class="bi bi-person-bounding-box text-primary me-2"></i>Profil Lengkap Guru
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="modal-detail-content">
+          <!-- Rendered dynamically -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tambah / Edit Pendidikan -->
+  <div class="modal fade" id="modal-pendidikan-form" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modal-pendidikan-title">Tambah Riwayat Pendidikan</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-pendidikan">
+            <input type="hidden" id="form-pendidikan-id">
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Pilih Guru</label>
+              <select class="form-select form-select-sm" id="form-pendidikan-guru-id" required></select>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Jenjang</label>
+                <select class="form-select form-select-sm" id="form-pendidikan-jenjang">
+                  <option value="S1">S1 (Sarjana)</option>
+                  <option value="S2">S2 (Magister)</option>
+                  <option value="S3">S3 (Doktor)</option>
+                  <option value="D3">D3 (Diploma)</option>
+                  <option value="SMA/SMK">SMA/SMK</option>
+                </select>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label small fw-bold">Perguruan Tinggi / Institusi</label>
+                <input type="text" id="form-pendidikan-institusi" class="form-control form-control-sm" required
+                  placeholder="Universitas...">
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Program Studi</label>
+              <input type="text" id="form-pendidikan-prodi" class="form-control form-control-sm"
+                placeholder="Pendidikan Guru Sekolah Dasar (PGSD)">
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Tahun Masuk</label>
+                <input type="number" id="form-pendidikan-tahun-masuk" class="form-control form-control-sm" value="2015">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Tahun Lulus</label>
+                <input type="number" id="form-pendidikan-tahun-lulus" class="form-control form-control-sm" value="2019">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">IPK</label>
+                <input type="number" step="0.01" id="form-pendidikan-ipk" class="form-control form-control-sm"
+                  placeholder="3.75">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Nomor Ijazah</label>
+              <input type="text" id="form-pendidikan-no-ijazah" class="form-control form-control-sm"
+                placeholder="Nomor Ijazah Resmi">
+            </div>
+            <div class="modal-footer px-0 pb-0">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" class="btn btn-primary">Simpan</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tambah / Edit Sertifikasi -->
+  <div class="modal fade" id="modal-sertifikasi-form" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modal-sertifikasi-title">Tambah Sertifikasi Guru</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-sertifikasi">
+            <input type="hidden" id="form-sertifikasi-id">
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Pilih Guru</label>
+              <select class="form-select form-select-sm" id="form-sertifikasi-guru-id" required></select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Nomor Sertifikat Pendidik</label>
+              <input type="text" id="form-sertifikasi-no" class="form-control form-control-sm" required
+                placeholder="13 digit / nomor sertifikat">
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Bidang Studi Sertifikasi</label>
+              <input type="text" id="form-sertifikasi-bidang" class="form-control form-control-sm"
+                placeholder="Guru Kelas SD / PAI / PJOK" required>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">LPTK Penyelenggara</label>
+                <input type="text" id="form-sertifikasi-lptk" class="form-control form-control-sm"
+                  placeholder="Universitas Negeri Malang">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Tahun Sertifikasi</label>
+                <input type="number" id="form-sertifikasi-tahun" class="form-control form-control-sm" value="2023">
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Nomor Registrasi Guru (NRG)</label>
+                <input type="text" id="form-sertifikasi-nrg" class="form-control form-control-sm"
+                  placeholder="NRG resmi">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Status Keaktifan</label>
+                <select id="form-sertifikasi-status" class="form-select form-select-sm">
+                  <option value="Aktif">Aktif</option>
+                  <option value="Dalam Proses">Dalam Proses</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer px-0 pb-0">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" class="btn btn-primary">Simpan</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tambah / Edit Jadwal Mengajar -->
+  <div class="modal fade" id="modal-jadwal-form" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modal-jadwal-title">Tambah Jadwal Mengajar</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-jadwal">
+            <input type="hidden" id="form-jadwal-id">
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Pilih Guru Pengajar</label>
+              <select class="form-select form-select-sm" id="form-jadwal-guru-id" required></select>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Hari</label>
+                <select class="form-select form-select-sm" id="form-jadwal-hari">
+                  <option value="Senin">Senin</option>
+                  <option value="Selasa">Selasa</option>
+                  <option value="Rabu">Rabu</option>
+                  <option value="Kamis">Kamis</option>
+                  <option value="Jumat">Jumat</option>
+                  <option value="Sabtu">Sabtu</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Kelas</label>
+                <select class="form-select form-select-sm" id="form-jadwal-kelas">
+                  <option value="Kelas 1">Kelas 1 (Fase A)</option>
+                  <option value="Kelas 2">Kelas 2 (Fase A)</option>
+                  <option value="Kelas 3">Kelas 3 (Fase B)</option>
+                  <option value="Kelas 4">Kelas 4 (Fase B)</option>
+                  <option value="Kelas 5">Kelas 5 (Fase C)</option>
+                  <option value="Kelas 6">Kelas 6 (Fase C)</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Mata Pelajaran</label>
+              <input type="text" id="form-jadwal-mapel" class="form-control form-control-sm" required
+                placeholder="Bahasa Indonesia / IPAS / Matematika">
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Jam Ke-</label>
+                <input type="text" id="form-jadwal-jam-ke" class="form-control form-control-sm" value="1 - 3">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Mulai</label>
+                <input type="time" id="form-jadwal-mulai" class="form-control form-control-sm" value="07:00">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Selesai</label>
+                <input type="time" id="form-jadwal-selesai" class="form-control form-control-sm" value="08:45">
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Ruangan</label>
+                <input type="text" id="form-jadwal-ruang" class="form-control form-control-sm" value="Ruang Kelas">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Jumlah JP (Jam Pelajaran)</label>
+                <input type="number" id="form-jadwal-jp" class="form-control form-control-sm" value="3">
+              </div>
+            </div>
+            <div class="modal-footer px-0 pb-0">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" class="btn btn-primary">Simpan Jadwal</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tambah / Edit Beban Mengajar (24 JP) -->
+  <div class="modal fade" id="modal-beban-form" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modal-beban-title">Tambah Data Beban Mengajar</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-beban">
+            <input type="hidden" id="form-beban-id">
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Pilih Guru <span class="text-danger">*</span></label>
+              <select class="form-select" id="form-beban-guru-id" required></select>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">JP Tatap Muka (Wajib)</label>
+                <div class="input-group">
+                  <input type="number" id="form-beban-jp-tatap" class="form-control" min="0" max="60" value="24"
+                    required>
+                  <span class="input-group-text">JP</span>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">JP Tugas Tambahan</label>
+                <div class="input-group">
+                  <input type="number" id="form-beban-jp-tugas" class="form-control" min="0" max="30" value="0">
+                  <span class="input-group-text">JP</span>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">JP Ekstrakurikuler</label>
+                <div class="input-group">
+                  <input type="number" id="form-beban-jp-ekskul" class="form-control" min="0" max="30" value="0">
+                  <span class="input-group-text">JP</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Nama Tugas Tambahan</label>
+                <input type="text" id="form-beban-tugas" class="form-control"
+                  placeholder="Contoh: Kepala Perpustakaan, Pembina UKS, Operator BOS">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Nama Ekstrakurikuler</label>
+                <input type="text" id="form-beban-ekskul" class="form-control"
+                  placeholder="Contoh: Pramuka Siaga/Penggalang, Seni Tari, Drumband">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Keterangan Tambahan</label>
+              <input type="text" id="form-beban-ket" class="form-control"
+                placeholder="Keterangan dispensasi atau catatan pemenuhan jam">
+            </div>
+
+            <!-- Live Calculation Info Card -->
+            <div class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <span class="text-muted small d-block">Total Jam Mingguan Terhitung:</span>
+                <strong class="fs-5 text-primary" id="form-beban-total-jp">24 JP / Minggu</strong>
+              </div>
+              <div>
+                <span class="badge bg-success" id="form-beban-validation">✓ Terpenuhi (24 JP)</span>
+              </div>
+            </div>
+
+            <div class="modal-footer px-0 pb-0">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" class="btn btn-primary fw-bold">
+                <i class="bi bi-save me-1"></i>Simpan Beban Mengajar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Presensi Harian Form Detail / Edit -->
+  <div class="modal fade" id="modal-absensi-form" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modal-absensi-title"><i
+              class="bi bi-fingerprint text-primary me-2"></i>Pencatatan Presensi Guru</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-absensi">
+            <input type="hidden" id="form-absensi-id">
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Pilih Guru / PTK</label>
+              <select class="form-select form-select-sm" id="form-absensi-guru-id" required></select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Tanggal Presensi</label>
+              <input type="date" id="form-absensi-tanggal" class="form-control form-control-sm" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Status Kehadiran</label>
+              <select id="form-absensi-status" class="form-select form-select-sm"
+                onchange="AbsensiModule.handleFormStatusChange(this.value)">
+                <option value="Hadir">Hadir (Tepat Waktu)</option>
+                <option value="Terlambat">Hadir (Terlambat)</option>
+                <option value="Izin">Izin</option>
+                <option value="Sakit">Sakit (Surat Dokter)</option>
+                <option value="Dinas Luar">Dinas Luar / Pelatihan</option>
+                <option value="Cuti">Cuti Tahunan / Melahirkan</option>
+                <option value="Alpha">Alpha / Tanpa Keterangan</option>
+              </select>
+            </div>
+            <div class="row g-2 mb-2" id="form-absensi-time-row">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Jam Masuk (Datang)</label>
+                <input type="time" id="form-absensi-masuk" class="form-control form-control-sm" value="06:45">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Jam Pulang</label>
+                <input type="time" id="form-absensi-pulang" class="form-control form-control-sm" value="14:30">
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Keterangan / Alasan</label>
+              <input type="text" id="form-absensi-ket" class="form-control form-control-sm"
+                placeholder="Tepat waktu / Mengikuti KKG / Sakit Demam">
+            </div>
+            <div class="mb-3" id="form-absensi-doc-group">
+              <label class="form-label small fw-bold">Nomor / Lampiran Surat (Opsional)</label>
+              <input type="text" id="form-absensi-surat" class="form-control form-control-sm"
+                placeholder="Nomor Surat Tugas / Surat Dokter">
+            </div>
+            <div class="modal-footer px-0 pb-0 justify-content-between">
+              <button type="button" class="btn btn-outline-danger btn-sm" id="btn-delete-absensi"
+                onclick="AbsensiModule.deleteCurrentAbsensi()" style="display: none;">
+                <i class="bi bi-trash me-1"></i>Hapus Presensi
+              </button>
+              <div class="d-flex gap-2 ms-auto">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary">Simpan Presensi</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tandai Semua Hadir (Batch Attendance) -->
+  <div class="modal fade" id="modal-absensi-batch" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-warning-subtle">
+          <h5 class="modal-title fw-bold text-dark"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Tandai
+            Semua Guru Hadir</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-3">
+            Fitur ini akan secara otomatis menandai status <strong>Hadir (Tepat Waktu)</strong> untuk seluruh guru dan
+            staf yang belum memiliki catatan presensi pada tanggal yang dipilih.
+          </p>
+          <div class="card p-3 bg-light border mb-3">
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Tanggal Target</label>
+              <input type="date" id="batch-absensi-tanggal" class="form-control form-control-sm fw-bold" readonly>
+            </div>
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small fw-bold">Jam Masuk Default</label>
+                <input type="time" id="batch-absensi-masuk" class="form-control form-control-sm" value="06:45">
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-bold">Jam Pulang Default</label>
+                <input type="time" id="batch-absensi-pulang" class="form-control form-control-sm" value="14:30">
+              </div>
+            </div>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="batch-overwrite-existing">
+            <label class="form-check-label small text-muted" for="batch-overwrite-existing">
+              Timpa data guru yang sudah memiliki presensi (Izin/Sakit tetap dipertahankan jika tidak dicentang)
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-warning fw-bold text-dark" onclick="AbsensiModule.executeBatchHadir()">
+            <i class="bi bi-check-all me-1"></i>Proses Semua Hadir
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Presensi Mandiri / Live Clock Scanner -->
+  <div class="modal fade" id="modal-absensi-mandiri" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold"><i class="bi bi-qr-code-scan me-2"></i>Presensi Mandiri & Digital Kiosk</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row g-4">
+            <div class="col-md-5">
+              <div class="live-clock-card mb-3">
+                <small class="text-white-50 text-uppercase fw-semibold d-block mb-1" id="live-clock-date">-</small>
+                <div class="digital-time" id="live-clock-time">00:00:00</div>
+                <span class="badge bg-success mt-2"><i class="bi bi-geo-alt-fill me-1"></i>Lokasi: SDN Sumber Waru
+                  2</span>
+              </div>
+              <div class="card p-3 bg-light border text-center">
+                <small class="fw-bold text-muted d-block mb-2">QR Code Presensi Harian</small>
+                <div id="qrcode-presensi-container" class="d-flex justify-content-center my-1"></div>
+                <small class="text-muted" style="font-size: 10px;">Scan dengan kamera smartphone guru</small>
+              </div>
+            </div>
+            <div class="col-md-7">
+              <h6 class="fw-bold text-primary mb-3"><i class="bi bi-person-bounding-box me-1"></i>Catat Presensi Guru
+              </h6>
+              <div class="mb-3">
+                <label class="form-label small fw-bold">Pilih Guru / PTK</label>
+                <select class="form-select" id="mandiri-guru-select"
+                  onchange="AbsensiModule.loadMandiriGuruState()"></select>
+              </div>
+
+              <div id="mandiri-status-info" class="alert alert-info py-2 small mb-3">
+                <i class="bi bi-info-circle me-1"></i>Silakan pilih nama guru untuk mencatat presensi hari ini.
+              </div>
+
+              <div class="row g-2 mb-3">
+                <div class="col-6">
+                  <button type="button" class="btn btn-success w-100 py-2 fw-bold" id="btn-mandiri-masuk"
+                    onclick="AbsensiModule.doMandiriAbsen('masuk')">
+                    <i class="bi bi-box-arrow-in-right fs-5 d-block mb-1"></i>Absen Masuk
+                  </button>
+                </div>
+                <div class="col-6">
+                  <button type="button" class="btn btn-primary w-100 py-2 fw-bold" id="btn-mandiri-pulang"
+                    onclick="AbsensiModule.doMandiriAbsen('pulang')">
+                    <i class="bi bi-box-arrow-right fs-5 d-block mb-1"></i>Absen Pulang
+                  </button>
+                </div>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label small fw-bold">Catatan Kegiatan / Lokasi</label>
+                <input type="text" id="mandiri-keterangan" class="form-control form-control-sm"
+                  placeholder="Hadir di ruang guru / Mengajar kelas 4">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Input Penilaian Kinerja Guru (PKG) -->
+  <div class="modal fade" id="modal-pkg-form" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modal-pkg-title">Input Penilaian Kinerja Guru (PKG / SKP)</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-pkg">
+            <input type="hidden" id="form-pkg-id">
+            <div class="row g-2 mb-3">
+              <div class="col-md-8">
+                <label class="form-label small fw-bold">Pilih Guru Dinilai</label>
+                <select class="form-select form-select-sm" id="form-pkg-guru-id" required></select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Tahun Penilaian</label>
+                <input type="number" id="form-pkg-tahun" class="form-control form-control-sm" value="2026" required>
+              </div>
+            </div>
+
+            <div class="card p-3 bg-light border mb-3">
+              <h6 class="fw-bold text-primary mb-2">Komponen Skor Evaluasi (Skala 0 - 100)</h6>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold">Perencanaan (20%)</label>
+                  <input type="number" step="0.5" id="form-pkg-perencanaan" class="form-control form-control-sm"
+                    value="90">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold">Pelaksanaan (30%)</label>
+                  <input type="number" step="0.5" id="form-pkg-pelaksanaan" class="form-control form-control-sm"
+                    value="88">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold">Evaluasi Asesmen (20%)</label>
+                  <input type="number" step="0.5" id="form-pkg-evaluasi" class="form-control form-control-sm"
+                    value="89">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold">Pengembangan Profesionalisme (15%)</label>
+                  <input type="number" step="0.5" id="form-pkg-profesional" class="form-control form-control-sm"
+                    value="91">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold">Kedisiplinan & Kehadiran (15%)</label>
+                  <input type="number" step="0.5" id="form-pkg-kehadiran" class="form-control form-control-sm"
+                    value="95">
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-2 mb-3 align-items-center">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Nilai Akhir (Otomatis)</label>
+                <input type="text" id="form-pkg-nilai-akhir"
+                  class="form-control form-control-sm fw-bold fs-6 text-primary" readonly value="89.9">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Predikat SKP</label>
+                <input type="text" id="form-pkg-predikat" class="form-control form-control-sm fw-bold fs-6 text-success"
+                  readonly value="Baik">
+              </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Nama Pejabat Penilai</label>
+                <input type="text" id="form-pkg-penilai" class="form-control form-control-sm"
+                  value="Drs. H. Bambang Sutrisno, M.Pd.">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Catatan & Rekomendasi</label>
+                <input type="text" id="form-pkg-catatan" class="form-control form-control-sm"
+                  placeholder="Pertahankan inovasi pembelajaran digital.">
+              </div>
+            </div>
+
+            <div class="modal-footer px-0 pb-0">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" class="btn btn-primary">Simpan Penilaian PKG</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Prestasi -->
+  <div class="modal fade" id="modal-prestasi-form" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modal-prestasi-title">Tambah Prestasi Guru / Siswa Binaan</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-prestasi">
+            <input type="hidden" id="form-prestasi-id">
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Guru</label>
+              <select class="form-select form-select-sm" id="form-prestasi-guru-id" required></select>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Kategori</label>
+                <select id="form-prestasi-kategori" class="form-select form-select-sm">
+                  <option value="Guru Berprestasi">Guru Berprestasi</option>
+                  <option value="Pembimbing Siswa">Pembimbing Siswa</option>
+                  <option value="Karya Inovasi">Karya Inovasi</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Tingkat</label>
+                <select id="form-prestasi-tingkat" class="form-select form-select-sm">
+                  <option value="Kecamatan">Kecamatan</option>
+                  <option value="Kabupaten">Kabupaten</option>
+                  <option value="Provinsi">Provinsi</option>
+                  <option value="Nasional">Nasional</option>
+                  <option value="Internasional">Internasional</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Nama Prestasi / Event Lomba</label>
+              <input type="text" id="form-prestasi-nama" class="form-control form-control-sm" required
+                placeholder="Lomba Guru Inovatif / OSN SD">
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Peringkat Juara</label>
+                <input type="text" id="form-prestasi-juara" class="form-control form-control-sm"
+                  placeholder="Juara 1 / Medali Emas">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Tahun</label>
+                <input type="number" id="form-prestasi-tahun" class="form-control form-control-sm" value="2024">
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Penyelenggara</label>
+                <input type="text" id="form-prestasi-penyelenggara" class="form-control form-control-sm"
+                  placeholder="Dinas Pendidikan / BGP">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Nomor Piagam</label>
+                <input type="text" id="form-prestasi-piagam" class="form-control form-control-sm">
+              </div>
+            </div>
+            <div class="modal-footer px-0 pb-0">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" class="btn btn-primary">Simpan Prestasi</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Pelatihan / PMM -->
+  <div class="modal fade" id="modal-pelatihan-form" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modal-pelatihan-title">Tambah Riwayat Pelatihan</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-pelatihan">
+            <input type="hidden" id="form-pelatihan-id">
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Guru</label>
+              <select class="form-select form-select-sm" id="form-pelatihan-guru-id" required></select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Nama Pelatihan / Topik PMM</label>
+              <input type="text" id="form-pelatihan-nama" class="form-control form-control-sm" required
+                placeholder="Aksi Nyata PMM Kurikulum Merdeka...">
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Jenis Kegiatan</label>
+                <select id="form-pelatihan-jenis" class="form-select form-select-sm">
+                  <option value="Pelatihan Mandiri PMM">Pelatihan Mandiri PMM</option>
+                  <option value="Diklat Fungsional">Diklat Fungsional</option>
+                  <option value="Workshop / Bimtek">Workshop / Bimtek</option>
+                  <option value="Guru Penggerak">Guru Penggerak</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Pola Jam Pelajaran (JP)</label>
+                <input type="number" id="form-pelatihan-jp" class="form-control form-control-sm" value="32">
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Penyelenggara</label>
+              <input type="text" id="form-pelatihan-penyelenggara" class="form-control form-control-sm"
+                value="Kemendikbudristek RI">
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Tanggal Mulai</label>
+                <input type="date" id="form-pelatihan-mulai" class="form-control form-control-sm">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Tanggal Selesai</label>
+                <input type="date" id="form-pelatihan-selesai" class="form-control form-control-sm">
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Tahun</label>
+                <input type="number" id="form-pelatihan-tahun" class="form-control form-control-sm" value="2024">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">No. Sertifikat</label>
+                <input type="text" id="form-pelatihan-sertifikat" class="form-control form-control-sm">
+              </div>
+            </div>
+            <div class="modal-footer px-0 pb-0">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" class="btn btn-primary">Simpan Pelatihan</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Dokumen Digital -->
+  <div class="modal fade" id="modal-dokumen-form" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modal-dokumen-title">Upload Dokumen Digital Baru</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-dokumen">
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Pilih Guru Pemilik Berkas</label>
+              <select class="form-select form-select-sm" id="form-dokumen-guru-id" required></select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Kategori Dokumen</label>
+              <select id="form-dokumen-kategori" class="form-select form-select-sm">
+                <option value="KTP">KTP (Identitas)</option>
+                <option value="KK">Kartu Keluarga (KK)</option>
+                <option value="NPWP">NPWP</option>
+                <option value="Ijazah">Ijazah & Transkrip</option>
+                <option value="Sertifikat Pendidik">Sertifikat Pendidik</option>
+                <option value="SK Kepegawaian">SK Kepegawaian</option>
+                <option value="Pakta Integritas">Pakta Integritas</option>
+                <option value="Dokumen Lainnya">Dokumen Lainnya</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Nama Dokumen</label>
+              <input type="text" id="form-dokumen-nama" class="form-control form-control-sm" required
+                placeholder="Contoh: SK Kenaikan Pangkat Golongan III/c">
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Nomor Dokumen (Opsional)</label>
+              <input type="text" id="form-dokumen-nomor" class="form-control form-control-sm">
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Tanggal Terbit</label>
+                <input type="date" id="form-dokumen-tgl-terbit" class="form-control form-control-sm">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Masa Berlaku / SK Berakhir</label>
+                <input type="date" id="form-dokumen-tgl-exp" class="form-control form-control-sm">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Pilih File Berkas (PDF / JPG / PNG)</label>
+              <input type="file" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png">
+            </div>
+            <div class="modal-footer px-0 pb-0">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Unggah & Simpan</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tambah / Edit Kepegawaian -->
+  <div class="modal fade" id="modal-kepegawaian-form" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modal-kepegawaian-title">Tambah Data Kepegawaian</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-kepegawaian">
+            <input type="hidden" id="form-kepegawaian-id">
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Pilih Guru / PTK</label>
+                <select class="form-select form-select-sm" id="form-kepegawaian-guru-id" required></select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Status Kepegawaian</label>
+                <select class="form-select form-select-sm" id="form-kepegawaian-status">
+                  <option value="PNS">PNS (Pegawai Negeri Sipil)</option>
+                  <option value="PPPK">PPPK (P3K)</option>
+                  <option value="Honorer Sekolah (BOS)">Honorer Sekolah (BOS)</option>
+                  <option value="Honorer Daerah">Honorer Daerah</option>
+                  <option value="GTY">Guru Tetap Yayasan (GTY)</option>
+                </select>
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Jabatan Utama</label>
+                <input type="text" id="form-kepegawaian-jabatan" class="form-control form-control-sm" required
+                  placeholder="Guru Kelas / Guru Mapel / Kepala Sekolah">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Pangkat / Golongan Ruang</label>
+                <select class="form-select form-select-sm" id="form-kepegawaian-pangkat">
+                  <option value="-">- (Non Golongan)</option>
+                  <option value="Penata Muda (III/a)">Penata Muda (III/a)</option>
+                  <option value="Penata Muda Tk. I (III/b)">Penata Muda Tk. I (III/b)</option>
+                  <option value="Penata (III/c)">Penata (III/c)</option>
+                  <option value="Penata Tk. I (III/d)">Penata Tk. I (III/d)</option>
+                  <option value="Pembina (IV/a)">Pembina (IV/a)</option>
+                  <option value="Pembina Tk. I (IV/b)">Pembina Tk. I (IV/b)</option>
+                  <option value="Pembina Utama Muda (IV/c)">Pembina Utama Muda (IV/c)</option>
+                  <option value="Golongan IX (PPPK)">Golongan IX (PPPK)</option>
+                  <option value="Golongan X (PPPK)">Golongan X (PPPK)</option>
+                </select>
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">TMT Pengangkatan Awal</label>
+                <input type="date" id="form-kepegawaian-tmt" class="form-control form-control-sm" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Nomor SK Pengangkatan</label>
+                <input type="text" id="form-kepegawaian-sk" class="form-control form-control-sm"
+                  placeholder="Contoh: 821.2/145/426.202/2021">
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Pejabat Pengangkat</label>
+                <input type="text" id="form-kepegawaian-pejabat" class="form-control form-control-sm"
+                  value="Bupati Pamekasan / Kepala Dinas">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Gaji Pokok Terakhir (Rp)</label>
+                <input type="number" id="form-kepegawaian-gaji" class="form-control form-control-sm"
+                  placeholder="Contoh: 3500000">
+              </div>
+            </div>
+            <div class="modal-footer px-0 pb-0">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Simpan Kepegawaian</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pratinjau Dokumen Digital -->
+  <div class="modal fade" id="modal-dokumen-preview" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modal-dokumen-preview-title"><i
+              class="bi bi-file-earmark-text text-primary me-2"></i>Pratinjau Dokumen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center p-4" id="modal-dokumen-preview-body"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Import Data Guru dari Excel / CSV -->
+  <div class="modal fade" id="modal-import-guru" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content shadow-lg border-0">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold" id="modal-import-guru-title">
+            <i class="bi bi-file-earmark-arrow-up-fill me-2"></i>Import Data Guru dari Excel / CSV
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <!-- Step 1: Petunjuk & Template -->
+          <div
+            class="alert alert-info d-flex align-items-center justify-content-between p-3 mb-4 rounded-3 border-0 bg-info bg-opacity-10">
+            <div class="d-flex align-items-center gap-3">
+              <i class="bi bi-info-circle-fill text-info fs-3"></i>
+              <div>
+                <strong class="d-block text-dark">Format Spreadsheet Standar</strong>
+                <small class="text-muted">Gunakan template resmi untuk memastikan struktur kolom (Nama, NUPTK, NIP,
+                  Status, Pangkat, TMT, dll) terbaca dengan akurat.</small>
+              </div>
+            </div>
+            <button type="button" class="btn btn-info btn-sm text-white fw-semibold text-nowrap"
+              onclick="GuruModule.downloadTemplate()">
+              <i class="bi bi-download me-1"></i>Unduh Template Excel (.xlsx)
+            </button>
+          </div>
+
+          <!-- Step 2: Upload File Box -->
+          <div class="mb-4">
+            <label class="form-label fw-bold mb-2"><i class="bi bi-file-earmark-spreadsheet me-1 text-success"></i>Pilih
+              File Spreadsheet (.xlsx, .xls, .csv):</label>
+            <input type="file" id="input-file-import-guru" class="form-control form-control-lg"
+              accept=".xlsx, .xls, .csv">
+            <div class="form-text small">Mendukung format Microsoft Excel 97-2024 (.xlsx, .xls) dan CSV berpemisah
+              koma/titik-koma.</div>
+          </div>
+
+          <!-- Step 3: Pratinjau & Validasi Data -->
+          <div class="mb-3">
+            <label class="form-label fw-bold mb-1"><i class="bi bi-eye-fill me-1 text-primary"></i>Pratinjau Data yang
+              Terdeteksi:</label>
+            <div id="import-guru-preview-container" class="bg-light p-3 rounded-3 border">
+              <div class="text-center py-4 text-muted">
+                <i class="bi bi-file-earmark-spreadsheet fs-1 text-primary d-block mb-2"></i>
+                Pilih file Excel (.xlsx / .xls) atau CSV untuk melihat pratinjau data sebelum diimport.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light px-4 py-3">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-primary fw-bold" id="btn-execute-import-guru"
+            onclick="GuruModule.executeImportGuru()" disabled>
+            <i class="bi bi-check-circle-fill me-1"></i>Proses & Simpan ke Database
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Modal Ganti Password -->
+  <div class="modal fade" id="modal-change-password" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title"><i class="bi bi-key-fill me-2"></i>Ganti Password</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2">
+            <label class="form-label fw-semibold small">Password Saat Ini</label>
+            <input type="password" id="cp-current" class="form-control form-control-sm" autocomplete="current-password">
+          </div>
+          <div class="mb-2">
+            <label class="form-label fw-semibold small">Password Baru</label>
+            <input type="password" id="cp-new" class="form-control form-control-sm" autocomplete="new-password"
+              placeholder="Min. 6 karakter">
+          </div>
+          <div class="mb-0">
+            <label class="form-label fw-semibold small">Konfirmasi Password Baru</label>
+            <input type="password" id="cp-confirm" class="form-control form-control-sm" autocomplete="new-password">
+          </div>
+          <div id="cp-error-msg" class="alert alert-danger mt-2 py-1 d-none" style="font-size:0.8rem;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light btn-sm border" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-primary btn-sm fw-bold" onclick="Auth.handleChangePassword()">
+            <i class="bi bi-check-circle-fill me-1"></i>Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invisible Print A4 Container -->
+  <div id="print-a4-container"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- External Libraries: Bootstrap, Chart.js, QRCode.js, SheetJS, jsPDF, html2canvas -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Application Modules -->
+  <script src="js/utils/helpers.js"></script>
+  <script src="js/utils/export_utils.js"></script>
+  <script src="js/utils/theme.js"></script>
+  <script src="js/utils/toast.js"></script>
+  <script src="js/utils/router.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/modules/dashboard.js"></script>
+  <script src="js/modules/guru.js"></script>
+  <script src="js/modules/pendidikan.js"></script>
+  <script src="js/modules/sertifikasi.js"></script>
+  <script src="js/modules/kepegawaian.js"></script>
+  <script src="js/modules/jadwal.js"></script>
+  <script src="js/modules/beban_mengajar.js"></script>
+  <script src="js/modules/absensi.js"></script>
+  <script src="js/modules/pkg.js"></script>
+  <script src="js/modules/prestasi.js"></script>
+  <script src="js/modules/pelatihan.js"></script>
+  <script src="js/modules/dokumen.js"></script>
+  <script src="js/modules/laporan.js"></script>
+  <script src="js/modules/pengaturan.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>
