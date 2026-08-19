@@ -15,6 +15,11 @@ const jadwalRoutes = require('./routes/jadwal');
 const genericRoutes = require('./routes/generic');
 const authRoutes = require('./routes/auth');
 
+// Swagger / OpenAPI (optional)
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const path = require('path');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -107,6 +112,25 @@ app.use('/api/auth', authRoutes);
 app.use('/api/guru', guruRoutes);
 app.use('/api/kepegawaian', kepegawaianRoutes);
 app.use('/api/data', genericRoutes);
+
+// ============================================================================
+// Swagger UI (optional, disabled in production)
+// ============================================================================
+let swaggerDocument = null;
+try {
+  const swaggerPath = path.join(__dirname, 'openapi.yaml');
+  swaggerDocument = YAML.load(swaggerPath);
+} catch (err) {
+  console.warn('Gagal memuat openapi.yaml untuk Swagger UI:', err.message);
+}
+
+const enableSwaggerUI = (process.env.SWAGGER_UI !== 'false' && NODE_ENV !== 'production');
+if (swaggerDocument && enableSwaggerUI) {
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, { explorer: true }));
+  console.log('Swagger UI tersedia di /api/docs');
+} else {
+  console.log('Swagger UI dinonaktifkan (SWAGGER_UI=false atau NODE_ENV=production) atau openapi.yaml tidak ditemukan.');
+}
 
 // ============================================================================
 // Root Route — Informasi API
