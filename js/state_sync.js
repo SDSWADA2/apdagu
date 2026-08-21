@@ -127,6 +127,9 @@ const SyncQueue = (function () {
           const queueIds = items.map(i => i.queueId);
           await removeOperations(queueIds);
           console.log(`[SyncQueue] Berhasil menyinkronkan ${changes.length} operasi offline ke backend.`);
+          if (typeof App !== 'undefined' && typeof App.showToast === 'function') {
+            App.showToast('Sinkronisasi Otomatis', `${changes.length} perubahan data offline berhasil disinkronkan ke server.`, 'success');
+          }
         }
       }
     } catch (err) {
@@ -163,6 +166,19 @@ const SyncQueue = (function () {
   window.addEventListener('online', () => {
     setTimeout(() => processQueue(), 1000);
   });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && navigator.onLine) {
+      processQueue();
+    }
+  });
+
+  // Periodic automatic sync every 30 seconds
+  setInterval(() => {
+    if (navigator.onLine && !isProcessing) {
+      processQueue();
+    }
+  }, 30000);
 
   if (window.Api) {
     window.Api.subscribe((ev) => {

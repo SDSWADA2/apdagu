@@ -125,9 +125,13 @@ try {
 }
 
 // ============================================================================
-// Root & Healthcheck Endpoints
+// Auto-Serve Frontend Single Page Application (SPA) & Static Assets
 // ============================================================================
-app.get('/', (req, res) => {
+const frontendPath = path.join(__dirname, '..');
+app.use(express.static(frontendPath));
+
+// API Info endpoint
+app.get('/api', (req, res) => {
   res.json({
     message: 'REST API — Aplikasi Database Guru SD Negeri Sumber Waru 2',
     version: '1.2.0',
@@ -147,7 +151,6 @@ app.get('/', (req, res) => {
 });
 
 app.get('/health', async (req, res) => {
-  // Gunakan helper testDbConnection dari config/db.js
   const dbTest = typeof pool.testDbConnection === 'function'
     ? await pool.testDbConnection()
     : { connected: false, message: 'testDbConnection tidak tersedia', error: 'N/A' };
@@ -164,12 +167,20 @@ app.get('/health', async (req, res) => {
   });
 });
 
+// Fallback SPA routing for browser navigation
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/') || req.path.startsWith('/health')) {
+    return next();
+  }
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
 // ============================================================================
-// 404 Handler
+// 404 Handler for API
 // ============================================================================
-app.use((req, res) => {
+app.use('/api/*', (req, res) => {
   res.status(404).json({
-    error: `Endpoint tidak ditemukan: ${req.method} ${req.path}`,
+    error: `Endpoint API tidak ditemukan: ${req.method} ${req.path}`,
     code: 'NOT_FOUND',
   });
 });
@@ -204,18 +215,34 @@ module.exports = app;
 if (require.main === module) {
   app.listen(PORT, async () => {
     console.log('============================================================');
-    console.log(`  🏫  API Database Guru SD Negeri Sumber Waru 2`);
-    console.log(`  🚀  Server berjalan di : http://localhost:${PORT}`);
-    console.log(`  🌍  Environment        : ${NODE_ENV}`);
-    console.log(`  📅  Waktu Start        : ${new Date().toLocaleString('id-ID')}`);
+    console.log(`  🏫  Aplikasi Database Guru SD Negeri Sumber Waru 2`);
+    console.log(`  🚀  Server & Web App berjalan di : http://localhost:${PORT}`);
+    console.log(`  🌍  Environment                  : ${NODE_ENV}`);
+    console.log(`  📅  Waktu Start                  : ${new Date().toLocaleString('id-ID')}`);
 
     if (typeof pool.testDbConnection === 'function') {
       const dbTest = await pool.testDbConnection();
       if (dbTest.connected) {
-        console.log(`  🗄️   Database MySQL     : Terhubung ke \`${dbTest.database}\` (${dbTest.version})`);
+        console.log(`  🗄️   Database MySQL               : Terhubung ke \`${dbTest.database}\` (${dbTest.version})`);
+        
+        // Auto-initialize tables if empty
+        try {
+          const [[{ count }]] = await pool.query(`
+            SELECT COUNT(*) AS count FROM information_schema.tables 
+            WHERE table_schema = ? AND table_name = 'users'
+          `, [dbTest.database]);
+
+          if (count === 0) {
+            console.log('  ⚙️   Inisialisasi otomatis skema & akun demo...');
+            const setupDatabase = require('./scripts/setup_db');
+            await setupDatabase();
+          }
+        } catch (initErr) {
+          console.warn('  ⚠️   Pengecekan otomatis skema dilewati:', initErr.message);
+        }
       } else {
-        console.log(`  ⚠️   Database MySQL     : ${dbTest.message}`);
-        console.log(`  💡  Petunjuk           : Jalankan "npm run db:setup" untuk inisialisasi database`);
+        console.log(`  ⚠️   Database MySQL               : ${dbTest.message}`);
+        console.log(`  💡  Petunjuk                     : Aplikasi otomatis berjalan dalam mode Offline-First`);
       }
     }
     console.log('============================================================');

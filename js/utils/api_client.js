@@ -22,7 +22,16 @@ class ApiClient {
    * Mendapatkan Base URL API dari konfigurasi lokal atau default
    */
   getBaseUrl() {
-    return (localStorage.getItem(API_STORAGE_KEY) || DEFAULT_API_BASE).replace(/\/+$/, '');
+    const saved = localStorage.getItem(API_STORAGE_KEY);
+    if (saved) return saved.replace(/\/+$/, '');
+    
+    // Auto-detect jika di-host langsung dari server backend
+    if (typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
+      if (window.location.port === '3000' || window.location.pathname.startsWith('/api')) {
+        return window.location.origin.replace(/\/+$/, '');
+      }
+    }
+    return DEFAULT_API_BASE.replace(/\/+$/, '');
   }
 
   /**
