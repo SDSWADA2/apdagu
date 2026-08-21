@@ -58,8 +58,8 @@ function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 router.get('/', async (req, res) => {
   try {
     const { status, search, limit = 100, offset = 0 } = req.query;
-    let query  = 'SELECT * FROM guru WHERE is_deleted = 0';
-    let countQuery = 'SELECT COUNT(*) AS total FROM guru WHERE is_deleted = 0';
+    let query  = 'SELECT * FROM guru WHERE is_deleted = false';
+    let countQuery = 'SELECT COUNT(*) AS total FROM guru WHERE is_deleted = false';
     const params = [];
     let idx = 1;
 
@@ -94,15 +94,15 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { rows } = await pool.query('SELECT * FROM guru WHERE id = $1 AND is_deleted = 0 LIMIT 1', [id]);
+    const { rows } = await pool.query('SELECT * FROM guru WHERE id = $1 AND is_deleted = false LIMIT 1', [id]);
     if (!rows.length) return res.status(404).json({ error: 'Data guru tidak ditemukan.' });
 
     const [kepegawaian, pendidikan, sertifikasi, jadwal, absensi] = await Promise.all([
-      pool.query('SELECT * FROM kepegawaian WHERE guru_id = $1 AND is_deleted = 0 ORDER BY tmt_pengangkatan DESC', [id]),
-      pool.query('SELECT * FROM pendidikan  WHERE guru_id = $1 AND is_deleted = 0 ORDER BY tahun_lulus DESC', [id]),
-      pool.query('SELECT * FROM sertifikasi WHERE guru_id = $1 AND is_deleted = 0 ORDER BY tahun_sertifikasi DESC', [id]),
-      pool.query('SELECT * FROM jadwal_mengajar WHERE guru_id = $1 AND is_deleted = 0 ORDER BY hari ASC', [id]),
-      pool.query('SELECT * FROM absensi WHERE guru_id = $1 AND is_deleted = 0 ORDER BY tanggal DESC LIMIT 30', [id])
+      pool.query('SELECT * FROM kepegawaian WHERE guru_id = $1 AND is_deleted = false ORDER BY tmt_pengangkatan DESC', [id]),
+      pool.query('SELECT * FROM pendidikan  WHERE guru_id = $1 AND is_deleted = false ORDER BY tahun_lulus DESC', [id]),
+      pool.query('SELECT * FROM sertifikasi WHERE guru_id = $1 AND is_deleted = false ORDER BY tahun_sertifikasi DESC', [id]),
+      pool.query('SELECT * FROM jadwal_mengajar WHERE guru_id = $1 AND is_deleted = false ORDER BY hari ASC', [id]),
+      pool.query('SELECT * FROM absensi WHERE guru_id = $1 AND is_deleted = false ORDER BY tanggal DESC LIMIT 30', [id])
     ]);
 
     res.json({
@@ -176,7 +176,7 @@ router.put('/:id', requireRole(['admin', 'operator']), async (req, res) => {
     const actor   = getActor(req);
     const body    = req.body;
 
-    const { rows: before } = await pool.query('SELECT * FROM guru WHERE id = $1 AND is_deleted = 0 LIMIT 1', [id]);
+    const { rows: before } = await pool.query('SELECT * FROM guru WHERE id = $1 AND is_deleted = false LIMIT 1', [id]);
     if (!before.length) return res.status(404).json({ error: 'Data guru tidak ditemukan.' });
 
     const fields = ALLOWED_UPDATE_FIELDS.filter(f => body[f] !== undefined);
@@ -185,7 +185,7 @@ router.put('/:id', requireRole(['admin', 'operator']), async (req, res) => {
     const set = fields.map((f, i) => `${f} = $${i + 1}`).join(', ');
     const values = [...fields.map(f => body[f]), actor.username, id];
 
-    await pool.query(`UPDATE guru SET ${set}, updated_by = $${fields.length + 1}, updated_at = NOW() WHERE id = $${fields.length + 2} AND is_deleted = 0`, values);
+    await pool.query(`UPDATE guru SET ${set}, updated_by = $${fields.length + 1}, updated_at = NOW() WHERE id = $${fields.length + 2} AND is_deleted = false`, values);
 
     const { rows: after } = await pool.query('SELECT * FROM guru WHERE id = $1 LIMIT 1', [id]);
     const data = { ...after[0], _action: 'update' };
@@ -214,11 +214,11 @@ router.delete('/:id', requireRole(['admin']), async (req, res) => {
     const { id } = req.params;
     const actor  = getActor(req);
 
-    const { rows } = await pool.query('SELECT id, nama_lengkap FROM guru WHERE id = $1 AND is_deleted = 0 LIMIT 1', [id]);
+    const { rows } = await pool.query('SELECT id, nama_lengkap FROM guru WHERE id = $1 AND is_deleted = false LIMIT 1', [id]);
     if (!rows.length) return res.status(404).json({ error: 'Data guru tidak ditemukan.' });
 
     await pool.query(
-      'UPDATE guru SET is_deleted = 1, updated_by = $1, updated_at = NOW() WHERE id = $2',
+      'UPDATE guru SET is_deleted = true, updated_by = $1, updated_at = NOW() WHERE id = $2',
       [actor.username, id]
     );
 
