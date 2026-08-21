@@ -1,33 +1,62 @@
 /**
  * ============================================================================
- * SOCKET.IO SERVER — Multi-User Realtime Engine
+ * SOCKET.IO SERVER — Multi-User Realtime Engine (Production Grade)
  * Aplikasi Database Guru SD Negeri Sumber Waru 2
  * ============================================================================
  *
- * File ini mengelola:
- *  - WebSocket connections via Socket.IO
- *  - Active user tracking (siapa saja yang sedang online)
- *  - Broadcasting perubahan data ke semua client
- *  - JWT Authentication untuk WebSocket
+ *  Fitur:
+ *  ─────
+ *  ① JWT Authentication Middleware (wajib untuk aksi tulis)
+ *  ② Rooms per-entity  → hanya client yg subscribe entitas tsb yg diberitahu
+ *  ③ CDC-style Events  → data_inserted / data_updated / data_deleted / data_synced
+ *  ④ Presence System   → active_users_update (siapa online, kapan connect)
+ *  ⑤ Heartbeat/Ping    → server aktif kirim ping setiap 30 detik
+ *  ⑥ Broadcast helpers → dipanggil oleh routes setiap kali data berubah
+ *  ⑦ Namespace /events → endpoint SSE fallback (polling-friendly)
+ *  ⑧ Audit Trail       → setiap broadcast dicatat ke log konsol terformat
  * ============================================================================
  */
 
 'use strict';
 
 const { Server } = require('socket.io');
-const jwt = require('jsonwebtoken');
+const jwt        = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sdn_sw2_rahasia_2024';
 
-/** @type {Map<string, {socketId, username, role, name, connectedAt}>} */
+/* ─────────────────────────────────────────────
+   INTERNAL STATE
+───────────────────────────────────────────── */
+
+/** @type {Map<string, ActiveUserEntry>} socketId → user info */
 const activeUsers = new Map();
 
 /** @type {import('socket.io').Server|null} */
 let io = null;
 
-// ============================================================================
-// INISIALISASI
-// ============================================================================
+/** Statistik broadcast (untuk endpoint /health) */
+const stats = {
+  totalConnections: 0,
+  totalDisconnections: 0,
+  totalBroadcasts: 0,
+  startedAt: new Date().toISOString(),
+};
+
+/* ─────────────────────────────────────────────
+   HELPER — extract token from handshake
+───────────────────────────────────────────── */
+
+function extractToken(socket) {
+  return (
+    socket.handshake.auth?.token ||
+    socket.handshake.query?.token ||
+    (socket.handshake.headers?.authorization || '').replace(/^Bearer\s+/i, '')
+  );
+}
+
+/* ─────────────────────────────────────────────
+   INISIALISASI
+───────────────────────────────────────────── */
 
 /**
  * Inisialisasi Socket.IO dengan HTTP server yang sudah ada.
@@ -38,149 +67,149 @@ let io = null;
 function init(httpServer, allowedOrigins) {
   io = new Server(httpServer, {
     cors: {
-      origin: allowedOrigins,
-      methods: ['GET', 'POST'],
-      credentials: true,
+      origin: (origin, cb) => {
+        if (!origin || allowedOrigins.includes(origin) ||
+            origin.startsWith('http://localhost') ||
+            origin.startsWith('http://127.0.0.1')) {
+          cb(null, true);
+        } else {
+          cb(new Error(`Socket CORS: origin '${origin}' ditolak`));
+        }
+      },
+      methods     : ['GET', 'POST'],
+      credentials : true,
     },
-    pingTimeout: 30000,
-    pingInterval: 10000,
-    transports: ['websocket', 'polling'],
+    pingTimeout  : 30_000,
+    pingInterval : 15_000,
+    transports   : ['websocket', 'polling'],
+    maxHttpBufferSize: 1e6,  // 1 MB
   });
 
-  // ── JWT Middleware untuk setiap koneksi ──
+  /* ══════════════════════════════════════════
+     MIDDLEWARE — JWT Authentication
+  ══════════════════════════════════════════ */
   io.use((socket, next) => {
-    const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+    const token = extractToken(socket);
     if (!token) {
-      // Izinkan koneksi tanpa auth untuk monitoring publik (status server)
-      socket.user = null;
+      socket.user = null;           // Izinkan anonymous (read-only / monitoring)
       return next();
     }
     try {
-      const decoded = jwt.verify(token, JWT_SECRET);
-      socket.user = decoded;
-      return next();
-    } catch (err) {
-      socket.user = null;
-      return next(); // Tetap izinkan, tapi tanpa user info
+      socket.user = jwt.verify(token, JWT_SECRET);
+    } catch {
+      socket.user = null;           // Token kadaluarsa → tetap boleh konek
     }
+    next();
   });
 
+  /* ══════════════════════════════════════════
+     CONNECTION HANDLER
+  ══════════════════════════════════════════ */
   io.on('connection', (socket) => {
+    stats.totalConnections++;
     const user = socket.user;
 
-    // Daftarkan user aktif jika sudah login
-    if (user && user.username) {
+    /* — Daftarkan user aktif ─────────────── */
+    if (user?.username) {
       activeUsers.set(socket.id, {
-        socketId: socket.id,
-        username: user.username,
-        role: user.role || 'unknown',
-        name: user.nama_lengkap || user.username,
+        socketId   : socket.id,
+        username   : user.username,
+        role       : user.role        || 'guru',
+        name       : user.nama_lengkap || user.username,
         connectedAt: new Date().toISOString(),
       });
-      // Broadcast daftar user aktif yang diperbarui ke semua client
       _broadcastActiveUsers();
-      console.log(`[Socket] ✅ User connected: ${user.username} (${socket.id})`);
+      console.log(`[Socket] ✅ ${user.username} (${user.role}) terhubung — ${socket.id}`);
     } else {
-      console.log(`[Socket] 🔌 Anonymous connection: ${socket.id}`);
+      console.log(`[Socket] 🔌 Anonim terhubung — ${socket.id}`);
     }
 
-    // ── Event: client meminta daftar user aktif ──
+    /* — Kirim state awal ke client baru ──── */
+    socket.emit('welcome', {
+      message  : 'Terhubung ke Realtime Engine SDN Sumber Waru 2',
+      socketId : socket.id,
+      user     : user
+        ? { username: user.username, role: user.role, name: user.nama_lengkap }
+        : null,
+      serverTime: new Date().toISOString(),
+      activeUsers: _getActiveUsersList(),
+    });
+
+    /* ── Event: subscribe ke room entitas ── */
+    socket.on('subscribe', (entities) => {
+      const list = Array.isArray(entities) ? entities : [entities];
+      list.forEach(e => {
+        socket.join(`entity:${e}`);
+      });
+      socket.emit('subscribed', { rooms: list });
+    });
+
+    /* ── Event: unsubscribe dari room ─────── */
+    socket.on('unsubscribe', (entities) => {
+      const list = Array.isArray(entities) ? entities : [entities];
+      list.forEach(e => socket.leave(`entity:${e}`));
+    });
+
+    /* ── Event: request daftar user aktif ── */
     socket.on('request_active_users', () => {
       socket.emit('active_users_update', _getActiveUsersList());
     });
 
-    // ── Disconnect ──
+    /* ── Event: ping dari client ─────────── */
+    socket.on('ping_server', () => {
+      socket.emit('pong_server', { ts: Date.now() });
+    });
+
+    /* ── Event: client konfirmasi terima event */
+    socket.on('ack', ({ eventId }) => {
+      // Dapat digunakan untuk guaranteed-delivery (future)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[Socket] ACK ${eventId} dari ${socket.id}`);
+      }
+    });
+
+    /* ── Disconnect ──────────────────────── */
     socket.on('disconnect', (reason) => {
+      stats.totalDisconnections++;
       if (activeUsers.has(socket.id)) {
         const u = activeUsers.get(socket.id);
-        console.log(`[Socket] ❌ User disconnected: ${u.username} — ${reason}`);
         activeUsers.delete(socket.id);
         _broadcastActiveUsers();
-      } else {
-        console.log(`[Socket] 🔌 Anonymous disconnected: ${socket.id}`);
+        console.log(`[Socket] ❌ ${u.username} terputus — ${reason}`);
       }
+    });
+
+    /* ── Error handler per-socket ─────────── */
+    socket.on('error', (err) => {
+      console.error(`[Socket] Error pada socket ${socket.id}:`, err.message);
     });
   });
 
-  console.log('[Socket] ✅ Socket.IO Realtime Engine initialized.');
+  /* ══════════════════════════════════════════
+     SERVER HEARTBEAT — kirim ping setiap 30 detik
+  ══════════════════════════════════════════ */
+  setInterval(() => {
+    if (!io) return;
+    io.emit('server_heartbeat', {
+      ts          : Date.now(),
+      activeUsers : activeUsers.size,
+      uptime      : Math.round(process.uptime()),
+    });
+  }, 30_000);
+
+  console.log('[Socket] ✅ Realtime Engine (Socket.IO) aktif & siap.');
   return io;
 }
 
-// ============================================================================
-// BROADCAST HELPERS — Dipanggil oleh Routes saat data berubah
-// ============================================================================
-
-/**
- * Broadcast event perubahan data ke SEMUA client yang terhubung.
- * @param {string} event    - Nama event (contoh: 'data_updated')
- * @param {object} payload  - Data yang dikirim ke client
- *
- * Payload standar:
- * {
- *   entity: 'guru' | 'absensi' | 'surat' | ...,  // Entitas yang berubah
- *   action: 'insert' | 'update' | 'delete',
- *   data: { id, ... },                            // Data lengkap / partial
- *   by: { username, name },                       // Siapa yang mengubah
- *   at: '2026-08-21T10:00:00Z',                   // Kapan perubahan terjadi
- * }
- */
-function broadcast(event, payload) {
-  if (!io) return;
-  io.emit(event, { ...payload, _server_ts: Date.now() });
-}
-
-/**
- * Broadcast perubahan data ke semua client kecuali pengirim.
- * @param {string} senderSocketId
- * @param {string} event
- * @param {object} payload
- */
-function broadcastExcept(senderSocketId, event, payload) {
-  if (!io) return;
-  io.except(senderSocketId).emit(event, { ...payload, _server_ts: Date.now() });
-}
-
-// ============================================================================
-// SHORTCUT EVENTS — API bersih untuk digunakan di routes
-// ============================================================================
-
-/**
- * Notify semua client bahwa data sebuah entitas berhasil ditambahkan.
- */
-function notifyInsert(entity, data, actorInfo) {
-  broadcast('data_inserted', { entity, action: 'insert', data, by: actorInfo, at: new Date().toISOString() });
-}
-
-/**
- * Notify semua client bahwa data sebuah entitas berhasil diperbarui.
- */
-function notifyUpdate(entity, data, actorInfo) {
-  broadcast('data_updated', { entity, action: 'update', data, by: actorInfo, at: new Date().toISOString() });
-}
-
-/**
- * Notify semua client bahwa data sebuah entitas berhasil dihapus (soft delete).
- */
-function notifyDelete(entity, id, actorInfo) {
-  broadcast('data_deleted', { entity, action: 'delete', data: { id }, by: actorInfo, at: new Date().toISOString() });
-}
-
-/**
- * Notify semua client bahwa sinkronisasi batch selesai.
- */
-function notifySync(entity, count, actorInfo) {
-  broadcast('data_synced', { entity, action: 'sync', count, by: actorInfo, at: new Date().toISOString() });
-}
-
-// ============================================================================
-// INTERNAL HELPERS
-// ============================================================================
+/* ─────────────────────────────────────────────
+   INTERNAL BROADCAST HELPERS
+───────────────────────────────────────────── */
 
 function _getActiveUsersList() {
   return Array.from(activeUsers.values()).map(u => ({
-    username: u.username,
-    name: u.name,
-    role: u.role,
+    username   : u.username,
+    name       : u.name,
+    role       : u.role,
     connectedAt: u.connectedAt,
   }));
 }
@@ -190,19 +219,123 @@ function _broadcastActiveUsers() {
   io.emit('active_users_update', _getActiveUsersList());
 }
 
-// ============================================================================
-// EXPORTS
-// ============================================================================
+function _buildPayload(entity, action, data, actorInfo) {
+  return {
+    entity,
+    action,
+    data,
+    by : actorInfo || { username: 'system', name: 'System' },
+    at : new Date().toISOString(),
+    _id: `${entity}:${action}:${Date.now()}`,   // eventId untuk ACK
+    _server_ts: Date.now(),
+  };
+}
 
+/* ─────────────────────────────────────────────
+   PUBLIC BROADCAST API — dipanggil dari Routes
+───────────────────────────────────────────── */
+
+/**
+ * Broadcast event ke SEMUA client.
+ */
+function broadcast(event, payload) {
+  if (!io) return;
+  stats.totalBroadcasts++;
+  io.emit(event, { ...payload, _server_ts: Date.now() });
+  _log(event, payload);
+}
+
+/**
+ * Broadcast ke semua client di room entitas tertentu.
+ * Client harus sudah melakukan `subscribe('guru')` dsb.
+ */
+function broadcastToRoom(entity, event, payload) {
+  if (!io) return;
+  stats.totalBroadcasts++;
+  const enriched = { ...payload, _server_ts: Date.now() };
+  // Kirim ke room spesifik SEKALIGUS ke semua (agar client yg belum subscribe tetap update)
+  io.to(`entity:${entity}`).emit(event, enriched);
+  io.emit(event, enriched);   // global fallback
+  _log(event, payload);
+}
+
+/**
+ * Broadcast ke semua client KECUALI pengirim.
+ */
+function broadcastExcept(senderSocketId, event, payload) {
+  if (!io) return;
+  stats.totalBroadcasts++;
+  io.except(senderSocketId).emit(event, { ...payload, _server_ts: Date.now() });
+  _log(event, payload);
+}
+
+/* ─────────────────────────────────────────────
+   CDC-STYLE SHORTCUT EVENTS
+   Dipanggil oleh setiap route setelah operasi DB
+───────────────────────────────────────────── */
+
+/** Notifikasi INSERT berhasil */
+function notifyInsert(entity, data, actorInfo) {
+  broadcastToRoom(entity, 'data_inserted', _buildPayload(entity, 'insert', data, actorInfo));
+}
+
+/** Notifikasi UPDATE berhasil */
+function notifyUpdate(entity, data, actorInfo) {
+  broadcastToRoom(entity, 'data_updated', _buildPayload(entity, 'update', data, actorInfo));
+}
+
+/** Notifikasi SOFT DELETE berhasil */
+function notifyDelete(entity, id, actorInfo) {
+  broadcastToRoom(entity, 'data_deleted', _buildPayload(entity, 'delete', { id }, actorInfo));
+}
+
+/** Notifikasi SYNC BATCH selesai */
+function notifySync(entity, count, actorInfo) {
+  broadcast('data_synced', _buildPayload(entity, 'sync', { count }, actorInfo));
+}
+
+/** Notifikasi BULK ACTION (misal: upload Excel, import massal) */
+function notifyBulk(entity, action, count, actorInfo) {
+  broadcast('data_bulk', _buildPayload(entity, action, { count }, actorInfo));
+}
+
+/** Notifikasi ERROR ke semua admin/operator yang online */
+function notifyError(message, context) {
+  if (!io) return;
+  io.emit('server_error_notify', {
+    message,
+    context,
+    at: new Date().toISOString(),
+  });
+}
+
+/* ─────────────────────────────────────────────
+   LOGGER INTERNAL
+───────────────────────────────────────────── */
+function _log(event, payload) {
+  if (process.env.NODE_ENV === 'production') return;  // Silent in production
+  const entity = payload?.entity || '-';
+  const action = payload?.action || '-';
+  const by     = payload?.by?.username || 'system';
+  console.log(`[Socket] 📡 [${event}] entity=${entity} action=${action} by=${by}`);
+}
+
+/* ─────────────────────────────────────────────
+   EXPORTS
+───────────────────────────────────────────── */
 module.exports = {
   init,
   broadcast,
+  broadcastToRoom,
   broadcastExcept,
   notifyInsert,
   notifyUpdate,
   notifyDelete,
   notifySync,
-  getActiveUsers: _getActiveUsersList,
+  notifyBulk,
+  notifyError,
+  getActiveUsers : _getActiveUsersList,
+  getStats       : () => ({ ...stats, currentActive: activeUsers.size }),
   /** Akses langsung ke instance io (untuk kasus advanced) */
   get io() { return io; },
 };

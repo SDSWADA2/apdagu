@@ -16,6 +16,7 @@ const jadwalRoutes = require('./routes/jadwal');
 const absensiRoutes = require('./routes/absensi');
 const genericRoutes = require('./routes/generic');
 const syncRoutes = require('./routes/sync');
+const eventsModule = require('./routes/events');   // SSE Fallback
 
 // Swagger / OpenAPI (optional)
 const swaggerUi = require('swagger-ui-express');
@@ -112,6 +113,7 @@ app.use('/api/jadwal', jadwalRoutes);
 app.use('/api/absensi', absensiRoutes);
 app.use('/api/data', genericRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/events', eventsModule.router);       // SSE Realtime Fallback
 
 // ============================================================================
 // Swagger UI (optional)
@@ -160,19 +162,20 @@ app.get('/health', async (req, res) => {
     : { connected: false, message: 'testDbConnection tidak tersedia', error: 'N/A' };
 
   const activeUsers = SocketServer.getActiveUsers ? SocketServer.getActiveUsers() : [];
+  const socketStats = SocketServer.getStats ? SocketServer.getStats() : {};
 
   res.status(200).json({
-    status:   'success',
-    message:  'Server backend terhubung dengan baik',
-    uptime:   Math.round(process.uptime()),
-    database: dbTest.connected ? 'connected' : dbTest.error || 'disconnected',
-    db_name:  dbTest.database  || null,
-    db_host:  dbTest.host      || null,
-    db_version: dbTest.version || null,
-    realtime: {
-      status: 'active',
-      engine: 'Socket.IO',
-      activeUsers: activeUsers.length,
+    status   : 'success',
+    message  : 'Server backend terhubung dengan baik',
+    uptime   : Math.round(process.uptime()),
+    database : dbTest.connected ? 'connected' : dbTest.error || 'disconnected',
+    db_name  : dbTest.database  || null,
+    db_host  : dbTest.host      || null,
+    db_version: dbTest.version  || null,
+    realtime : {
+      websocket   : { status: 'active', engine: 'Socket.IO v4', activeUsers: activeUsers.length },
+      sse_fallback: { status: 'active', clients: eventsModule.getClientCount() },
+      stats       : socketStats,
     },
     timestamp: new Date().toISOString(),
   });
@@ -227,6 +230,9 @@ const httpServer = http.createServer(app);
 
 // Inisialisasi Socket.IO Realtime Engine
 SocketServer.init(httpServer, allowedOrigins);
+
+// Hubungkan SSE module ke SocketServer agar bisa query stats
+eventsModule.attachSocketServer(SocketServer);
 
 // Export httpServer untuk testing
 module.exports = { app, httpServer };
