@@ -820,6 +820,24 @@ class StateManager {
             changed = true;
           }
 
+          // Merge pengaturan_aplikasi dari server
+          if (serverState.pengaturan_aplikasi && typeof serverState.pengaturan_aplikasi === 'object') {
+            this.state.pengaturan_aplikasi = {
+              ...this.state.pengaturan_aplikasi,
+              ...serverState.pengaturan_aplikasi
+            };
+            changed = true;
+          }
+
+          // Merge konfigurasi sistem, integrasi, dan pengaturan absensi dari server
+          const configKeys = ['konfigurasi_sistem', 'integrasi', 'pengaturan_absensi'];
+          configKeys.forEach(key => {
+            if (serverState[key] && typeof serverState[key] === 'object' && Object.keys(serverState[key]).length > 0) {
+              this.state[key] = { ...this.state[key], ...serverState[key] };
+              changed = true;
+            }
+          });
+
           if (serverState.users && serverState.users.length > 0) {
             // Update daftar user dengan mempertahankan password lokal jika ada
             const mergedUsers = serverState.users.map(su => {
@@ -1066,17 +1084,19 @@ class StateManager {
     if (!res || !res.success || !res.data) throw new Error('Format data server tidak valid.');
 
     const serverState = res.data;
+
+    // Tabel koleksi
     const collections = [
       'guru', 'kepegawaian', 'pendidikan', 'sertifikasi', 'jadwal_mengajar',
       'beban_mengajar', 'absensi', 'pkg', 'prestasi', 'pelatihan', 'dokumen', 'audit_logs'
     ];
-
     collections.forEach(col => {
       if (Array.isArray(serverState[col])) {
         this.state[col] = serverState[col];
       }
     });
 
+    // Profil sekolah
     if (serverState.profil_sekolah) {
       this.state.profil_sekolah = {
         ...this.state.profil_sekolah,
@@ -1084,13 +1104,30 @@ class StateManager {
       };
     }
 
+    // Users: pertahankan password lokal (server tidak mengirim password_hash)
     if (Array.isArray(serverState.users) && serverState.users.length > 0) {
       this.state.users = serverState.users.map(su => ({
         ...su,
-        password: (this.state.users.find(u => u.username === su.username) || {}).password || 'guru123',
+        password: ((this.state.users || []).find(u => u.username === su.username) || {}).password || 'guru123',
         status: su.is_active ? 'aktif' : 'nonaktif'
       }));
     }
+
+    // Pengaturan aplikasi (warna, logo, TTD)
+    if (serverState.pengaturan_aplikasi && typeof serverState.pengaturan_aplikasi === 'object') {
+      this.state.pengaturan_aplikasi = {
+        ...this.state.pengaturan_aplikasi,
+        ...serverState.pengaturan_aplikasi
+      };
+    }
+
+    // Konfigurasi sistem, integrasi, pengaturan absensi (JSONB dari server)
+    const configKeys = ['konfigurasi_sistem', 'integrasi', 'pengaturan_absensi'];
+    configKeys.forEach(key => {
+      if (serverState[key] && typeof serverState[key] === 'object' && Object.keys(serverState[key]).length > 0) {
+        this.state[key] = { ...this.state[key], ...serverState[key] };
+      }
+    });
 
     this.saveState();
     return true;
@@ -1101,7 +1138,61 @@ class StateManager {
    */
   async pushAllToBackend() {
     if (!window.Api) throw new Error('ApiClient tidak tersedia.');
-    const res = await window.Api.pushAllState(this.state);
+
+    // Buat salinan state yang aman untuk dikirim ke server:
+    // - Hilangkan base64 besar dari semua koleksi (foto, TTD, logo)
+    // - Pertahankan semua field teks, angka, dan boolean
+    const BASE64_FIELDS = ['foto_url', 'tanda_tangan_url', 'logo_sekolah', 'stempel_url', 'logo_url', 'ttd_kepala_sekolah', 'lampiran_url', 'file_url', 'file_sertifikat_url', 'file_ijazah_url', 'file_piagam_url', 'file_laporan_url', 'qr_code_url'];
+
+    const stripBase64 = (obj) => {
+      if (!obj || typeof obj !== 'object') return obj;
+      const clean = Array.isArray(obj) ? [] : {};
+      Object.keys(obj).forEach(key => {
+        if (BASE64_FIELDS.includes(key) && typeof obj[key] === 'string' && obj[key].startsWith('data:')) {
+          // Hilangkan base64 — disimpan lokal di IndexedDB saja
+          if (Array.isArray(clean)) clean.push(undefined);
+          else clean[key] = '';
+        } else if (Array.isArray(obj)) {
+          clean.push(typeof obj[key] === 'object' ? stripBase64(obj[key]) : obj[key]);
+        } else {
+          clean[key] = typeof obj[key] === 'object' && obj[key] !== null ? stripBase64(obj[key]) : obj[key];
+        }
+      });
+      return clean;
+    };
+
+    const safeState = {
+      profil_sekolah: stripBase64({ ...this.state.profil_sekolah }),
+      pengaturan_aplikasi: stripBase64({ ...this.state.pengaturan_aplikasi }),
+      konfigurasi_sistem: this.state.konfigurasi_sistem || {},
+      integrasi: this.state.integrasi || {},
+      pengaturan_absensi: this.state.pengaturan_absensi || {},
+      users: (this.state.users || []).map(u => ({
+        id: u.id,
+        username: u.username,
+        nama_lengkap: u.nama_lengkap,
+        email: u.email,
+        role: u.role,
+        guru_id: u.guru_id || null,
+        is_active: u.status !== 'nonaktif',
+        // Sertakan password hanya jika masih berupa plaintext (bukan hash)
+        ...(u.password && !u.password.startsWith('$2') ? { password: u.password } : {})
+      })),
+      guru: (this.state.guru || []).map(g => stripBase64({ ...g })),
+      kepegawaian:    this.state.kepegawaian    || [],
+      pendidikan:     this.state.pendidikan     || [],
+      sertifikasi:    this.state.sertifikasi    || [],
+      jadwal_mengajar:this.state.jadwal_mengajar|| [],
+      beban_mengajar: this.state.beban_mengajar || [],
+      absensi:        this.state.absensi        || [],
+      pkg:            this.state.pkg            || [],
+      prestasi:       this.state.prestasi       || [],
+      pelatihan:      this.state.pelatihan      || [],
+      dokumen:        this.state.dokumen        || [],
+      audit_logs:     this.state.audit_logs     || []
+    };
+
+    const res = await window.Api.pushAllState(safeState);
     if (!res || !res.success) throw new Error(res.error || 'Gagal mengirim data ke server.');
     return res;
   }

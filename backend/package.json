@@ -9,6 +9,7 @@
     "db:setup"        : "node scripts/setup_db.js",
     "db:autofix"      : "node scripts/auto_fix.js",
     "db:migrate"      : "node scripts/migration_realtime.js",
+    "db:migrate002"   : "node scripts/run_migration_002.js",
     "audit"           : "npm audit --audit-level=moderate",
     "audit:fix"       : "npm audit fix"
   },
