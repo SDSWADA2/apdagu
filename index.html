@@ -50,6 +50,15 @@
         </div>
       </div>
 
+      <!-- Status Realtime Badge -->
+      <div style="padding: 6px 16px;">
+        <span id="realtime-status" class="realtime-status-badge text-secondary"
+              title="Status koneksi realtime" style="font-size:0.72rem; display:flex; align-items:center; gap:5px;">
+          🔵 Menghubungkan...
+        </span>
+      </div>
+
+
       <div class="sidebar-menu-wrapper">
         <div class="nav-section-title">Menu Utama</div>
         <ul class="nav-menu">
@@ -3262,7 +3271,9 @@
   <script src="js/state_sync.js"></script>
   <script src="js/state.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/realtime_client.js"></script>  <!-- Dual-mode: WebSocket + SSE Fallback -->
   <script src="js/realtime.js"></script>
+
   <script src="js/modules/dashboard.js"></script>
   <script src="js/modules/guru.js"></script>
   <script src="js/modules/pendidikan.js"></script>

@@ -15,6 +15,28 @@
 
 'use strict';
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   BRIDGE — Hubungkan RealtimeClient baru (WS+SSE) ke modul lama ini
+   Setiap event dari RealtimeClient diteruskan ke sistem refresh yang sudah ada
+───────────────────────────────────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof window.RealtimeClient === 'undefined') return;
+
+  // Forward semua perubahan data ke DOM event agar module listener yang ada tetap berjalan
+  ['data_inserted', 'data_updated', 'data_deleted', 'data_synced'].forEach(ev => {
+    window.RealtimeClient.on(ev, (payload) => {
+      // Module-level refresh berdasarkan entitas
+      const entity = payload?.entity || '';
+      if (entity && window.Realtime && typeof window.Realtime._handleDataChange === 'function') {
+        window.Realtime._handleDataChange(ev, payload);
+      }
+    });
+  });
+
+  // Aktifkan koneksi RealtimeClient segera
+  window.RealtimeClient.connect();
+});
+
 const Realtime = (() => {
   // ── Config ──────────────────────────────────────────────────────────────────
   const RECONNECT_DELAY_MS = 3000;
