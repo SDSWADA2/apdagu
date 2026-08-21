@@ -147,22 +147,20 @@ app.get('/', (req, res) => {
 });
 
 app.get('/health', async (req, res) => {
-  let dbStatus = 'disconnected';
-  try {
-    const [result] = await pool.query('SELECT 1 + 1 AS test');
-    if (result && result[0].test === 2) {
-      dbStatus = 'connected';
-    }
-  } catch (err) {
-    dbStatus = `error: ${err.message}`;
-  }
+  // Gunakan helper testDbConnection dari config/db.js
+  const dbTest = typeof pool.testDbConnection === 'function'
+    ? await pool.testDbConnection()
+    : { connected: false, message: 'testDbConnection tidak tersedia', error: 'N/A' };
 
-  res.status(200).json({ 
-    status: 'success', 
-    message: 'Server backend terhubung dengan baik',
-    uptime: process.uptime(),
-    database: dbStatus,
-    timestamp: new Date().toISOString()
+  res.status(200).json({
+    status:   'success',
+    message:  'Server backend terhubung dengan baik',
+    uptime:   Math.round(process.uptime()),
+    database: dbTest.connected ? 'connected' : dbTest.error || 'disconnected',
+    db_name:  dbTest.database  || null,
+    db_host:  dbTest.host      || null,
+    db_version: dbTest.version || null,
+    timestamp: new Date().toISOString(),
   });
 });
 
