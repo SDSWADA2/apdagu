@@ -1,31 +1,66 @@
 require('dotenv').config();
 
+const connection = {
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT, 10) || 3306,
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : (process.env.DB_PASS || ''),
+  database: process.env.DB_NAME || process.env.DB_DATABASE || 'db_guru_sd',
+  charset: 'utf8mb4',
+  timezone: '+07:00',
+  multipleStatements: true,
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
+};
+
 module.exports = {
   development: {
     client: 'mysql2',
-    connection: {
-      host: process.env.DB_HOST || '127.0.0.1',
-      port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASS || '',
-      database: process.env.DB_NAME || 'sd_guru_db'
+    connection,
+    pool: {
+      min: 2,
+      max: 10
     },
     migrations: {
-      directory: './migrations'
+      directory: './migrations',
+      tableName: 'knex_migrations'
+    },
+    seeds: {
+      directory: './seeds'
     }
   },
-  production: {
+
+  test: {
     client: 'mysql2',
     connection: {
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASS,
-      database: process.env.DB_NAME,
-      ssl: process.env.DB_SSL === 'true'
+      ...connection,
+      database: process.env.DB_TEST_NAME || 'db_guru_sd_test'
+    },
+    pool: {
+      min: 1,
+      max: 5
     },
     migrations: {
-      directory: './migrations'
+      directory: './migrations',
+      tableName: 'knex_migrations'
+    },
+    seeds: {
+      directory: './seeds'
+    }
+  },
+
+  production: {
+    client: 'mysql2',
+    connection,
+    pool: {
+      min: 2,
+      max: 20
+    },
+    migrations: {
+      directory: './migrations',
+      tableName: 'knex_migrations'
+    },
+    seeds: {
+      directory: './seeds'
     }
   }
 };

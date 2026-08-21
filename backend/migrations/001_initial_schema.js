@@ -11,13 +11,12 @@ exports.up = async function(knex) {
 exports.down = async function(knex) {
   // Drop tables in reverse order of creation to respect FK constraints
   const tables = [
-    'audit_logs', 'dokumen', 'pelatihan', 'prestasi', 'pkg', 'absensi', 'beban_mengajar',
+    'pengaturan_aplikasi', 'audit_logs', 'dokumen', 'pelatihan', 'prestasi', 'pkg', 'absensi', 'beban_mengajar',
     'jadwal_mengajar', 'sertifikasi', 'pendidikan', 'kepegawaian', 'guru', 'users', 'profil_sekolah'
   ];
   for (const t of tables) {
-    // ignore errors
     try {
-      await knex.schema.raw(`DROP TABLE IF EXISTS \`${t}\``);
+      await knex.raw(`DROP TABLE IF EXISTS \`${t}\``);
     } catch (e) {
       // continue
     }

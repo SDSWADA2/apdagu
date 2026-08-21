@@ -204,12 +204,22 @@ app.use((err, req, res, next) => {
 module.exports = app;
 
 if (require.main === module) {
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log('============================================================');
     console.log(`  🏫  API Database Guru SD Negeri Sumber Waru 2`);
     console.log(`  🚀  Server berjalan di : http://localhost:${PORT}`);
     console.log(`  🌍  Environment        : ${NODE_ENV}`);
     console.log(`  📅  Waktu Start        : ${new Date().toLocaleString('id-ID')}`);
+
+    if (typeof pool.testDbConnection === 'function') {
+      const dbTest = await pool.testDbConnection();
+      if (dbTest.connected) {
+        console.log(`  🗄️   Database MySQL     : Terhubung ke \`${dbTest.database}\` (${dbTest.version})`);
+      } else {
+        console.log(`  ⚠️   Database MySQL     : ${dbTest.message}`);
+        console.log(`  💡  Petunjuk           : Jalankan "npm run db:setup" untuk inisialisasi database`);
+      }
+    }
     console.log('============================================================');
   });
 }
