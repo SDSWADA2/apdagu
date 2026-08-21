@@ -264,6 +264,10 @@ const Auth = {
         'success'
       );
     }
+
+    if (window.Realtime && isOnlineSuccess) {
+      Realtime.connect();
+    }
   },
 
   // ==========================================================================
@@ -275,6 +279,9 @@ const Auth = {
     }
     if (window.Api) {
       window.Api.clearToken();
+    }
+    if (window.Realtime) {
+      Realtime.disconnect();
     }
     this._clearSession();
     this.currentUser = null;
@@ -352,6 +359,10 @@ const Auth = {
         }).catch(err => {
           console.log('[Auth] Me check:', err.message);
         });
+      }
+
+      if (window.Realtime) {
+        Realtime.connect();
       }
 
       return true;

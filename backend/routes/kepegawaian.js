@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
       SELECT k.*, g.nama_lengkap, g.gelar_depan, g.gelar_belakang, g.nuptk, g.nip
       FROM kepegawaian k
       LEFT JOIN guru g ON g.id = k.guru_id
-      WHERE 1=1
+      WHERE k.is_deleted = 0 AND g.is_deleted = 0
     `;
     const params = [];
 
@@ -45,7 +45,7 @@ router.get('/', async (req, res) => {
 // ============================================================================
 router.get('/:id', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM kepegawaian WHERE id = ? LIMIT 1', [req.params.id]);
+    const [rows] = await pool.query('SELECT * FROM kepegawaian WHERE id = ? AND is_deleted = 0 LIMIT 1', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Data kepegawaian tidak ditemukan.' });
     res.json({ data: rows[0] });
   } catch (error) {

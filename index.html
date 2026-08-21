@@ -203,6 +203,18 @@
             </button>
           </div>
 
+          <!-- 📡 Realtime Live Badge (Multi-User Status) -->
+          <div class="d-flex align-items-center gap-1 px-2 py-1 rounded border" id="realtime-badge-container"
+               title="Status koneksi realtime multi-user"
+               style="font-size:0.72rem; background: rgba(0,0,0,.04); cursor:default;">
+            <span id="realtime-status-dot" class="rounded-circle bg-danger" style="width:8px;height:8px;display:inline-block;flex-shrink:0;"></span>
+            <span id="realtime-status-text" class="d-none d-sm-inline text-muted fw-medium">Offline</span>
+            <span class="text-muted d-none d-md-inline" style="margin-left:4px;">|</span>
+            <i class="bi bi-people-fill text-muted d-none d-md-inline"></i>
+            <span id="active-user-count" class="fw-bold text-primary d-none d-md-inline">0</span>
+            <span class="text-muted d-none d-md-inline" style="font-size:0.65rem;">online</span>
+          </div>
+
           <!-- Role Simulation Switcher -->
           <div class="d-flex align-items-center gap-1">
             <span class="text-muted small d-none d-xl-inline">Peran:</span>
@@ -3229,6 +3241,9 @@
   <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container"></div>
 
+  <!-- Socket.IO Client — Realtime Engine (dimuat pertama sebelum modul lain) -->
+  <script src="/socket.io/socket.io.js"></script>
+
   <!-- External Libraries: Bootstrap, Chart.js, QRCode.js, SheetJS, jsPDF, html2canvas -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
@@ -3247,6 +3262,7 @@
   <script src="js/state_sync.js"></script>
   <script src="js/state.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/realtime.js"></script>
   <script src="js/modules/dashboard.js"></script>
   <script src="js/modules/guru.js"></script>
   <script src="js/modules/pendidikan.js"></script>

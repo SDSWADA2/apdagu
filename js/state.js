@@ -893,11 +893,13 @@ class StateManager {
 
   // Helper CRUD Generator
   getAll(collection) {
-    return this.state[collection] || [];
+    const list = this.state[collection] || [];
+    // Filter out logically deleted records from frontend views
+    return list.filter(item => !item.is_deleted);
   }
 
   getById(collection, id) {
-    return (this.state[collection] || []).find(item => item.id == id);
+    return (this.state[collection] || []).find(item => item.id == id && !item.is_deleted);
   }
 
   /**

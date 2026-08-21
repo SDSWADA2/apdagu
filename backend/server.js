@@ -4,7 +4,9 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const http = require('http');
 const pool = require('./config/db');
+const SocketServer = require('./socket');
 
 // Route imports
 const authRoutes = require('./routes/auth');
@@ -134,9 +136,10 @@ app.use(express.static(frontendPath));
 app.get('/api', (req, res) => {
   res.json({
     message: 'REST API — Aplikasi Database Guru SD Negeri Sumber Waru 2',
-    version: '1.2.0',
+    version: '1.3.0',
     status: 'online',
     environment: NODE_ENV,
+    realtime: 'Socket.IO v4 — Active',
     endpoints: {
       auth: '/api/auth/login [POST], /api/auth/me [GET], /api/auth/change-password [POST]',
       guru: '/api/guru [GET, POST, PUT, DELETE]',
@@ -144,7 +147,8 @@ app.get('/api', (req, res) => {
       jadwal: '/api/jadwal [GET, POST, PUT, DELETE]',
       absensi: '/api/absensi [GET, POST, PUT, DELETE, POST /batch]',
       data: '/api/data/:table [GET, POST, PUT, DELETE]',
-      sync: '/api/sync/status [GET], /api/sync/all [GET, POST], /api/sync/changes [GET, POST]'
+      sync: '/api/sync/status [GET], /api/sync/all [GET, POST], /api/sync/changes [GET, POST]',
+      socket: 'ws://localhost:3000 (Socket.IO)',
     },
     timestamp: new Date().toISOString(),
   });
@@ -155,6 +159,8 @@ app.get('/health', async (req, res) => {
     ? await pool.testDbConnection()
     : { connected: false, message: 'testDbConnection tidak tersedia', error: 'N/A' };
 
+  const activeUsers = SocketServer.getActiveUsers ? SocketServer.getActiveUsers() : [];
+
   res.status(200).json({
     status:   'success',
     message:  'Server backend terhubung dengan baik',
@@ -163,6 +169,11 @@ app.get('/health', async (req, res) => {
     db_name:  dbTest.database  || null,
     db_host:  dbTest.host      || null,
     db_version: dbTest.version || null,
+    realtime: {
+      status: 'active',
+      engine: 'Socket.IO',
+      activeUsers: activeUsers.length,
+    },
     timestamp: new Date().toISOString(),
   });
 });
@@ -209,15 +220,24 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Export app for testing or external usage
-module.exports = app;
+// ============================================================================
+// HTTP Server + Socket.IO — Wajib pakai http.createServer agar WebSocket bisa
+// ============================================================================
+const httpServer = http.createServer(app);
+
+// Inisialisasi Socket.IO Realtime Engine
+SocketServer.init(httpServer, allowedOrigins);
+
+// Export httpServer untuk testing
+module.exports = { app, httpServer };
 
 if (require.main === module) {
-  app.listen(PORT, async () => {
+  httpServer.listen(PORT, async () => {
     console.log('============================================================');
     console.log(`  🏫  Aplikasi Database Guru SD Negeri Sumber Waru 2`);
     console.log(`  🚀  Server & Web App berjalan di : http://localhost:${PORT}`);
     console.log(`  🌍  Environment                  : ${NODE_ENV}`);
+    console.log(`  📡  Realtime Engine              : Socket.IO v4 Active`);
     console.log(`  📅  Waktu Start                  : ${new Date().toLocaleString('id-ID')}`);
 
     if (typeof pool.testDbConnection === 'function') {

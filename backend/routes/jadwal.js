@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
       SELECT j.*, g.nama_lengkap AS nama_guru, g.nuptk, g.nip
       FROM jadwal_mengajar j
       LEFT JOIN guru g ON g.id = j.guru_id
-      WHERE 1=1
+      WHERE j.is_deleted = 0 AND g.is_deleted = 0
     `;
     const params = [];
 
@@ -66,7 +66,7 @@ router.get('/:id', async (req, res) => {
       SELECT j.*, g.nama_lengkap AS nama_guru, g.nuptk, g.nip
       FROM jadwal_mengajar j
       LEFT JOIN guru g ON g.id = j.guru_id
-      WHERE j.id = ? LIMIT 1
+      WHERE j.id = ? AND j.is_deleted = 0 LIMIT 1
     `, [req.params.id]);
 
     if (rows.length === 0) {

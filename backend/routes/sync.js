@@ -9,6 +9,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth');
+const SocketServer = require('../socket');
 
 // Whitelist of valid table names for synchronization
 const ALLOWED_TABLES = new Set([
@@ -244,6 +245,11 @@ router.post('/all', requireRole('admin'), async (req, res) => {
     }
 
     await conn.commit();
+
+    // 📡 Broadcast realtime: batch sync selesai
+    const actor = { username: req.user?.username, name: req.user?.nama_lengkap || req.user?.username };
+    SocketServer.notifySync('all', syncedTables, actor);
+
     res.json({ success: true, message: `Sinkronisasi menyeluruh berhasil diproses (${syncedTables} entitas).`, timestamp: new Date().toISOString() });
   } catch (error) {
     await conn.rollback();
@@ -296,6 +302,12 @@ router.post('/changes', async (req, res) => {
     }
 
     await conn.commit();
+
+    // 📡 Broadcast realtime: offline queue synced
+    const actor = { username: req.user?.username, name: req.user?.nama_lengkap || req.user?.username };
+    const affectedTables = [...new Set(results.map(r => r.table))];
+    affectedTables.forEach(tbl => SocketServer.notifySync(tbl, results.filter(r => r.table === tbl).length, actor));
+
     res.json({ success: true, results, appliedAt: new Date().toISOString(), processed: changes.length });
   } catch (err) {
     await conn.rollback();

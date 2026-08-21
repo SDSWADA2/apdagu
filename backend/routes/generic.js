@@ -9,6 +9,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth');
+const SocketServer = require('../socket');
 
 // Mapping of frontend entity keys to MySQL database tables
 const tableMapping = {
@@ -77,12 +78,17 @@ router.use('/:table', validateTable);
 router.get('/:table', async (req, res) => {
   try {
     const { guru_id, limit = 500, offset = 0 } = req.query;
-    let query = `SELECT * FROM \`${req.tableName}\``;
+    let query = `SELECT * FROM \`${req.tableName}\` WHERE 1=1`;
     const params = [];
 
+    const noDeletedCol = ['users', 'audit_logs', 'profil_sekolah', 'pengaturan_aplikasi'];
+    if (!noDeletedCol.includes(req.tableName)) {
+      query += ' AND is_deleted = 0';
+    }
+
     // Filter guru_id jika tabel memiliki kolom guru_id
-    if (guru_id && req.tableName !== 'profil_sekolah' && req.tableName !== 'audit_logs' && req.tableName !== 'users') {
-      query += ' WHERE guru_id = ?';
+    if (guru_id && !noDeletedCol.includes(req.tableName)) {
+      query += ' AND guru_id = ?';
       params.push(parseInt(guru_id));
     }
 
@@ -119,7 +125,14 @@ router.get('/:table', async (req, res) => {
 router.get('/:table/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const [rows] = await pool.query(`SELECT * FROM \`${req.tableName}\` WHERE id = ? LIMIT 1`, [id]);
+    const noDeletedCol = ['users', 'audit_logs', 'profil_sekolah', 'pengaturan_aplikasi'];
+    let query = `SELECT * FROM \`${req.tableName}\` WHERE id = ?`;
+    if (!noDeletedCol.includes(req.tableName)) {
+      query += ' AND is_deleted = 0';
+    }
+    query += ' LIMIT 1';
+    
+    const [rows] = await pool.query(query, [id]);
 
     if (rows.length === 0) {
       return res.status(404).json({ error: `Data ${req.tableName} tidak ditemukan.` });
@@ -158,6 +171,10 @@ router.post('/:table', async (req, res) => {
     const query = `INSERT INTO \`${req.tableName}\` (${queryFields}) VALUES (${placeholders})`;
     const [result] = await pool.query(query, values);
 
+    // 📡 Broadcast realtime
+    const actor = { username: req.user?.username, name: req.user?.nama_lengkap || req.user?.username };
+    SocketServer.notifyInsert(req.tableName, { id: result.insertId, ...data }, actor);
+
     res.status(201).json({
       message: `Data berhasil ditambahkan ke ${req.tableName}`,
       insertId: result.insertId,
@@ -194,6 +211,10 @@ router.put('/:table/:id', async (req, res) => {
       return res.status(404).json({ error: `Data tidak ditemukan di ${req.tableName}.` });
     }
 
+    // 📡 Broadcast realtime
+    const actor = { username: req.user?.username, name: req.user?.nama_lengkap || req.user?.username };
+    SocketServer.notifyUpdate(req.tableName, { id: parseInt(id), ...data }, actor);
+
     res.json({ message: `Data berhasil diperbarui di ${req.tableName}`, data: { id: parseInt(id), ...data } });
   } catch (error) {
     console.error(`[GENERIC] Error updating ${req.tableName}:`, error);
@@ -212,6 +233,10 @@ router.delete('/:table/:id', requireRole('admin', 'operator'), async (req, res) 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: `Data tidak ditemukan di ${req.tableName}.` });
     }
+
+    // 📡 Broadcast realtime
+    const actor = { username: req.user?.username, name: req.user?.nama_lengkap || req.user?.username };
+    SocketServer.notifyDelete(req.tableName, id, actor);
 
     res.json({ message: `Data berhasil dihapus dari ${req.tableName}` });
   } catch (error) {

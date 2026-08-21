@@ -9,6 +9,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth');
+const SocketServer = require('../socket');
 
 // Semua endpoint guru memerlukan token yang valid
 router.use(verifyToken);
@@ -29,7 +30,7 @@ router.get('/', async (req, res) => {
   try {
     const { status, search, limit = 100, offset = 0 } = req.query;
 
-    let query = 'SELECT * FROM guru WHERE 1=1';
+    let query = 'SELECT * FROM guru WHERE is_deleted = 0';
     const params = [];
 
     if (status) {
@@ -47,7 +48,7 @@ router.get('/', async (req, res) => {
 
     const [rows] = await pool.query(query, params);
     const [[{ total }]] = await pool.query(
-      'SELECT COUNT(*) AS total FROM guru WHERE 1=1' + (status ? ' AND status_keaktifan = ?' : ''),
+      'SELECT COUNT(*) AS total FROM guru WHERE is_deleted = 0' + (status ? ' AND status_keaktifan = ?' : ''),
       status ? [status] : []
     );
 
@@ -64,16 +65,16 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const [rows] = await pool.query('SELECT * FROM guru WHERE id = ? LIMIT 1', [id]);
+    const [rows] = await pool.query('SELECT * FROM guru WHERE id = ? AND is_deleted = 0 LIMIT 1', [id]);
 
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Data guru tidak ditemukan.' });
     }
 
     // Ambil data terkait sekaligus
-    const [kepegawaian] = await pool.query('SELECT * FROM kepegawaian WHERE guru_id = ? ORDER BY tmt_pengangkatan DESC', [id]);
-    const [pendidikan]  = await pool.query('SELECT * FROM pendidikan WHERE guru_id = ? ORDER BY tahun_lulus DESC', [id]);
-    const [sertifikasi] = await pool.query('SELECT * FROM sertifikasi WHERE guru_id = ? ORDER BY tahun_sertifikasi DESC', [id]);
+    const [kepegawaian] = await pool.query('SELECT * FROM kepegawaian WHERE guru_id = ? AND is_deleted = 0 ORDER BY tmt_pengangkatan DESC', [id]);
+    const [pendidikan]  = await pool.query('SELECT * FROM pendidikan WHERE guru_id = ? AND is_deleted = 0 ORDER BY tahun_lulus DESC', [id]);
+    const [sertifikasi] = await pool.query('SELECT * FROM sertifikasi WHERE guru_id = ? AND is_deleted = 0 ORDER BY tahun_sertifikasi DESC', [id]);
 
     res.json({
       data: rows[0],
@@ -107,11 +108,11 @@ router.post('/', requireRole('admin', 'operator'), async (req, res) => {
 
     // Cek duplikasi NUPTK dan NIP
     if (nuptk) {
-      const [dup] = await pool.query('SELECT id FROM guru WHERE nuptk = ? LIMIT 1', [nuptk]);
+      const [dup] = await pool.query('SELECT id FROM guru WHERE nuptk = ? AND is_deleted = 0 LIMIT 1', [nuptk]);
       if (dup.length > 0) return res.status(409).json({ error: `NUPTK "${nuptk}" sudah terdaftar.` });
     }
     if (nip) {
-      const [dup] = await pool.query('SELECT id FROM guru WHERE nip = ? LIMIT 1', [nip]);
+      const [dup] = await pool.query('SELECT id FROM guru WHERE nip = ? AND is_deleted = 0 LIMIT 1', [nip]);
       if (dup.length > 0) return res.status(409).json({ error: `NIP "${nip}" sudah terdaftar.` });
     }
 
@@ -139,6 +140,10 @@ router.post('/', requireRole('admin', 'operator'), async (req, res) => {
 
     const [result] = await pool.query(query, values);
 
+    // 📡 Broadcast realtime ke semua client
+    const actorInfo = { username: req.user?.username, name: req.user?.nama_lengkap || req.user?.username };
+    SocketServer.notifyInsert('guru', { id: result.insertId, nama_lengkap, status_keaktifan: status_keaktifan || 'Aktif' }, actorInfo);
+
     res.status(201).json({
       message: `Guru "${nama_lengkap}" berhasil ditambahkan.`,
       insertId: result.insertId,
@@ -157,7 +162,7 @@ router.put('/:id', requireRole('admin', 'operator'), async (req, res) => {
     const { id } = req.params;
 
     // Verifikasi guru ada
-    const [existing] = await pool.query('SELECT id FROM guru WHERE id = ? LIMIT 1', [id]);
+    const [existing] = await pool.query('SELECT id FROM guru WHERE id = ? AND is_deleted = 0 LIMIT 1', [id]);
     if (existing.length === 0) {
       return res.status(404).json({ error: 'Data guru tidak ditemukan.' });
     }
@@ -176,11 +181,11 @@ router.put('/:id', requireRole('admin', 'operator'), async (req, res) => {
 
     // Cek duplikasi NUPTK/NIP jika diubah
     if (updates.nuptk) {
-      const [dup] = await pool.query('SELECT id FROM guru WHERE nuptk = ? AND id != ? LIMIT 1', [updates.nuptk, id]);
+      const [dup] = await pool.query('SELECT id FROM guru WHERE nuptk = ? AND id != ? AND is_deleted = 0 LIMIT 1', [updates.nuptk, id]);
       if (dup.length > 0) return res.status(409).json({ error: `NUPTK "${updates.nuptk}" sudah digunakan guru lain.` });
     }
     if (updates.nip) {
-      const [dup] = await pool.query('SELECT id FROM guru WHERE nip = ? AND id != ? LIMIT 1', [updates.nip, id]);
+      const [dup] = await pool.query('SELECT id FROM guru WHERE nip = ? AND id != ? AND is_deleted = 0 LIMIT 1', [updates.nip, id]);
       if (dup.length > 0) return res.status(409).json({ error: `NIP "${updates.nip}" sudah digunakan guru lain.` });
     }
 
@@ -192,6 +197,10 @@ router.put('/:id', requireRole('admin', 'operator'), async (req, res) => {
       `UPDATE guru SET ${setClauses}, updated_at = NOW() WHERE id = ?`,
       [...setValues, id]
     );
+
+    // 📡 Broadcast realtime ke semua client
+    const actorInfo = { username: req.user?.username, name: req.user?.nama_lengkap || req.user?.username };
+    SocketServer.notifyUpdate('guru', { id: parseInt(id), ...updates }, actorInfo);
 
     res.json({ message: 'Data guru berhasil diperbarui.', updatedFields: Object.keys(updates) });
   } catch (error) {
@@ -224,6 +233,10 @@ router.patch('/:id/status', requireRole('admin', 'operator'), async (req, res) =
       return res.status(404).json({ error: 'Data guru tidak ditemukan.' });
     }
 
+    // 📡 Broadcast realtime ke semua client
+    const actorInfo = { username: req.user?.username, name: req.user?.nama_lengkap || req.user?.username };
+    SocketServer.notifyUpdate('guru', { id: parseInt(id), status_keaktifan }, actorInfo);
+
     res.json({ message: `Status guru berhasil diubah menjadi "${status_keaktifan}".` });
   } catch (error) {
     console.error('[GURU] Error updating status:', error);
@@ -237,7 +250,7 @@ router.patch('/:id/status', requireRole('admin', 'operator'), async (req, res) =
 router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const { id } = req.params;
-    const [existing] = await pool.query('SELECT nama_lengkap FROM guru WHERE id = ? LIMIT 1', [id]);
+    const [existing] = await pool.query('SELECT nama_lengkap FROM guru WHERE id = ? AND is_deleted = 0 LIMIT 1', [id]);
 
     if (existing.length === 0) {
       return res.status(404).json({ error: 'Data guru tidak ditemukan.' });
@@ -272,6 +285,10 @@ router.delete('/:id', requireRole('admin'), async (req, res) => {
     } finally {
       connection.release();
     }
+
+    // 📡 Broadcast realtime ke semua client
+    const actorInfo = { username: req.user?.username, name: req.user?.nama_lengkap || req.user?.username };
+    SocketServer.notifyDelete('guru', id, actorInfo);
 
     res.json({ message: `Data guru "${namaGuru}" beserta semua data terkait berhasil dihapus.` });
   } catch (error) {
