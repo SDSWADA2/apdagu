@@ -1,10 +1,31 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { GraduationCap, Award, Loader2, Plus, Edit, Trash2 } from 'lucide-react';
 
 export default function PendidikanSertifikasi() {
   const [activeTab, setActiveTab] = useState('pendidikan'); // 'pendidikan' or 'sertifikasi'
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('schema-db-changes-pendidikan-sertifikasi')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'pendidikan' },
+        () => queryClient.invalidateQueries({ queryKey: ['pendidikan'] })
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'sertifikasi' },
+        () => queryClient.invalidateQueries({ queryKey: ['sertifikasi'] })
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   // Fetch Pendidikan
   const { data: pendidikanList, isLoading: isPendidikanLoading } = useQuery({
@@ -31,6 +52,7 @@ export default function PendidikanSertifikasi() {
       return data || [];
     }
   });
+
 
   return (
     <div className="flex flex-col h-full">

@@ -42,7 +42,6 @@ function App() {
               <Route path="guru" element={<DataGuru />} />
               
               <Route path="pendidikan" element={<PendidikanSertifikasi />} />
-              <Route path="sertifikasi" element={<div className="p-4">Modul Sertifikasi (Tahap Migrasi)</div>} />
               <Route path="kepegawaian" element={<div className="p-4">Modul Kepegawaian (Tahap Migrasi)</div>} />
               
               <Route path="*" element={<Navigate to="/" replace />} />

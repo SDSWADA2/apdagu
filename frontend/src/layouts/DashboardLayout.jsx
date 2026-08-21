@@ -11,8 +11,7 @@ export default function DashboardLayout() {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Data Guru', href: '/guru', icon: Users },
-    { name: 'Pendidikan', href: '/pendidikan', icon: GraduationCap },
-    { name: 'Sertifikasi', href: '/sertifikasi', icon: Award },
+    { name: 'Pendidikan & Sertifikasi', href: '/pendidikan', icon: GraduationCap },
     { name: 'Kepegawaian', href: '/kepegawaian', icon: Briefcase },
   ];
 
