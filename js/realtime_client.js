@@ -43,6 +43,7 @@
   let _wsRetries   = 0;
   let _listeners   = {};               // { eventName: [ fn, fn, ... ] }
   let _activeUsers = [];
+  let _eventDebounceTimers = {};
 
   /* ─────────────────────────────────────────────
      HELPER — token dari localStorage / sessionStorage
@@ -70,12 +71,24 @@
   }
 
   /* ─────────────────────────────────────────────
-     HANDLER — proses semua incoming events
+     HANDLER — proses semua incoming events (dengan debouncing)
   ───────────────────────────────────────────── */
   function _handleEvent(event, payload) {
     console.log(`[Realtime][${_mode}] 📥 ${event} | entity=${payload?.entity} | action=${payload?.action}`);
-    _emit(event, payload);
-    _emit('any_change', { event, payload });
+    
+    // Debounce data_synced or data_bulk events to prevent UI freezing
+    if (event === 'data_synced' || event === 'data_bulk') {
+      if (_eventDebounceTimers[event]) {
+        clearTimeout(_eventDebounceTimers[event]);
+      }
+      _eventDebounceTimers[event] = setTimeout(() => {
+        _emit(event, payload);
+        _emit('any_change', { event, payload });
+      }, 300);
+    } else {
+      _emit(event, payload);
+      _emit('any_change', { event, payload });
+    }
   }
 
   /* ─────────────────────────────────────────────
@@ -340,6 +353,14 @@
   window.addEventListener('DOMContentLoaded', () => {
     if (_getToken()) {
       setTimeout(() => RealtimeClient.connect(), 500);
+    }
+  });
+
+  // Reconnect otomatis saat aplikasi kembali dibuka dari background (mobile/sleep)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !RealtimeClient.isConnected() && _getToken()) {
+      console.log('[Realtime] Aplikasi aktif kembali, menghubungkan ulang...');
+      RealtimeClient.connect();
     }
   });
 
