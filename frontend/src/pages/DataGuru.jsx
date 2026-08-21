@@ -1,33 +1,70 @@
 import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { Search, Plus, Filter } from 'lucide-react';
+import { Search, Plus, Filter, Loader2, Edit, Trash2 } from 'lucide-react';
+import GuruFormModal from '../components/GuruFormModal';
+import GuruDeleteModal from '../components/GuruDeleteModal';
 
 export default function DataGuru() {
-  const [guruList, setGuruList] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const limit = 10;
+  const queryClient = useQueryClient();
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedGuru, setSelectedGuru] = useState(null);
 
-  // Fungsi untuk menarik data dari Supabase (Pagination & Lazy Loading akan diimplementasi di sini)
+  const openFormModal = (guru = null) => {
+    setSelectedGuru(guru);
+    setIsFormModalOpen(true);
+  };
+
+  const openDeleteModal = (guru) => {
+    setSelectedGuru(guru);
+    setIsDeleteModalOpen(true);
+  };
+
   useEffect(() => {
-    async function fetchGuru() {
-      try {
-        setLoading(true);
-        // Menggunakan select('*') dengan limit untuk contoh awal pagination
-        const { data, error } = await supabase
-          .from('guru')
-          .select('*')
-          .limit(10);
-          
-        if (error) throw error;
-        setGuruList(data || []);
-      } catch (error) {
-        console.error('Error fetching guru:', error.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-    
-    fetchGuru();
-  }, []);
+    // Berlangganan perubahan pada tabel guru untuk fitur realtime
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'guru',
+        },
+        () => {
+          // Invalidate cache react-query saat ada perubahan di tabel guru
+          queryClient.invalidateQueries({ queryKey: ['guru'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard_stats'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['guru', page],
+    queryFn: async () => {
+      const { data, error, count } = await supabase
+        .from('guru')
+        .select('*', { count: 'exact' })
+        .range(page * limit, (page + 1) * limit - 1);
+        
+      if (error) throw error;
+      return { guru: data || [], count: count || 0 };
+    },
+    // Tetap menyimpan data lama saat mengambil halaman baru
+    placeholderData: (previousData) => previousData,
+  });
+
+  const guruList = data?.guru || [];
+  const totalCount = data?.count || 0;
+  const totalPages = Math.ceil(totalCount / limit);
 
   return (
     <div className="flex flex-col h-full">
@@ -37,7 +74,10 @@ export default function DataGuru() {
           <p className="text-slate-500 text-sm">Kelola master data pendidik dan tenaga kependidikan</p>
         </div>
         
-        <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+        <button 
+          onClick={() => openFormModal()}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+        >
           <Plus className="w-4 h-4" />
           Tambah Guru
         </button>
@@ -60,9 +100,13 @@ export default function DataGuru() {
         </div>
 
         <div className="flex-1 overflow-auto">
-          {loading ? (
+          {isLoading ? (
             <div className="flex items-center justify-center h-48">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+            </div>
+          ) : isError ? (
+            <div className="flex items-center justify-center h-48 text-red-500">
+              <p>Terjadi kesalahan: {error.message}</p>
             </div>
           ) : guruList.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-slate-500">
@@ -96,7 +140,22 @@ export default function DataGuru() {
                       </span>
                     </td>
                     <td className="p-4 text-right">
-                      <button className="text-blue-600 hover:text-blue-800 font-medium text-sm">Detail</button>
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => openFormModal(guru)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => openDeleteModal(guru)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Hapus"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -107,13 +166,39 @@ export default function DataGuru() {
         
         {/* Pagination Controls */}
         <div className="p-4 border-t border-slate-200 flex items-center justify-between bg-slate-50 rounded-b-xl">
-          <span className="text-sm text-slate-500">Menampilkan 1-10 dari total data</span>
+          <span className="text-sm text-slate-500">
+            Menampilkan {guruList.length > 0 ? page * limit + 1 : 0}-
+            {Math.min((page + 1) * limit, totalCount)} dari {totalCount} data
+          </span>
           <div className="flex gap-2">
-            <button className="px-3 py-1 border border-slate-300 rounded text-sm text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-50">Sebelumnnya</button>
-            <button className="px-3 py-1 border border-slate-300 rounded text-sm text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-50">Selanjutnya</button>
+            <button 
+              onClick={() => setPage(old => Math.max(old - 1, 0))}
+              disabled={page === 0}
+              className="px-3 py-1 border border-slate-300 rounded text-sm text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-50"
+            >
+              Sebelumnya
+            </button>
+            <button 
+              onClick={() => setPage(old => (page + 1 < totalPages ? old + 1 : old))}
+              disabled={page + 1 >= totalPages}
+              className="px-3 py-1 border border-slate-300 rounded text-sm text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-50"
+            >
+              Selanjutnya
+            </button>
           </div>
         </div>
       </div>
+
+      <GuruFormModal 
+        isOpen={isFormModalOpen}
+        onClose={() => setIsFormModalOpen(false)}
+        guru={selectedGuru}
+      />
+      <GuruDeleteModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        guru={selectedGuru}
+      />
     </div>
   )
 }
