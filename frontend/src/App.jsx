@@ -7,6 +7,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const DataGuru = lazy(() => import('./pages/DataGuru'));
 const Login = lazy(() => import('./pages/Login'));
+const PendidikanSertifikasi = lazy(() => import('./pages/PendidikanSertifikasi'));
 
 // Komponen loader
 const PageLoader = () => (
@@ -40,7 +41,7 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="guru" element={<DataGuru />} />
               
-              <Route path="pendidikan" element={<div className="p-4">Modul Pendidikan (Tahap Migrasi)</div>} />
+              <Route path="pendidikan" element={<PendidikanSertifikasi />} />
               <Route path="sertifikasi" element={<div className="p-4">Modul Sertifikasi (Tahap Migrasi)</div>} />
               <Route path="kepegawaian" element={<div className="p-4">Modul Kepegawaian (Tahap Migrasi)</div>} />
               
