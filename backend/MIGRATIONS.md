@@ -1,5 +1,6 @@
-This directory contains database migration and seed files for the backend.
+# Database Migrations
 
+This directory contains database migration and seed files for the backend.
 How to run migrations (local):
 
 1. Install dependencies in backend:
