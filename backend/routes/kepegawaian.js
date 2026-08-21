@@ -127,7 +127,7 @@ router.put('/:id', requireRole('admin', 'operator'), async (req, res) => {
 // ============================================================================
 router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
-    const [result] = await pool.query('DELETE FROM kepegawaian WHERE id = ?', [req.params.id]);
+    const [result] = await pool.query('UPDATE kepegawaian SET is_deleted = 1 WHERE id = ?', [req.params.id]);
     if (result.affectedRows === 0) return res.status(404).json({ error: 'Data kepegawaian tidak ditemukan.' });
     res.json({ message: 'Data kepegawaian berhasil dihapus.' });
   } catch (error) {

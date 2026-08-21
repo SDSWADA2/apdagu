@@ -294,7 +294,7 @@ router.post('/changes', async (req, res) => {
         results.push({ tempId: tempId || null, id: data.id, table: targetTable, op });
       } else if (op === 'delete') {
         if (!data || !data.id) throw new Error('Field ID diperlukan untuk operasi delete');
-        await conn.execute(`DELETE FROM \`${targetTable}\` WHERE id = ?`, [data.id]);
+        await conn.execute(`UPDATE \`${targetTable}\` SET is_deleted = 1 WHERE id = ?`, [data.id]);
         results.push({ tempId: null, id: data.id, table: targetTable, op });
       } else {
         throw new Error(`Operasi tidak didukung: ${op}`);

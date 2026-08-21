@@ -223,7 +223,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', requireRole('admin', 'operator'), async (req, res) => {
   try {
     const { id } = req.params;
-    const [result] = await pool.query('DELETE FROM absensi WHERE id = ?', [id]);
+    const [result] = await pool.query('UPDATE absensi SET is_deleted = 1 WHERE id = ?', [id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Data absensi tidak ditemukan.' });

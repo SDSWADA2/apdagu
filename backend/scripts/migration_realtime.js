@@ -14,8 +14,6 @@ async function migrate() {
     try {
       await pool.query(`
         ALTER TABLE ${table}
-        ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         ADD COLUMN created_by VARCHAR(50) DEFAULT NULL,
         ADD COLUMN updated_by VARCHAR(50) DEFAULT NULL,
         ADD COLUMN is_deleted TINYINT(1) DEFAULT 0

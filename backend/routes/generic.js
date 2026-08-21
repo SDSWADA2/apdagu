@@ -228,7 +228,7 @@ router.put('/:table/:id', async (req, res) => {
 router.delete('/:table/:id', requireRole('admin', 'operator'), async (req, res) => {
   try {
     const { id } = req.params;
-    const [result] = await pool.query(`DELETE FROM \`${req.tableName}\` WHERE id = ?`, [id]);
+    const [result] = await pool.query(`UPDATE \`${req.tableName}\` SET is_deleted = 1 WHERE id = ?`, [id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: `Data tidak ditemukan di ${req.tableName}.` });

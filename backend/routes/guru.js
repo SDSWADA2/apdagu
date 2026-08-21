@@ -271,13 +271,13 @@ router.delete('/:id', requireRole('admin'), async (req, res) => {
 
       for (const table of relatedTables) {
         try {
-          await connection.query(`DELETE FROM ${table} WHERE guru_id = ?`, [id]);
+          await connection.query(`UPDATE ${table} SET is_deleted = 1 WHERE guru_id = ?`, [id]);
         } catch (e) {
           // Tabel mungkin tidak ada — abaikan
         }
       }
 
-      await connection.query('DELETE FROM guru WHERE id = ?', [id]);
+      await connection.query('UPDATE guru SET is_deleted = 1 WHERE id = ?', [id]);
       await connection.commit();
     } catch (err) {
       await connection.rollback();
