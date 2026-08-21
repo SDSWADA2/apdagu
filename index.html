@@ -3122,6 +3122,147 @@
   <script src="js/modules/laporan.js"></script>
   <script src="js/modules/pengaturan.js"></script>
   <script src="js/app.js"></script>
+
+  <!-- ====================================================================
+       LOGIN OVERLAY — Full-Page Premium Authentication Screen
+       Tampil paling awal, dikendalikan sepenuhnya oleh js/auth.js
+       ==================================================================== -->
+  <div id="login-overlay" class="login-overlay" role="dialog" aria-modal="true" aria-label="Halaman Login">
+
+    <!-- Animated Background Bubbles -->
+    <div class="login-bg-bubbles" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <!-- Login Card -->
+    <div class="login-card">
+      <div class="login-card-body">
+
+        <!-- Logo & Identitas Sekolah -->
+        <div class="login-logo-wrap">
+          <div class="login-logo-icon" aria-hidden="true">
+            <i class="bi bi-mortarboard-fill"></i>
+          </div>
+          <div class="login-school-name">SD NEGERI SUMBER WARU 2</div>
+          <div class="login-school-sub">Kecamatan Waru — Kabupaten Pamekasan</div>
+        </div>
+
+        <!-- Judul Form -->
+        <div class="login-heading">Masuk ke Sistem</div>
+        <div class="login-subheading">Aplikasi Database Guru &amp; PTK Profesional</div>
+
+        <!-- Error Message (tersembunyi saat tidak ada error) -->
+        <div id="login-error-msg" class="login-error" style="display:none;" role="alert">
+          <!-- Diisi oleh JS -->
+        </div>
+
+        <!-- Form Login -->
+        <form id="login-form" novalidate autocomplete="on">
+          <!-- Username -->
+          <div class="login-input-wrap">
+            <label for="login-username" class="login-label">Username</label>
+            <div style="position:relative;">
+              <input
+                type="text"
+                id="login-username"
+                class="login-input"
+                placeholder="Masukkan username..."
+                autocomplete="username"
+                spellcheck="false"
+                maxlength="100"
+                aria-required="true"
+              >
+              <i class="bi bi-person-fill login-input-icon" aria-hidden="true"></i>
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="login-input-wrap">
+            <label for="login-password" class="login-label">Password</label>
+            <div style="position:relative;">
+              <input
+                type="password"
+                id="login-password"
+                class="login-input"
+                placeholder="Masukkan password..."
+                autocomplete="current-password"
+                maxlength="200"
+                aria-required="true"
+                style="padding-right: 2.8rem;"
+              >
+              <i class="bi bi-lock-fill login-input-icon" aria-hidden="true"></i>
+              <button type="button" id="login-eye-btn" class="login-eye-btn" aria-label="Tampilkan/sembunyikan password">
+                <i class="bi bi-eye-fill"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Ingat Saya -->
+          <label class="login-remember" for="login-remember">
+            <input type="checkbox" id="login-remember">
+            <span>Ingat saya di perangkat ini</span>
+          </label>
+
+          <!-- Tombol Login -->
+          <button type="submit" id="login-submit-btn" class="login-btn">
+            <div class="login-spinner" aria-hidden="true"></div>
+            <span class="login-btn-text">
+              <i class="bi bi-box-arrow-in-right me-1"></i>Masuk ke Sistem
+            </span>
+          </button>
+        </form>
+
+        <!-- Hint Akun Demo — Klik untuk Autofill -->
+        <div class="login-hint" role="complementary" aria-label="Akun demo">
+          <div class="login-hint-title">&#128272; Akun Demo — Klik untuk autofill</div>
+
+          <div class="login-hint-row"
+               data-user="admin" data-pass="admin123"
+               role="button" tabindex="0"
+               aria-label="Login sebagai Admin"
+               title="Klik untuk mengisi username dan password admin">
+            <div class="d-flex align-items-center gap-2">
+              <span class="login-hint-badge hint-admin">Admin</span>
+              <span class="login-hint-creds">admin / admin123</span>
+            </div>
+            <span class="login-hint-click">&#9654; isi otomatis</span>
+          </div>
+
+          <div class="login-hint-row"
+               data-user="operator" data-pass="operator123"
+               role="button" tabindex="0"
+               aria-label="Login sebagai Operator"
+               title="Klik untuk mengisi username dan password operator">
+            <div class="d-flex align-items-center gap-2">
+              <span class="login-hint-badge hint-operator">Operator</span>
+              <span class="login-hint-creds">operator / operator123</span>
+            </div>
+            <span class="login-hint-click">&#9654; isi otomatis</span>
+          </div>
+
+          <div class="login-hint-row"
+               data-user="guru1" data-pass="guru123"
+               role="button" tabindex="0"
+               aria-label="Login sebagai Guru"
+               title="Klik untuk mengisi username dan password guru">
+            <div class="d-flex align-items-center gap-2">
+              <span class="login-hint-badge hint-guru">Guru</span>
+              <span class="login-hint-creds">guru1 / guru123</span>
+            </div>
+            <span class="login-hint-click">&#9654; isi otomatis</span>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="login-footer">
+          &copy; 2026 SD Negeri Sumber Waru 2 &mdash; Kab. Pamekasan<br>
+          Sistem Informasi Database Guru Berbasis Kurikulum Merdeka
+        </div>
+
+      </div><!-- /.login-card-body -->
+    </div><!-- /.login-card -->
+  </div><!-- /#login-overlay -->
+
 </body>
 
 </html>
