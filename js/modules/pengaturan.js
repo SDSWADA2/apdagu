@@ -866,7 +866,7 @@ const PengaturanModule = {
       if (dbText) {
         const isDbOk = res.data && res.data.database === 'connected';
         dbText.innerHTML = isDbOk
-          ? '<span class="text-success fw-bold"><i class="bi bi-database-check me-1"></i>MySQL Terhubung (db_guru_sd)</span>'
+          ? '<span class="text-success fw-bold"><i class="bi bi-database-check me-1"></i>PostgreSQL Terhubung (Neon)</span>'
           : `<span class="text-warning fw-bold"><i class="bi bi-database-exclamation me-1"></i>${res.data ? res.data.database : 'Disambungkan'}</span>`;
       }
       if (latText) {

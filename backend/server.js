@@ -41,8 +41,8 @@ const allowedOrigins = rawAllowed
   : [
       'http://localhost:5500',
       'http://127.0.0.1:5500',
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3001',
       'http://localhost:8080',
       'http://127.0.0.1:8080',
       'null',
@@ -150,7 +150,7 @@ app.get('/api', (req, res) => {
       absensi: '/api/absensi [GET, POST, PUT, DELETE, POST /batch]',
       data: '/api/data/:table [GET, POST, PUT, DELETE]',
       sync: '/api/sync/status [GET], /api/sync/all [GET, POST], /api/sync/changes [GET, POST]',
-      socket: 'ws://localhost:3000 (Socket.IO)',
+      socket: `ws://localhost:${PORT} (Socket.IO)`,
     },
     timestamp: new Date().toISOString(),
   });
