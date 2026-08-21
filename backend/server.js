@@ -157,8 +157,9 @@ app.get('/health', async (req, res) => {
     dbStatus = `error: ${err.message}`;
   }
 
-  res.json({
-    status: 'ok',
+  res.status(200).json({ 
+    status: 'success', 
+    message: 'Server backend terhubung dengan baik',
     uptime: process.uptime(),
     database: dbStatus,
     timestamp: new Date().toISOString()
