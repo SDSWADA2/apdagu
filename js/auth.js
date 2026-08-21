@@ -16,8 +16,8 @@
  * ============================================================================
  */
 
-const AUTH_STORAGE_KEY   = 'SDN_SW2_AUTH_SESSION';
-const JWT_STORAGE_KEY    = 'jwt_token';
+const AUTH_STORAGE_KEY = 'SDN_SW2_AUTH_SESSION';
+const JWT_STORAGE_KEY = 'jwt_token';
 const SESSION_TIMEOUT_MS = 60 * 60 * 1000; // 60 menit inaktif
 
 /**
@@ -25,20 +25,20 @@ const SESSION_TIMEOUT_MS = 60 * 60 * 1000; // 60 menit inaktif
  * View yang tidak terdaftar → akses bebas.
  */
 const VIEW_ACCESS = {
-  'view-dashboard'  : ['admin', 'operator', 'guru'],
-  'view-guru'       : ['admin', 'operator', 'guru'],
-  'view-pendidikan' : ['admin', 'operator'],
+  'view-dashboard': ['admin', 'operator', 'guru'],
+  'view-guru': ['admin', 'operator', 'guru'],
+  'view-pendidikan': ['admin', 'operator'],
   'view-sertifikasi': ['admin', 'operator'],
   'view-kepegawaian': ['admin', 'operator'],
-  'view-jadwal'     : ['admin', 'operator', 'guru'],
-  'view-beban'      : ['admin', 'operator', 'guru'],
-  'view-absensi'    : ['admin', 'operator', 'guru'],
-  'view-pkg'        : ['admin', 'operator'],
-  'view-prestasi'   : ['admin', 'operator', 'guru'],
-  'view-pelatihan'  : ['admin', 'operator', 'guru'],
-  'view-dokumen'    : ['admin', 'operator', 'guru'],
-  'view-laporan'    : ['admin', 'operator', 'guru'],
-  'view-pengaturan' : ['admin'],
+  'view-jadwal': ['admin', 'operator', 'guru'],
+  'view-beban': ['admin', 'operator', 'guru'],
+  'view-absensi': ['admin', 'operator', 'guru'],
+  'view-pkg': ['admin', 'operator'],
+  'view-prestasi': ['admin', 'operator', 'guru'],
+  'view-pelatihan': ['admin', 'operator', 'guru'],
+  'view-dokumen': ['admin', 'operator', 'guru'],
+  'view-laporan': ['admin', 'operator', 'guru'],
+  'view-pengaturan': ['admin'],
 };
 
 const Auth = {
@@ -104,12 +104,12 @@ const Auth = {
     });
 
     // Toggle visibilitas password
-    const eyeBtn  = document.getElementById('login-eye-btn');
+    const eyeBtn = document.getElementById('login-eye-btn');
     const pwdInput = document.getElementById('login-password');
     if (eyeBtn && pwdInput) {
       eyeBtn.addEventListener('click', () => {
         const isVisible = pwdInput.type === 'text';
-        pwdInput.type   = isVisible ? 'password' : 'text';
+        pwdInput.type = isVisible ? 'password' : 'text';
         const icon = eyeBtn.querySelector('i');
         if (icon) icon.className = isVisible ? 'bi bi-eye-fill' : 'bi bi-eye-slash-fill';
       });
@@ -139,7 +139,7 @@ const Auth = {
     const usernameEl = document.getElementById('login-username');
     const passwordEl = document.getElementById('login-password');
     const rememberEl = document.getElementById('login-remember');
-    const btn        = document.getElementById('login-submit-btn');
+    const btn = document.getElementById('login-submit-btn');
 
     const username = usernameEl ? usernameEl.value.trim() : '';
     const password = passwordEl ? passwordEl.value : '';
@@ -171,7 +171,7 @@ const Auth = {
     // Sedikit delay agar spinner terlihat
     setTimeout(() => {
       const users = typeof DB !== 'undefined' ? DB.getAll('users') : [];
-      const user  = users.find(u =>
+      const user = users.find(u =>
         String(u.username).toLowerCase() === username.toLowerCase() &&
         u.password === password &&
         String(u.status).toLowerCase() !== 'nonaktif'
@@ -265,13 +265,13 @@ const Auth = {
   _restoreSession() {
     try {
       const raw = sessionStorage.getItem(AUTH_STORAGE_KEY) ||
-                  localStorage.getItem(AUTH_STORAGE_KEY);
+        localStorage.getItem(AUTH_STORAGE_KEY);
       if (!raw) return false;
 
       const parsed = JSON.parse(raw);
       if (!parsed || !parsed.username) return false;
 
-      const elapsed  = Date.now() - (parsed._lastActivity || 0);
+      const elapsed = Date.now() - (parsed._lastActivity || 0);
       const remember = parsed._remember === true;
       if (!remember && elapsed > SESSION_TIMEOUT_MS) {
         this._clearSession();
@@ -279,7 +279,7 @@ const Auth = {
       }
 
       if (parsed.role) parsed.role = String(parsed.role).toLowerCase();
-      this.currentUser   = parsed;
+      this.currentUser = parsed;
       this._lastActivity = parsed._lastActivity || Date.now();
       this._refreshSession();
       return true;
@@ -394,7 +394,7 @@ const Auth = {
 
     // Menu sidebar
     document.querySelectorAll('.nav-menu-link[data-view]').forEach(link => {
-      const viewId  = link.getAttribute('data-view');
+      const viewId = link.getAttribute('data-view');
       const allowed = VIEW_ACCESS[viewId];
       const li = link.closest('.nav-menu-item');
       if (li) {
@@ -414,7 +414,7 @@ const Auth = {
       const colorMap = { admin: 'danger', operator: 'success', guru: 'primary' };
       const labelMap = { admin: 'ADMIN', operator: 'OPERATOR', guru: 'GURU' };
       const color = colorMap[role] || 'secondary';
-      const lbl   = labelMap[role]  || (role ? role.toUpperCase() : 'GUEST');
+      const lbl = labelMap[role] || (role ? role.toUpperCase() : 'GUEST');
       roleBadge.innerHTML = `<span class="badge bg-${color}">${lbl}</span>`;
     }
   },
@@ -424,7 +424,7 @@ const Auth = {
   // ==========================================================================
   _updateSidebarProfile() {
     if (!this.currentUser) return;
-    const nameEl   = document.getElementById('user-profile-name');
+    const nameEl = document.getElementById('user-profile-name');
     const avatarEl = document.getElementById('user-profile-avatar');
     if (nameEl) nameEl.textContent = this.currentUser.nama_lengkap || this.currentUser.username;
     if (avatarEl) {
@@ -483,9 +483,9 @@ const Auth = {
   },
 
   handleChangePassword() {
-    const cur  = (document.getElementById('cp-current')  || {}).value || '';
-    const nw   = (document.getElementById('cp-new')      || {}).value || '';
-    const conf = (document.getElementById('cp-confirm')  || {}).value || '';
+    const cur = (document.getElementById('cp-current') || {}).value || '';
+    const nw = (document.getElementById('cp-new') || {}).value || '';
+    const conf = (document.getElementById('cp-confirm') || {}).value || '';
     const errEl = document.getElementById('cp-error-msg');
 
     const showErr = (msg) => {
@@ -494,11 +494,11 @@ const Auth = {
     if (errEl) errEl.classList.add('d-none');
 
     if (!cur || !nw || !conf) { showErr('Semua kolom wajib diisi.'); return; }
-    if (nw.length < 6)        { showErr('Password baru minimal 6 karakter.'); return; }
-    if (nw !== conf)          { showErr('Konfirmasi password tidak cocok.'); return; }
-    if (!this.currentUser)    { showErr('Sesi tidak ditemukan. Silakan login ulang.'); return; }
+    if (nw.length < 6) { showErr('Password baru minimal 6 karakter.'); return; }
+    if (nw !== conf) { showErr('Konfirmasi password tidak cocok.'); return; }
+    if (!this.currentUser) { showErr('Sesi tidak ditemukan. Silakan login ulang.'); return; }
     if (cur !== this.currentUser.password) { showErr('Password saat ini salah.'); return; }
-    if (cur === nw)           { showErr('Password baru tidak boleh sama dengan password lama.'); return; }
+    if (cur === nw) { showErr('Password baru tidak boleh sama dengan password lama.'); return; }
 
     if (typeof DB !== 'undefined') {
       DB.update('users', this.currentUser.id, { password: nw },
