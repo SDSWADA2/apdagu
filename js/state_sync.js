@@ -19,6 +19,8 @@ const SyncQueue = (function () {
   let isProcessing = false;
   let _retryCount = 0;
   const MAX_RETRIES = 3;
+  const MAX_QUEUE_AGE_DAYS = 7;
+  const MAX_QUEUE_ITEMS = 500;
   const listeners = [];
 
   // ============================================================================
@@ -118,6 +120,37 @@ const SyncQueue = (function () {
   }
 
   // ============================================================================
+  // Cleanup Stale Data
+  // ============================================================================
+  async function cleanupStaleData() {
+    try {
+      const items = await getAllOperations();
+      if (items.length === 0) return;
+
+      const now = new Date().getTime();
+      const idsToDelete = [];
+      
+      // Filter items older than MAX_QUEUE_AGE_DAYS
+      items.forEach((item, index) => {
+        const ageMs = now - new Date(item.createdAt).getTime();
+        const daysOld = ageMs / (1000 * 60 * 60 * 24);
+        
+        // Delete if too old or if index exceeds MAX_QUEUE_ITEMS (keep newest)
+        if (daysOld > MAX_QUEUE_AGE_DAYS || (items.length - index > MAX_QUEUE_ITEMS)) {
+          idsToDelete.push(item.queueId);
+        }
+      });
+
+      if (idsToDelete.length > 0) {
+        console.log(`[SyncQueue] Membersihkan ${idsToDelete.length} data antrean kadaluwarsa/berlebih...`);
+        await removeOperations(idsToDelete);
+      }
+    } catch (err) {
+      console.warn('[SyncQueue] Gagal membersihkan data kadaluwarsa:', err);
+    }
+  }
+
+  // ============================================================================
   // Core: Process Offline Queue → Send to Backend
   // ============================================================================
   async function processQueue() {
@@ -150,7 +183,17 @@ const SyncQueue = (function () {
         return;
       }
 
-      const result = await window.Api.syncChanges(changes);
+      await cleanupStaleData();
+
+      // Implementasi timeout untuk sinkronisasi menggunakan Promise.race (jika Api.syncChanges tidak mendukung signal natively)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Sinkronisasi timeout setelah 15 detik')), 15000)
+      );
+
+      const result = await Promise.race([
+        window.Api.syncChanges(changes),
+        timeoutPromise
+      ]);
 
       if (result && result.success) {
         const queueIds = items.map(i => i.queueId);
