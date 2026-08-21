@@ -9,5 +9,8 @@
   },
   "devDependencies": {
     "eslint": "^8.50.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.6"
   }
 }
