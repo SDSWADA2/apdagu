@@ -39,10 +39,11 @@
   --text-inverse: #ffffff;
   
   --glass-bg: rgba(255, 255, 255, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-border-highlight: rgba(255, 255, 255, 0.9);
   --glass-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
   --card-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
-  --card-hover-shadow: 0 20px 35px -10px rgba(37, 99, 235, 0.12), 0 10px 15px -5px rgba(0, 0, 0, 0.04);
+  --card-hover-shadow: 0 20px 35px -10px rgba(37, 99, 235, 0.15), 0 10px 15px -5px rgba(0, 0, 0, 0.06);
   
   --sidebar-width: 280px;
   --topbar-height: 70px;
@@ -69,13 +70,65 @@
   --text-light: #64748b;
   
   --glass-bg: rgba(15, 23, 42, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-highlight: rgba(255, 255, 255, 0.2);
   --glass-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
   --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35);
-  --card-hover-shadow: 0 20px 35px -10px rgba(37, 99, 235, 0.25);
+  --card-hover-shadow: 0 20px 35px -10px rgba(37, 99, 235, 0.35);
   
   --primary-light: rgba(37, 99, 235, 0.2);
   --accent-light: rgba(16, 185, 129, 0.2);
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+@keyframes pulse-success {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes pulse-warning {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+@keyframes pulse-info {
+  0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(6, 182, 212, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+}
+
+.realtime-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: var(--bg-hover);
+  font-weight: 600;
+  transition: var(--transition);
+  border: 1px solid var(--border-color);
+}
+
+.realtime-status-badge.text-success {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  animation: pulse-success 2s infinite;
+}
+
+.realtime-status-badge.text-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  animation: pulse-warning 2s infinite;
+}
+
+.realtime-status-badge.text-info {
+  background: rgba(6, 182, 212, 0.1);
+  border-color: rgba(6, 182, 212, 0.3);
+  animation: pulse-info 1.5s infinite;
 }
 
 /* ==========================================================================
@@ -337,17 +390,34 @@ h1, h2, h3, h4, h5, h6, .brand-title, .topbar-title, .card-title {
    Cards & Glassmorphism Elements
    ========================================================================== */
 .card-glass {
-  background: var(--bg-card);
+  background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  box-shadow: var(--card-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
   transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glassmorphism subtle top highlight */
+.card-glass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-border-highlight), transparent);
+  opacity: 0.5;
+  z-index: 1;
 }
 
 .card-glass:hover {
+  transform: translateY(-3px);
   box-shadow: var(--card-hover-shadow);
+  border-color: var(--border-focus);
 }
 
 .card-header-glass {
@@ -448,7 +518,7 @@ h1, h2, h3, h4, h5, h6, .brand-title, .topbar-title, .card-title {
   border-radius: var(--radius-sm);
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  transition: var(--transition);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
