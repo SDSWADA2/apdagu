@@ -922,6 +922,13 @@ class StateManager {
   }
 
   /**
+   * Alias untuk insert
+   */
+  add(collection, item, logMessage = '') {
+    return this.insert(collection, item, logMessage);
+  }
+
+  /**
    * Mengubah data yang sudah ada (Optimistic Local Update + Backend Dispatch + Offline Queue Fallback)
    */
   update(collection, id, updatedFields, logMessage = '') {

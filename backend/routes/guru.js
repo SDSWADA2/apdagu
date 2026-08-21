@@ -72,7 +72,7 @@ router.get('/:id', async (req, res) => {
 
     // Ambil data terkait sekaligus
     const [kepegawaian] = await pool.query('SELECT * FROM kepegawaian WHERE guru_id = ? ORDER BY tmt_pengangkatan DESC', [id]);
-    const [pendidikan]  = await pool.query('SELECT * FROM riwayat_pendidikan WHERE guru_id = ? ORDER BY tahun_lulus DESC', [id]);
+    const [pendidikan]  = await pool.query('SELECT * FROM pendidikan WHERE guru_id = ? ORDER BY tahun_lulus DESC', [id]);
     const [sertifikasi] = await pool.query('SELECT * FROM sertifikasi WHERE guru_id = ? ORDER BY tahun_sertifikasi DESC', [id]);
 
     res.json({
@@ -247,9 +247,9 @@ router.delete('/:id', requireRole('admin'), async (req, res) => {
 
     // Hapus data terkait dulu (sesuai referential integrity jika tidak ada CASCADE)
     const relatedTables = [
-      'kepegawaian', 'riwayat_pendidikan', 'sertifikasi',
+      'kepegawaian', 'pendidikan', 'sertifikasi',
       'jadwal_mengajar', 'beban_mengajar', 'absensi',
-      'penilaian_kinerja_guru', 'prestasi_guru', 'pelatihan_guru', 'dokumen_guru'
+      'pkg', 'prestasi', 'pelatihan', 'dokumen'
     ];
 
     const connection = await pool.getConnection();

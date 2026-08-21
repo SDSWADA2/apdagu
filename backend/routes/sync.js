@@ -17,9 +17,41 @@ const ALLOWED_TABLES = new Set([
   'dokumen', 'audit_logs', 'profil_sekolah', 'pengaturan_aplikasi'
 ]);
 
+// Frontend alias to database table mapping
+const TABLE_MAPPING = {
+  guru: 'guru',
+  kepegawaian: 'kepegawaian',
+  pendidikan: 'pendidikan',
+  riwayat_pendidikan: 'pendidikan',
+  sertifikasi: 'sertifikasi',
+  jadwal: 'jadwal_mengajar',
+  jadwal_mengajar: 'jadwal_mengajar',
+  beban: 'beban_mengajar',
+  beban_mengajar: 'beban_mengajar',
+  absensi: 'absensi',
+  pkg: 'pkg',
+  penilaian_kinerja_guru: 'pkg',
+  prestasi: 'prestasi',
+  prestasi_guru: 'prestasi',
+  pelatihan: 'pelatihan',
+  pelatihan_guru: 'pelatihan',
+  dokumen: 'dokumen',
+  dokumen_guru: 'dokumen',
+  audit_logs: 'audit_logs',
+  profil_sekolah: 'profil_sekolah',
+  pengaturan_aplikasi: 'pengaturan_aplikasi',
+  pengaturan: 'pengaturan_aplikasi'
+};
+
+const IGNORED_FIELDS = new Set(['id', 'created_at', 'updated_at', 'nama_guru', 'nuptk', 'nip', 'foto_guru', 'nama_lengkap']);
+
 // Helper: build parameterized insert query
 function buildInsert(table, data) {
-  const keys = Object.keys(data).filter(k => k !== 'id' && k !== 'created_at' && k !== 'updated_at');
+  const keys = Object.keys(data).filter(k => {
+    if (IGNORED_FIELDS.has(k)) return false;
+    const val = data[k];
+    return typeof val !== 'object' || val === null;
+  });
   const cols = keys.map(k => `\`${k}\``).join(', ');
   const placeholders = keys.map(() => '?').join(', ');
   const values = keys.map(k => data[k]);
@@ -31,7 +63,11 @@ function buildInsert(table, data) {
 function buildUpdate(table, data) {
   const id = data.id;
   if (!id) throw new Error(`Missing ID for updating table ${table}`);
-  const keys = Object.keys(data).filter(k => k !== 'id' && k !== 'created_at' && k !== 'updated_at');
+  const keys = Object.keys(data).filter(k => {
+    if (IGNORED_FIELDS.has(k)) return false;
+    const val = data[k];
+    return typeof val !== 'object' || val === null;
+  });
   const set = keys.map(k => `\`${k}\` = ?`).join(', ');
   const values = keys.map(k => data[k]);
   const sql = `UPDATE \`${table}\` SET ${set} WHERE id = ?`;
@@ -163,7 +199,7 @@ router.post('/all', requireRole('admin'), async (req, res) => {
     }
 
     // 3. Child tables
-    const childTables = ['kepegawaian', 'pendidikan', 'sertifikasi', 'jadwal_mengajar', 'beban_mengajar', 'absensi', 'pkg', 'prestasi', 'pelatihan', 'dokumen'];
+    const childTables = ['kepegawaian', 'pendidikan', 'sertifikasi', 'jadwal_mengajar', 'beban_mengajar', 'absensi', 'pkg', 'prestasi', 'pelatihan', 'dokumen', 'audit_logs'];
     for (const table of childTables) {
       if (Array.isArray(data[table])) {
         for (const item of data[table]) {
@@ -178,6 +214,33 @@ router.post('/all', requireRole('admin'), async (req, res) => {
         }
         syncedTables++;
       }
+    }
+
+    // 4. Pengaturan Aplikasi
+    if (data.pengaturan_aplikasi) {
+      const pa = data.pengaturan_aplikasi;
+      const [existingPa] = await conn.query('SELECT id FROM pengaturan_aplikasi LIMIT 1');
+      if (existingPa.length > 0) {
+        await conn.query(`
+          UPDATE pengaturan_aplikasi SET
+            logo_sekolah = ?, ttd_kepala_sekolah = ?,
+            warna_utama_aplikasi = ?, warna_tema_idcard = ?
+          WHERE id = ?
+        `, [
+          pa.logo_sekolah || '', pa.ttd_kepala_sekolah || '',
+          pa.warna_utama_aplikasi || '#2563eb', pa.warna_tema_idcard || '#0f172a',
+          existingPa[0].id
+        ]);
+      } else {
+        await conn.query(`
+          INSERT INTO pengaturan_aplikasi (logo_sekolah, ttd_kepala_sekolah, warna_utama_aplikasi, warna_tema_idcard)
+          VALUES (?, ?, ?, ?)
+        `, [
+          pa.logo_sekolah || '', pa.ttd_kepala_sekolah || '',
+          pa.warna_utama_aplikasi || '#2563eb', pa.warna_tema_idcard || '#0f172a'
+        ]);
+      }
+      syncedTables++;
     }
 
     await conn.commit();
@@ -208,23 +271,25 @@ router.post('/changes', async (req, res) => {
     const results = [];
 
     for (const change of changes) {
-      const { op, table, data, tempId } = change;
-      if (!ALLOWED_TABLES.has(table)) {
-        throw new Error(`Tabel tidak diizinkan untuk sinkronisasi: ${table}`);
+      const { op, table: rawTable, data, tempId } = change;
+      const targetTable = TABLE_MAPPING[rawTable] || rawTable;
+
+      if (!ALLOWED_TABLES.has(targetTable)) {
+        throw new Error(`Tabel tidak diizinkan untuk sinkronisasi: ${targetTable}`);
       }
 
       if (op === 'insert') {
-        const { sql, values } = buildInsert(table, data);
+        const { sql, values } = buildInsert(targetTable, data);
         const [result] = await conn.execute(sql, values);
-        results.push({ tempId: tempId || null, id: result.insertId, table, op });
+        results.push({ tempId: tempId || null, id: result.insertId, table: targetTable, op });
       } else if (op === 'update') {
-        const { sql, values } = buildUpdate(table, data);
+        const { sql, values } = buildUpdate(targetTable, data);
         await conn.execute(sql, values);
-        results.push({ tempId: tempId || null, id: data.id, table, op });
+        results.push({ tempId: tempId || null, id: data.id, table: targetTable, op });
       } else if (op === 'delete') {
         if (!data || !data.id) throw new Error('Field ID diperlukan untuk operasi delete');
-        await conn.execute(`DELETE FROM \`${table}\` WHERE id = ?`, [data.id]);
-        results.push({ tempId: null, id: data.id, table, op });
+        await conn.execute(`DELETE FROM \`${targetTable}\` WHERE id = ?`, [data.id]);
+        results.push({ tempId: null, id: data.id, table: targetTable, op });
       } else {
         throw new Error(`Operasi tidak didukung: ${op}`);
       }

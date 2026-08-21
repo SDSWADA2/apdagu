@@ -85,11 +85,11 @@ async function setupDatabase() {
         INSERT INTO profil_sekolah
           (npsn, nss, nama_sekolah, status_sekolah, bentuk_pendidikan, akreditasi,
            alamat_lengkap, desa_kelurahan, kecamatan, kabupaten_kota, provinsi,
-           kode_pos, telepon, email, nama_kepala_sekolah)
+           kode_pos, telepon, email, website, nama_kepala_sekolah, nip_kepala_sekolah)
         VALUES
-          ('20551534', '101050419034', 'SD Negeri Sumber Waru 2', 'Negeri', 'SD', 'B',
-           'Jl. Raya Sumber Waru RT 01 RW 02', 'Sumber Waru', 'Bungah', 'Gresik', 'Jawa Timur',
-           '61152', '031-1234567', 'sdnsumberwaru2@gmail.com', 'Administrator Utama')
+          ('20527136', '101052610041', 'SD NEGERI SUMBER WARU 2', 'Negeri', 'Sekolah Dasar (SD)', 'B (Baik)',
+           'Jln 2, Sumber Waru 1, Sumber Waru, Kec. Waru, Kabupaten Pamekasan, Jawa Timur', 'Sumber Waru', 'Waru', 'Kabupaten Pamekasan', 'Jawa Timur',
+           '69353', '081953812155', 'sdnegerisumberwaru2official@gmail.com', 'https://sdnsumberwaru2.sch.id', 'FAUZAN, S.Pd.SD', '19720602 199605 1 001')
       `);
       console.log('✅ Data profil awal sekolah dibuat!');
     } else {

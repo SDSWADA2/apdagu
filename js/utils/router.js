@@ -136,6 +136,14 @@ const RouterUtil = {
       DokumenModule.renderList();
     } else if (viewId === 'view-laporan' && typeof LaporanModule !== 'undefined') {
       LaporanModule.renderGuruSelect();
+    } else if (viewId === 'view-pengaturan' && typeof PengaturanModule !== 'undefined') {
+      PengaturanModule.renderProfilSekolah();
+      PengaturanModule.renderVisualAndTema();
+      PengaturanModule.renderAdvancedAndIntegration();
+      PengaturanModule.renderUsers();
+      PengaturanModule.renderAuditLogs();
+      PengaturanModule.renderBackendSettings();
+      PengaturanModule.updateBackendStatusUI();
     }
   }
 };

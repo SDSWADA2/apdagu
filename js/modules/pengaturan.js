@@ -590,7 +590,7 @@ const PengaturanModule = {
     } else {
       data.password = passwordInput.value;
       data.id = Helpers.generateId();
-      DB.add('users', data);
+      DB.insert('users', data);
       DB.logActivity('Tambah User', 'users', `Menambahkan pengguna baru "@${username}" dengan role ${role}`);
       App.showToast('User Ditambahkan', `Pengguna "@${username}" berhasil ditambahkan.`, 'success');
     }
