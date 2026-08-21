@@ -231,22 +231,29 @@ router.post('/changes', async (req, res) => {
       const { op, table: rawTable, data, tempId } = change;
       const targetTable = TABLE_MAPPING[rawTable] || rawTable;
 
-      if (!ALLOWED_TABLES.has(targetTable)) throw new Error(`Tabel tidak diizinkan untuk sinkronisasi: ${targetTable}`);
+      try {
+        await client.query('SAVEPOINT row_savepoint');
+        if (!ALLOWED_TABLES.has(targetTable)) throw new Error(`Tabel tidak diizinkan untuk sinkronisasi: ${targetTable}`);
 
-      if (op === 'insert') {
-        const { sql, values } = buildInsert(targetTable, data);
-        const { rows } = await client.query(sql, values);
-        results.push({ tempId: tempId || null, id: rows[0].id, table: targetTable, op });
-      } else if (op === 'update') {
-        const { sql, values } = buildUpdate(targetTable, data);
-        await client.query(sql, values);
-        results.push({ tempId: tempId || null, id: data.id, table: targetTable, op });
-      } else if (op === 'delete') {
-        if (!data || !data.id) throw new Error('Field ID diperlukan untuk operasi delete');
-        await client.query(`UPDATE "${targetTable}" SET is_deleted = 1 WHERE id = $1`, [data.id]);
-        results.push({ tempId: null, id: data.id, table: targetTable, op });
-      } else {
-        throw new Error(`Operasi tidak didukung: ${op}`);
+        if (op === 'insert') {
+          const { sql, values } = buildInsert(targetTable, data);
+          const { rows } = await client.query(sql, values);
+          results.push({ tempId: tempId || null, id: rows[0].id, table: targetTable, op, success: true });
+        } else if (op === 'update') {
+          const { sql, values } = buildUpdate(targetTable, data);
+          await client.query(sql, values);
+          results.push({ tempId: tempId || null, id: data.id, table: targetTable, op, success: true });
+        } else if (op === 'delete') {
+          if (!data || !data.id) throw new Error('Field ID diperlukan untuk operasi delete');
+          await client.query(`UPDATE "${targetTable}" SET is_deleted = 1 WHERE id = $1`, [data.id]);
+          results.push({ tempId: null, id: data.id, table: targetTable, op, success: true });
+        } else {
+          throw new Error(`Operasi tidak didukung: ${op}`);
+        }
+      } catch (rowErr) {
+        await client.query('ROLLBACK TO SAVEPOINT row_savepoint');
+        console.warn(`[SYNC] Gagal memproses baris untuk ${targetTable} (op: ${op}):`, rowErr.message);
+        results.push({ tempId: tempId || null, id: data?.id, table: targetTable, op, success: false, error: rowErr.message });
       }
     }
 
