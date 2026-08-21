@@ -273,4 +273,43 @@ if (require.main === module) {
     }
     console.log('============================================================');
   });
+
+  // ============================================================================
+  // Graceful Shutdown
+  // ============================================================================
+  const gracefulShutdown = () => {
+    console.log('\n[SERVER] Menerima sinyal untuk mematikan server. Memulai graceful shutdown...');
+    
+    // Matikan HTTP Server (berhenti menerima request baru)
+    httpServer.close(async (err) => {
+      if (err) {
+        console.error('[SERVER] Error saat mematikan HTTP server:', err);
+        process.exit(1);
+      }
+      console.log('[SERVER] HTTP server ditutup.');
+      
+      // Matikan koneksi database jika pool.end() tersedia
+      try {
+        if (typeof pool.end === 'function') {
+          await pool.end();
+          console.log('[SERVER] Koneksi database ditutup.');
+        }
+      } catch (dbErr) {
+        console.error('[SERVER] Error saat mematikan koneksi database:', dbErr);
+      }
+
+      console.log('[SERVER] Graceful shutdown selesai. Keluar dari proses.');
+      process.exit(0);
+    });
+
+    // Paksa mati jika graceful shutdown terlalu lama (>10 detik)
+    setTimeout(() => {
+      console.error('[SERVER] Terlalu lama untuk shutdown, mematikan secara paksa (force exit).');
+      process.exit(1);
+    }, 10000);
+  };
+
+  process.on('SIGINT', gracefulShutdown);
+  process.on('SIGTERM', gracefulShutdown);
 }
+
