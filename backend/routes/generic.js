@@ -1,17 +1,7 @@
 /**
  * ============================================================================
- * ROUTE: Generic CRUD — Production Realtime Version
+ * ROUTE: Generic CRUD — Production Realtime Version (PostgreSQL)
  * Aplikasi Database Guru SD Negeri Sumber Waru 2
- * ============================================================================
- *
- *  Handler generik untuk semua entitas (kepegawaian, pendidikan, sertifikasi,
- *  absensi, pkg, prestasi, pelatihan, dokumen, dsb).
- *
- *  Setiap operasi tulis otomatis:
- *  ① Tulis ke MySQL
- *  ② Broadcast via WebSocket (Socket.IO)
- *  ③ Broadcast via SSE fallback
- *  ④ updated_by / created_by diisi dari JWT
  * ============================================================================
  */
 
@@ -59,7 +49,6 @@ const whitelistedTables = new Set([
   'audit_logs', 'profil_sekolah', 'pengaturan_aplikasi', 'users',
 ]);
 
-// Tabel yang tidak punya kolom is_deleted
 const NO_SOFT_DELETE = new Set(['users', 'audit_logs', 'profil_sekolah', 'pengaturan_aplikasi']);
 
 /* ─────────────────────────────────────────────
@@ -88,9 +77,6 @@ function getActor(req) {
   };
 }
 
-/**
- * Emit perubahan data ke WebSocket + SSE secara bersamaan.
- */
 function emitChange(eventName, entity, action, data, actor) {
   const payload = { entity, action, data, by: actor, at: new Date().toISOString() };
   try {
@@ -110,21 +96,23 @@ function emitChange(eventName, entity, action, data, actor) {
 router.get('/:table', async (req, res) => {
   try {
     const { guru_id, limit = 500, offset = 0 } = req.query;
-    let query = `SELECT * FROM \`${req.tableName}\` WHERE 1=1`;
+    let query = `SELECT * FROM "${req.tableName}" WHERE 1=1`;
     const params = [];
+    let idx = 1;
 
     if (!NO_SOFT_DELETE.has(req.tableName)) {
       query += ' AND is_deleted = 0';
     }
     if (guru_id && !NO_SOFT_DELETE.has(req.tableName)) {
-      query += ' AND guru_id = ?';
+      query += ` AND guru_id = $${idx++}`;
       params.push(parseInt(guru_id));
     }
+    
     query += req.tableName === 'audit_logs' ? ' ORDER BY created_at DESC' : ' ORDER BY id DESC';
-    query += ' LIMIT ? OFFSET ?';
+    query += ` LIMIT $${idx++} OFFSET $${idx++}`;
     params.push(parseInt(limit), parseInt(offset));
 
-    const [rows] = await pool.query(query, params);
+    const { rows } = await pool.query(query, params);
 
     if (req.tableName === 'users') {
       const safe = rows.map(({ password_hash, ...rest }) => rest);
@@ -143,11 +131,11 @@ router.get('/:table', async (req, res) => {
 router.get('/:table/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    let query = `SELECT * FROM \`${req.tableName}\` WHERE id = ?`;
+    let query = `SELECT * FROM "${req.tableName}" WHERE id = $1`;
     if (!NO_SOFT_DELETE.has(req.tableName)) query += ' AND is_deleted = 0';
     query += ' LIMIT 1';
 
-    const [rows] = await pool.query(query, [id]);
+    const { rows } = await pool.query(query, [id]);
     if (!rows.length) return res.status(404).json({ error: `Data ${req.tableName} tidak ditemukan.` });
 
     const row = rows[0];
@@ -170,29 +158,28 @@ router.post('/:table', async (req, res) => {
     let fields = Object.keys(body).filter(k => k !== 'id' && k !== 'created_at' && k !== 'updated_at');
     if (!fields.length) return res.status(400).json({ error: 'Tidak ada data valid untuk disisipkan.' });
 
-    // Tambahkan created_by / updated_by jika tidak ada di body
     if (!NO_SOFT_DELETE.has(req.tableName)) {
       if (!fields.includes('created_by')) { fields.push('created_by'); body.created_by = actor.username; }
       if (!fields.includes('updated_by')) { fields.push('updated_by'); body.updated_by = actor.username; }
     }
 
-    const cols   = fields.map(f => `\`${f}\``).join(', ');
-    const pholds = fields.map(() => '?').join(', ');
+    const cols   = fields.map(f => `"${f}"`).join(', ');
+    const pholds = fields.map((_, i) => `$${i + 1}`).join(', ');
     const values = fields.map(f => body[f]);
 
-    const [result] = await pool.query(
-      `INSERT INTO \`${req.tableName}\` (${cols}) VALUES (${pholds})`,
+    const { rows: result } = await pool.query(
+      `INSERT INTO "${req.tableName}" (${cols}) VALUES (${pholds}) RETURNING id`,
       values
     );
-    const newData = { id: result.insertId, ...body };
+    const insertId = result[0].id;
+    const newData = { id: insertId, ...body };
 
-    // 📡 Realtime Broadcast
     emitChange('data_inserted', req.tableName, 'insert', newData, actor);
 
-    res.status(201).json({ message: `Data berhasil ditambahkan ke ${req.tableName}`, insertId: result.insertId, data: newData });
+    res.status(201).json({ message: `Data berhasil ditambahkan ke ${req.tableName}`, insertId, data: newData });
   } catch (err) {
     console.error(`[GENERIC] POST ${req.tableName} error:`, err);
-    if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'Data duplikat. Nilai unik sudah ada.' });
+    if (err.code === '23505') return res.status(409).json({ error: 'Data duplikat. Nilai unik sudah ada.' });
     res.status(500).json({ error: `Gagal menambah data ke ${req.tableName}.` });
   }
 });
@@ -209,24 +196,23 @@ router.put('/:table/:id', async (req, res) => {
     let fields = Object.keys(body).filter(k => k !== 'id' && k !== 'created_at' && k !== 'updated_at');
     if (!fields.length) return res.status(400).json({ error: 'Tidak ada data valid untuk diperbarui.' });
 
-    // Tambahkan updated_by
     if (!NO_SOFT_DELETE.has(req.tableName) && !fields.includes('updated_by')) {
       fields.push('updated_by');
       body.updated_by = actor.username;
     }
 
-    const setClauses = fields.map(f => `\`${f}\` = ?`).join(', ');
+    const setClauses = fields.map((f, i) => `"${f}" = $${i + 1}`).join(', ');
     const values     = [...fields.map(f => body[f]), id];
 
-    const [result] = await pool.query(
-      `UPDATE \`${req.tableName}\` SET ${setClauses}, updated_at = NOW() WHERE id = ?`,
+    const { rowCount } = await pool.query(
+      `UPDATE "${req.tableName}" SET ${setClauses}, updated_at = NOW() WHERE id = $${fields.length + 1}`,
       values
     );
-    if (result.affectedRows === 0) return res.status(404).json({ error: `Data tidak ditemukan di ${req.tableName}.` });
+    
+    if (rowCount === 0) return res.status(404).json({ error: `Data tidak ditemukan di ${req.tableName}.` });
 
     const updatedData = { id: parseInt(id), ...body };
 
-    // 📡 Realtime Broadcast
     emitChange('data_updated', req.tableName, 'update', updatedData, actor);
 
     res.json({ message: `Data berhasil diperbarui di ${req.tableName}`, data: updatedData });
@@ -244,19 +230,20 @@ router.delete('/:table/:id', requireRole(['admin', 'operator']), async (req, res
     const { id } = req.params;
     const actor  = getActor(req);
 
-    let result;
+    let rowCount = 0;
     if (NO_SOFT_DELETE.has(req.tableName)) {
-      [result] = await pool.query(`DELETE FROM \`${req.tableName}\` WHERE id = ?`, [id]);
+      const resQuery = await pool.query(`DELETE FROM "${req.tableName}" WHERE id = $1`, [id]);
+      rowCount = resQuery.rowCount;
     } else {
-      [result] = await pool.query(
-        `UPDATE \`${req.tableName}\` SET is_deleted = 1, updated_by = ?, updated_at = NOW() WHERE id = ?`,
+      const resQuery = await pool.query(
+        `UPDATE "${req.tableName}" SET is_deleted = 1, updated_by = $1, updated_at = NOW() WHERE id = $2`,
         [actor.username, id]
       );
+      rowCount = resQuery.rowCount;
     }
 
-    if (result.affectedRows === 0) return res.status(404).json({ error: `Data tidak ditemukan di ${req.tableName}.` });
+    if (rowCount === 0) return res.status(404).json({ error: `Data tidak ditemukan di ${req.tableName}.` });
 
-    // 📡 Realtime Broadcast
     emitChange('data_deleted', req.tableName, 'delete', { id: parseInt(id) }, actor);
 
     res.json({ message: `Data berhasil dihapus dari ${req.tableName}`, id: parseInt(id) });

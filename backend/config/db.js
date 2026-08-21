@@ -1,98 +1,87 @@
 /**
  * ============================================================================
- * KONFIGURASI DATABASE MYSQL / MARIADB
+ * KONFIGURASI DATABASE POSTGRESQL (NEON)
  * Aplikasi Database Guru SD Negeri Sumber Waru 2
  * ============================================================================
  *
  * File ini mengekspor:
- *   - pool          : mysql2/promise pool (default export)
+ *   - pool          : pg pool (default export)
  *   - testDbConnection() : fungsi diagnostik koneksi
  *   - dbConfig      : objek konfigurasi yang dipakai
  */
 
 'use strict';
 
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 require('dotenv').config();
 
 // ============================================================================
-// Baca konfigurasi dari environment variables dengan nilai fallback yang aman
+// Baca konfigurasi dari environment variables
 // ============================================================================
 const dbConfig = {
-  host:     process.env.DB_HOST     || 'localhost',
-  port:     parseInt(process.env.DB_PORT, 10) || 3306,
-  user:     process.env.DB_USER     || 'root',
-  // Dukung DB_PASSWORD (baru) dan DB_PASS (lama) untuk kompatibilitas mundur
-  password: process.env.DB_PASSWORD ?? process.env.DB_PASS ?? '',
-  // Dukung DB_NAME (baru) dan DB_DATABASE (lama) untuk kompatibilitas mundur
-  database: process.env.DB_NAME     || process.env.DB_DATABASE || 'db_guru_sd',
+  // Jika DATABASE_URL tersedia (untuk Neon), gunakan itu
+  connectionString: process.env.DATABASE_URL,
+  
+  // Fallback jika tidak menggunakan connectionString
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT, 10) || 5432,
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || process.env.DB_PASS || '',
+  database: process.env.DB_NAME || process.env.DB_DATABASE || 'db_guru_sd',
 
-  // ─── Pool Settings ─────────────────────────────────────────────────────────
-  waitForConnections: true,
-  connectionLimit:    parseInt(process.env.DB_CONNECTION_LIMIT, 10) || 10,
-  queueLimit:         0,          // Antre tanpa batas
+  // SSL dibutuhkan untuk Neon dan kebanyakan cloud DB
+  ssl: {
+    rejectUnauthorized: false // Izinkan sertifikat self-signed / cloud
+  },
 
-  // ─── Koneksi Keepalive ─────────────────────────────────────────────────────
-  enableKeepAlive:     true,
-  keepAliveInitialDelay: 10_000,  // 10 detik
-
-  // ─── Encoding & Timezone ───────────────────────────────────────────────────
-  charset:  'utf8mb4',
-  timezone: '+07:00',             // WIB (Waktu Indonesia Barat)
-
-  // ─── Statement ─────────────────────────────────────────────────────────────
-  multipleStatements: true,       // Diperlukan saat menjalankan skrip migrasi SQL
-
-  // ─── SSL (aktifkan untuk koneksi ke Cloud MySQL / PlanetScale / Aiven) ─────
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  // Pool Settings
+  max: parseInt(process.env.DB_CONNECTION_LIMIT, 10) || 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 };
+
+// Hapus parameter individual jika connectionString digunakan agar tidak konflik
+if (dbConfig.connectionString) {
+  delete dbConfig.host;
+  delete dbConfig.port;
+  delete dbConfig.user;
+  delete dbConfig.password;
+  delete dbConfig.database;
+}
 
 // ============================================================================
 // Inisialisasi Connection Pool
 // ============================================================================
-const pool = mysql.createPool(dbConfig);
+const pool = new Pool(dbConfig);
 
 // ============================================================================
-// Helper: Uji koneksi ke database MySQL saat startup / health check
+// Helper: Uji koneksi ke database PostgreSQL saat startup / health check
 // ============================================================================
-/**
- * @returns {Promise<{
- *   connected: boolean,
- *   message: string,
- *   version?: string,
- *   database?: string,
- *   host?: string,
- *   port?: number,
- *   error?: string
- * }>}
- */
 async function testDbConnection() {
-  let connection;
+  let client;
   try {
-    connection = await pool.getConnection();
-    const [rows] = await connection.query(
-      "SELECT 1+1 AS test, VERSION() AS version, DATABASE() AS db_name"
-    );
-    const row = rows[0];
+    client = await pool.connect();
+    const result = await client.query("SELECT 1+1 AS test, version() AS version, current_database() AS db_name");
+    const row = result.rows[0];
     return {
       connected: true,
-      message:   'Koneksi database berhasil.',
+      message:   'Koneksi database PostgreSQL berhasil.',
       version:   row?.version  || 'unknown',
-      database:  row?.db_name  || dbConfig.database,
-      host:      dbConfig.host,
-      port:      dbConfig.port,
+      database:  row?.db_name  || 'unknown',
+      host:      dbConfig.host || 'Neon Cloud',
+      port:      dbConfig.port || 5432,
     };
   } catch (error) {
     return {
       connected: false,
-      message:   `Gagal terhubung ke database: ${error.message}`,
+      message:   `Gagal terhubung ke database PostgreSQL: ${error.message}`,
       error:     error.code || error.message,
-      database:  dbConfig.database,
-      host:      dbConfig.host,
-      port:      dbConfig.port,
+      database:  dbConfig.database || 'unknown',
+      host:      dbConfig.host || 'unknown',
+      port:      dbConfig.port || 5432,
     };
   } finally {
-    if (connection) connection.release();
+    if (client) client.release();
   }
 }
 

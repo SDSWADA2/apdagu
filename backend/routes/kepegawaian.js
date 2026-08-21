@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * ROUTE: Data Kepegawaian Guru
+ * ROUTE: Data Kepegawaian Guru (PostgreSQL Version)
  * Aplikasi Database Guru SD Negeri Sumber Waru 2
  * ============================================================================
  */
@@ -27,12 +27,12 @@ router.get('/', async (req, res) => {
     const params = [];
 
     if (guru_id) {
-      query += ' AND k.guru_id = ?';
+      query += ' AND k.guru_id = $1';
       params.push(parseInt(guru_id));
     }
 
     query += ' ORDER BY k.tmt_pengangkatan DESC';
-    const [rows] = await pool.query(query, params);
+    const { rows } = await pool.query(query, params);
     res.json({ data: rows });
   } catch (error) {
     console.error('[KEPEGAWAIAN] Error fetching:', error);
@@ -45,7 +45,7 @@ router.get('/', async (req, res) => {
 // ============================================================================
 router.get('/:id', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM kepegawaian WHERE id = ? AND is_deleted = 0 LIMIT 1', [req.params.id]);
+    const { rows } = await pool.query('SELECT * FROM kepegawaian WHERE id = $1 AND is_deleted = 0 LIMIT 1', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Data kepegawaian tidak ditemukan.' });
     res.json({ data: rows[0] });
   } catch (error) {
@@ -56,7 +56,7 @@ router.get('/:id', async (req, res) => {
 // ============================================================================
 // POST /api/kepegawaian — Tambah data kepegawaian
 // ============================================================================
-router.post('/', requireRole('admin', 'operator'), async (req, res) => {
+router.post('/', requireRole(['admin', 'operator']), async (req, res) => {
   try {
     const {
       guru_id, status_kepegawaian, jabatan, pangkat_golongan,
@@ -68,12 +68,13 @@ router.post('/', requireRole('admin', 'operator'), async (req, res) => {
       return res.status(400).json({ error: 'guru_id, status_kepegawaian, jabatan, dan tmt_pengangkatan wajib diisi.' });
     }
 
-    const [result] = await pool.query(`
+    const { rows } = await pool.query(`
       INSERT INTO kepegawaian 
       (guru_id, status_kepegawaian, jabatan, pangkat_golongan, tmt_pengangkatan,
        sk_pengangkatan, nomor_sk, tanggal_sk, pejabat_pengangkat, instansi,
        unit_kerja, gaji_pokok, tunjangan, keterangan, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
+      RETURNING id
     `, [
       guru_id, status_kepegawaian, jabatan, pangkat_golongan || null, tmt_pengangkatan,
       sk_pengangkatan || null, nomor_sk || null, tanggal_sk || null,
@@ -82,7 +83,7 @@ router.post('/', requireRole('admin', 'operator'), async (req, res) => {
       gaji_pokok || null, tunjangan || null, keterangan || null
     ]);
 
-    res.status(201).json({ message: 'Data kepegawaian berhasil ditambahkan.', insertId: result.insertId });
+    res.status(201).json({ message: 'Data kepegawaian berhasil ditambahkan.', insertId: rows[0].id });
   } catch (error) {
     console.error('[KEPEGAWAIAN] Error inserting:', error);
     res.status(500).json({ error: 'Gagal menambahkan data kepegawaian.' });
@@ -92,7 +93,7 @@ router.post('/', requireRole('admin', 'operator'), async (req, res) => {
 // ============================================================================
 // PUT /api/kepegawaian/:id — Update data kepegawaian
 // ============================================================================
-router.put('/:id', requireRole('admin', 'operator'), async (req, res) => {
+router.put('/:id', requireRole(['admin', 'operator']), async (req, res) => {
   try {
     const { id } = req.params;
     const allowed = [
@@ -108,13 +109,15 @@ router.put('/:id', requireRole('admin', 'operator'), async (req, res) => {
       return res.status(400).json({ error: 'Tidak ada field valid untuk diupdate.' });
     }
 
-    const setClauses = Object.keys(updates).map(f => `${f} = ?`).join(', ');
-    const [result] = await pool.query(
-      `UPDATE kepegawaian SET ${setClauses}, updated_at = NOW() WHERE id = ?`,
-      [...Object.values(updates), id]
+    const setClauses = Object.keys(updates).map((f, index) => `${f} = $${index + 1}`).join(', ');
+    const values = [...Object.values(updates), id];
+
+    const { rowCount } = await pool.query(
+      `UPDATE kepegawaian SET ${setClauses}, updated_at = NOW() WHERE id = $${values.length}`,
+      values
     );
 
-    if (result.affectedRows === 0) return res.status(404).json({ error: 'Data kepegawaian tidak ditemukan.' });
+    if (rowCount === 0) return res.status(404).json({ error: 'Data kepegawaian tidak ditemukan.' });
     res.json({ message: 'Data kepegawaian berhasil diperbarui.' });
   } catch (error) {
     console.error('[KEPEGAWAIAN] Error updating:', error);
@@ -125,10 +128,10 @@ router.put('/:id', requireRole('admin', 'operator'), async (req, res) => {
 // ============================================================================
 // DELETE /api/kepegawaian/:id
 // ============================================================================
-router.delete('/:id', requireRole('admin'), async (req, res) => {
+router.delete('/:id', requireRole(['admin']), async (req, res) => {
   try {
-    const [result] = await pool.query('UPDATE kepegawaian SET is_deleted = 1 WHERE id = ?', [req.params.id]);
-    if (result.affectedRows === 0) return res.status(404).json({ error: 'Data kepegawaian tidak ditemukan.' });
+    const { rowCount } = await pool.query('UPDATE kepegawaian SET is_deleted = 1 WHERE id = $1', [req.params.id]);
+    if (rowCount === 0) return res.status(404).json({ error: 'Data kepegawaian tidak ditemukan.' });
     res.json({ message: 'Data kepegawaian berhasil dihapus.' });
   } catch (error) {
     console.error('[KEPEGAWAIAN] Error deleting:', error);

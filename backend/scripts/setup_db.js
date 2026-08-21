@@ -1,7 +1,7 @@
 /**
  * ============================================================================
- * SKRIP SETUP OTOMATIS DATABASE — SD NEGERI SUMBER WARU 2
- * Membuat database, 15 tabel, dan akun pengguna demo secara otomatis.
+ * SKRIP SETUP OTOMATIS DATABASE — SD NEGERI SUMBER WARU 2 (PostgreSQL)
+ * Membuat tabel dan akun pengguna demo secara otomatis.
  *
  * Cara menjalankan:
  *   cd backend
@@ -11,77 +11,51 @@
 
 'use strict';
 
-const mysql = require('mysql2/promise');
+const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcrypt');
 
-// Muat variabel environment dari backend/.env
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
-const DB_HOST = process.env.DB_HOST || 'localhost';
-const DB_PORT = parseInt(process.env.DB_PORT, 10) || 3306;
-const DB_USER = process.env.DB_USER || 'root';
-const DB_PASSWORD = process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : (process.env.DB_PASS || '');
-const DB_NAME = process.env.DB_NAME || process.env.DB_DATABASE || 'db_guru_sd';
+const connectionString = process.env.DATABASE_URL;
 
 async function setupDatabase() {
   console.log('\n============================================================');
   console.log('  🛠️   SETUP & INISIALISASI DATABASE SDN SUMBER WARU 2');
   console.log('============================================================');
-  console.log(`  Host       : ${DB_HOST}:${DB_PORT}`);
-  console.log(`  User       : ${DB_USER}`);
-  console.log(`  Database   : ${DB_NAME}`);
+  console.log(`  Database URL : ${connectionString ? 'Terkonfigurasi' : 'Tidak Ditemukan'}`);
   console.log('------------------------------------------------------------\n');
 
-  let connection;
+  if (!connectionString) {
+    console.error('❌ ERROR: DATABASE_URL tidak ditemukan di file .env');
+    process.exit(1);
+  }
+
+  const client = new Client({
+    connectionString,
+    ssl: { rejectUnauthorized: false }
+  });
+
   try {
-    // ========================================================================
-    // LANGKAH 1 — Koneksi ke server MySQL tanpa memilih database
-    // ========================================================================
-    process.stdout.write('[1/5] Menghubungkan ke server MySQL... ');
-    connection = await mysql.createConnection({
-      host: DB_HOST,
-      port: DB_PORT,
-      user: DB_USER,
-      password: DB_PASSWORD,
-      multipleStatements: true,
-      charset: 'utf8mb4',
-    });
+    process.stdout.write('[1/4] Menghubungkan ke server PostgreSQL... ');
+    await client.connect();
     console.log('✅ Berhasil!');
 
-    // ========================================================================
-    // LANGKAH 2 — Buat database jika belum ada
-    // ========================================================================
-    process.stdout.write(`[2/5] Membuat database \`${DB_NAME}\`... `);
-    await connection.query(
-      `CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
-    );
-    console.log('✅ Siap!');
-
-    // Pindah ke database target
-    await connection.changeUser({ database: DB_NAME });
-
-    // ========================================================================
-    // LANGKAH 3 — Eksekusi skema DDL 15 tabel
-    // ========================================================================
-    process.stdout.write('[3/5] Mengimpor skema 15 tabel... ');
+    process.stdout.write('[2/4] Mengimpor skema 15 tabel... ');
     const schemaPath = path.join(__dirname, '../migrations/001_initial_schema.sql');
     if (!fs.existsSync(schemaPath)) {
       console.error('❌ File 001_initial_schema.sql tidak ditemukan!');
       process.exit(1);
     }
     const sql = fs.readFileSync(schemaPath, 'utf8');
-    await connection.query(sql);
+    await client.query(sql);
     console.log('✅ Selesai!');
 
-    // ========================================================================
-    // LANGKAH 4 — Seed data profil sekolah awal
-    // ========================================================================
-    process.stdout.write('[4/5] Memeriksa data profil sekolah awal... ');
-    const [[{ profilCount }]] = await connection.query('SELECT COUNT(*) AS profilCount FROM profil_sekolah');
-    if (profilCount === 0) {
-      await connection.query(`
+    process.stdout.write('[3/4] Memeriksa data profil sekolah awal... ');
+    const { rows: profilRows } = await client.query('SELECT COUNT(*) AS count FROM profil_sekolah');
+    if (parseInt(profilRows[0].count) === 0) {
+      await client.query(`
         INSERT INTO profil_sekolah
           (npsn, nss, nama_sekolah, status_sekolah, bentuk_pendidikan, akreditasi,
            alamat_lengkap, desa_kelurahan, kecamatan, kabupaten_kota, provinsi,
@@ -96,33 +70,27 @@ async function setupDatabase() {
       console.log('✅ Sudah ada.');
     }
 
-    // ========================================================================
-    // LANGKAH 5 — Seed akun pengguna awal
-    // ========================================================================
-    process.stdout.write('[5/5] Memeriksa akun pengguna awal... ');
-    const [[{ userCount }]] = await connection.query('SELECT COUNT(*) AS userCount FROM users');
-    if (userCount === 0) {
+    process.stdout.write('[4/4] Memeriksa akun pengguna awal... ');
+    const { rows: userRows } = await client.query('SELECT COUNT(*) AS count FROM users');
+    if (parseInt(userRows[0].count) === 0) {
       const hashAdmin    = await bcrypt.hash('admin123',    10);
       const hashOperator = await bcrypt.hash('operator123', 10);
       const hashGuru     = await bcrypt.hash('guru123',     10);
 
-      await connection.query(
-        `INSERT INTO users (username, password_hash, nama_lengkap, email, role, guru_id, is_active) VALUES ?`,
-        [[
-          ['admin',    hashAdmin,    'Administrator Utama (KS)',        'admin@sdnsumberwaru2.sch.id',        'admin',    null, true],
-          ['operator', hashOperator, 'Ahmad Fauzi (Operator Dapodik)',  'operator@sdnsumberwaru2.sch.id',     'operator', null, true],
-          ['guru1',    hashGuru,     'Siti Rahmawati, S.Pd., Gr.',     'siti.rahma@sdnsumberwaru2.sch.id',   'guru',     null, true],
-          ['guru2',    hashGuru,     'Budi Santoso, S.Pd.',            'budi.santoso@sdnsumberwaru2.sch.id', 'guru',     null, true],
-        ]]
-      );
+      const insertQuery = `
+        INSERT INTO users (username, password_hash, nama_lengkap, email, role, is_active)
+        VALUES
+          ('admin', $1, 'Administrator Utama (KS)', 'admin@sdnsumberwaru2.sch.id', 'admin', true),
+          ('operator', $2, 'Ahmad Fauzi (Operator Dapodik)', 'operator@sdnsumberwaru2.sch.id', 'operator', true),
+          ('guru1', $3, 'Siti Rahmawati, S.Pd., Gr.', 'siti.rahma@sdnsumberwaru2.sch.id', 'guru', true),
+          ('guru2', $3, 'Budi Santoso, S.Pd.', 'budi.santoso@sdnsumberwaru2.sch.id', 'guru', true)
+      `;
+      await client.query(insertQuery, [hashAdmin, hashOperator, hashGuru]);
       console.log('✅ 4 akun demo dibuat!');
     } else {
-      console.log(`✅ Sudah ada ${userCount} pengguna.`);
+      console.log(`✅ Sudah ada ${userRows[0].count} pengguna.`);
     }
 
-    // ========================================================================
-    // RINGKASAN AKHIR
-    // ========================================================================
     console.log('\n============================================================');
     console.log('  🎉  SETUP DATABASE BERHASIL DISELESAIKAN!');
     console.log('============================================================');
@@ -134,39 +102,19 @@ async function setupDatabase() {
     console.log('');
     console.log('  🚀 Jalankan server: npm run dev');
     console.log('  🌐 Akses API      : http://localhost:3000');
-    console.log('  🔍 Health check   : http://localhost:3000/health');
     console.log('============================================================\n');
 
   } catch (error) {
     console.error('\n\n❌ ERROR SAAT SETUP DATABASE:');
     console.error('--------------------------------------------------');
-    console.error(`  Kode   : ${error.code || 'UNKNOWN'}`);
     console.error(`  Pesan  : ${error.message}`);
     console.error('--------------------------------------------------\n');
-
-    console.log('💡 PANDUAN PENYELESAIAN MASALAH UMUM:');
-    if (error.code === 'ECONNREFUSED') {
-      console.log('  → MySQL / MariaDB belum berjalan!');
-      console.log('  → Buka XAMPP Control Panel → klik tombol "Start" pada MySQL');
-    } else if (error.code === 'ER_ACCESS_DENIED_ERROR') {
-      console.log('  → Username atau password MySQL salah!');
-      console.log('  → Periksa DB_USER dan DB_PASSWORD di file backend/.env');
-      console.log('  → Default XAMPP: DB_USER=root, DB_PASSWORD= (kosong)');
-    } else if (error.code === 'ER_BAD_DB_ERROR') {
-      console.log('  → Database tidak ditemukan. Coba jalankan ulang skrip ini.');
-    } else {
-      console.log('  → Pastikan MySQL aktif dan konfigurasi .env sudah benar.');
-    }
-    console.log('');
     process.exit(1);
   } finally {
-    if (connection) {
-      await connection.end();
-    }
+    await client.end();
   }
 }
 
-// Hanya jalankan jika dipanggil langsung (bukan via require)
 if (require.main === module) {
   setupDatabase();
 }

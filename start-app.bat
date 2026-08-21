@@ -34,7 +34,7 @@ echo.
 
 :: ─── LANGKAH 2: Perbaikan & Inisialisasi Database Otomatis ────────────────────
 echo [2/4] Menginisialisasi database dan akun pengguna secara otomatis...
-echo       ^ Pastikan XAMPP MySQL sudah berstatus "Start" (hijau) sebelum melanjutkan.
+echo       ^ Pastikan konfigurasi Neon PostgreSQL di .env sudah benar.
 echo.
 
 :: Jalankan auto_fix.js (setup DB + migrate + seed user)
@@ -42,8 +42,7 @@ node scripts\auto_fix.js
 if errorlevel 1 (
     echo.
     echo [PERINGATAN] Setup database gagal atau dilewati.
-    echo             Aplikasi akan tetap berjalan dalam mode Offline-First.
-    echo             Jalankan XAMPP, nyalakan MySQL, lalu restart aplikasi ini.
+    echo             Pastikan koneksi internet aktif dan DATABASE_URL valid.
     echo.
     timeout /t 3 /nobreak >nul
 )

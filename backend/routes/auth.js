@@ -35,8 +35,8 @@ router.post('/login', async (req, res) => {
     }
 
     // Cari user berdasarkan username
-    const [users] = await pool.query(
-      'SELECT * FROM users WHERE username = ? AND is_active = TRUE LIMIT 1',
+    const { rows: users } = await pool.query(
+      'SELECT * FROM users WHERE username = $1 AND is_active = TRUE LIMIT 1',
       [username.trim()]
     );
 
@@ -55,7 +55,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Update last_login
-    await pool.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
+    await pool.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
 
     // Generate JWT token
     const tokenPayload = {
@@ -86,8 +86,8 @@ router.post('/login', async (req, res) => {
 // ============================================================================
 router.get('/me', verifyToken, async (req, res) => {
   try {
-    const [users] = await pool.query(
-      'SELECT id, username, nama_lengkap, email, role, guru_id, foto_url, last_login FROM users WHERE id = ? AND is_active = TRUE LIMIT 1',
+    const { rows: users } = await pool.query(
+      'SELECT id, username, nama_lengkap, email, role, guru_id, foto_url, last_login FROM users WHERE id = $1 AND is_active = TRUE LIMIT 1',
       [req.user.id]
     );
 
@@ -120,8 +120,8 @@ router.post('/change-password', verifyToken, async (req, res) => {
     }
 
     // Ambil password hash saat ini
-    const [users] = await pool.query(
-      'SELECT password_hash FROM users WHERE id = ? LIMIT 1',
+    const { rows: users } = await pool.query(
+      'SELECT password_hash FROM users WHERE id = $1 LIMIT 1',
       [req.user.id]
     );
     if (users.length === 0) {
@@ -137,7 +137,7 @@ router.post('/change-password', verifyToken, async (req, res) => {
     // Hash password baru dan simpan
     const newHash = await bcrypt.hash(new_password, BCRYPT_ROUNDS);
     await pool.query(
-      'UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?',
+      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
       [newHash, req.user.id]
     );
 
