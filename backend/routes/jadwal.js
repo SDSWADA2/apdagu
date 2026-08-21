@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
       SELECT j.*, g.nama_lengkap AS nama_guru, g.nuptk, g.nip
       FROM jadwal_mengajar j
       LEFT JOIN guru g ON g.id = j.guru_id
-      WHERE j.is_deleted = 0 AND g.is_deleted = 0
+      WHERE j.is_deleted = false AND g.is_deleted = false
     `;
     const params = [];
     let idx = 1;
@@ -80,7 +80,7 @@ router.get('/:id', async (req, res) => {
       SELECT j.*, g.nama_lengkap AS nama_guru, g.nuptk, g.nip
       FROM jadwal_mengajar j
       LEFT JOIN guru g ON g.id = j.guru_id
-      WHERE j.id = $1 AND j.is_deleted = 0 LIMIT 1
+      WHERE j.id = $1 AND j.is_deleted = false LIMIT 1
     `, [req.params.id]);
 
     if (rows.length === 0) {
@@ -171,7 +171,7 @@ router.put('/:id', requireRole(['admin', 'operator']), async (req, res) => {
 router.delete('/:id', requireRole(['admin', 'operator']), async (req, res) => {
   try {
     const { id } = req.params;
-    const { rowCount } = await pool.query('UPDATE jadwal_mengajar SET is_deleted = 1 WHERE id = $1', [id]);
+    const { rowCount } = await pool.query('UPDATE jadwal_mengajar SET is_deleted = true, updated_at = NOW() WHERE id = $1', [id]);
 
     if (rowCount === 0) {
       return res.status(404).json({ error: 'Data jadwal tidak ditemukan.' });

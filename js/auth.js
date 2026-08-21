@@ -265,8 +265,8 @@ const Auth = {
       );
     }
 
-    if (window.Realtime && isOnlineSuccess) {
-      Realtime.connect();
+    if (window.RealtimeClient && isOnlineSuccess) {
+      RealtimeClient.connect();
     }
   },
 
@@ -280,8 +280,8 @@ const Auth = {
     if (window.Api) {
       window.Api.clearToken();
     }
-    if (window.Realtime) {
-      Realtime.disconnect();
+    if (window.RealtimeClient) {
+      RealtimeClient.disconnect();
     }
     this._clearSession();
     this.currentUser = null;
@@ -361,8 +361,8 @@ const Auth = {
         });
       }
 
-      if (window.Realtime) {
-        Realtime.connect();
+      if (window.RealtimeClient) {
+        RealtimeClient.connect();
       }
 
       return true;

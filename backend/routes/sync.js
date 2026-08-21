@@ -245,7 +245,7 @@ router.post('/changes', async (req, res) => {
           results.push({ tempId: tempId || null, id: data.id, table: targetTable, op, success: true });
         } else if (op === 'delete') {
           if (!data || !data.id) throw new Error('Field ID diperlukan untuk operasi delete');
-          await client.query(`UPDATE "${targetTable}" SET is_deleted = 1 WHERE id = $1`, [data.id]);
+          await client.query(`UPDATE "${targetTable}" SET is_deleted = true, updated_at = NOW() WHERE id = $1`, [data.id]);
           results.push({ tempId: null, id: data.id, table: targetTable, op, success: true });
         } else {
           throw new Error(`Operasi tidak didukung: ${op}`);

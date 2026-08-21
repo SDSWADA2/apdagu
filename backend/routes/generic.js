@@ -101,7 +101,7 @@ router.get('/:table', async (req, res) => {
     let idx = 1;
 
     if (!NO_SOFT_DELETE.has(req.tableName)) {
-      query += ' AND is_deleted = 0';
+      query += ' AND is_deleted = false';
     }
     if (guru_id && !NO_SOFT_DELETE.has(req.tableName)) {
       query += ` AND guru_id = $${idx++}`;
@@ -132,7 +132,7 @@ router.get('/:table/:id', async (req, res) => {
   try {
     const { id } = req.params;
     let query = `SELECT * FROM "${req.tableName}" WHERE id = $1`;
-    if (!NO_SOFT_DELETE.has(req.tableName)) query += ' AND is_deleted = 0';
+    if (!NO_SOFT_DELETE.has(req.tableName)) query += ' AND is_deleted = false';
     query += ' LIMIT 1';
 
     const { rows } = await pool.query(query, [id]);
@@ -236,7 +236,7 @@ router.delete('/:table/:id', requireRole(['admin', 'operator']), async (req, res
       rowCount = resQuery.rowCount;
     } else {
       const resQuery = await pool.query(
-        `UPDATE "${req.tableName}" SET is_deleted = 1, updated_by = $1, updated_at = NOW() WHERE id = $2`,
+        `UPDATE "${req.tableName}" SET is_deleted = true, updated_by = $1, updated_at = NOW() WHERE id = $2`,
         [actor.username, id]
       );
       rowCount = resQuery.rowCount;

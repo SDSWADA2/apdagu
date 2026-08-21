@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
       SELECT k.*, g.nama_lengkap, g.gelar_depan, g.gelar_belakang, g.nuptk, g.nip
       FROM kepegawaian k
       LEFT JOIN guru g ON g.id = k.guru_id
-      WHERE k.is_deleted = 0 AND g.is_deleted = 0
+      WHERE k.is_deleted = false AND g.is_deleted = false
     `;
     const params = [];
 
@@ -45,7 +45,7 @@ router.get('/', async (req, res) => {
 // ============================================================================
 router.get('/:id', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM kepegawaian WHERE id = $1 AND is_deleted = 0 LIMIT 1', [req.params.id]);
+    const { rows } = await pool.query('SELECT * FROM kepegawaian WHERE id = $1 AND is_deleted = false LIMIT 1', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Data kepegawaian tidak ditemukan.' });
     res.json({ data: rows[0] });
   } catch (error) {
@@ -130,7 +130,7 @@ router.put('/:id', requireRole(['admin', 'operator']), async (req, res) => {
 // ============================================================================
 router.delete('/:id', requireRole(['admin']), async (req, res) => {
   try {
-    const { rowCount } = await pool.query('UPDATE kepegawaian SET is_deleted = 1 WHERE id = $1', [req.params.id]);
+    const { rowCount } = await pool.query('UPDATE kepegawaian SET is_deleted = true, updated_at = NOW() WHERE id = $1', [req.params.id]);
     if (rowCount === 0) return res.status(404).json({ error: 'Data kepegawaian tidak ditemukan.' });
     res.json({ message: 'Data kepegawaian berhasil dihapus.' });
   } catch (error) {

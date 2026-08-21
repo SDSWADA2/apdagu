@@ -1,9 +1,11 @@
 /**
  * ============================================================================
- * ROUTE: Presensi / Absensi Guru Harian & Batch
+ * ROUTE: Presensi / Absensi Guru Harian & Batch — PostgreSQL
  * Aplikasi Database Guru SD Negeri Sumber Waru 2
  * ============================================================================
  */
+
+'use strict';
 
 const express = require('express');
 const router = express.Router();
@@ -18,33 +20,35 @@ router.use(verifyToken);
 router.get('/', async (req, res) => {
   try {
     const { tanggal, bulan, tahun, guru_id } = req.query;
+    const params = [];
+    let idx = 1;
+
     let query = `
       SELECT a.*, g.nama_lengkap AS nama_guru, g.nuptk, g.nip, g.foto_url
       FROM absensi a
       LEFT JOIN guru g ON g.id = a.guru_id
-      WHERE a.is_deleted = 0 AND g.is_deleted = 0
+      WHERE a.is_deleted = false AND g.is_deleted = false
     `;
-    const params = [];
 
     if (tanggal) {
-      query += ' AND a.tanggal = ?';
+      query += ` AND a.tanggal = $${idx++}`;
       params.push(tanggal);
     }
     if (bulan && tahun) {
-      query += ' AND MONTH(a.tanggal) = ? AND YEAR(a.tanggal) = ?';
+      query += ` AND EXTRACT(MONTH FROM a.tanggal) = $${idx++} AND EXTRACT(YEAR FROM a.tanggal) = $${idx++}`;
       params.push(parseInt(bulan), parseInt(tahun));
     } else if (tahun) {
-      query += ' AND YEAR(a.tanggal) = ?';
+      query += ` AND EXTRACT(YEAR FROM a.tanggal) = $${idx++}`;
       params.push(parseInt(tahun));
     }
     if (guru_id) {
-      query += ' AND a.guru_id = ?';
+      query += ` AND a.guru_id = $${idx++}`;
       params.push(parseInt(guru_id));
     }
 
     query += ' ORDER BY a.tanggal DESC, a.waktu_masuk ASC';
 
-    const [rows] = await pool.query(query, params);
+    const { rows } = await pool.query(query, params);
     res.json({ data: rows });
   } catch (error) {
     console.error('[ABSENSI] Error fetching absensi:', error);
@@ -57,11 +61,11 @@ router.get('/', async (req, res) => {
 // ============================================================================
 router.get('/:id', async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const { rows } = await pool.query(`
       SELECT a.*, g.nama_lengkap AS nama_guru, g.nuptk, g.nip
       FROM absensi a
       LEFT JOIN guru g ON g.id = a.guru_id
-      WHERE a.id = ? AND a.is_deleted = 0 LIMIT 1
+      WHERE a.id = $1 AND a.is_deleted = false LIMIT 1
     `, [req.params.id]);
 
     if (rows.length === 0) {
@@ -90,9 +94,9 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Field guru_id, tanggal, dan status_kehadiran wajib diisi.' });
     }
 
-    // Upsert (jika sudah ada data guru di tanggal yang sama)
-    const [existing] = await pool.query(
-      'SELECT id FROM absensi WHERE guru_id = ? AND tanggal = ? LIMIT 1',
+    // Upsert: cek apakah sudah ada data guru di tanggal yang sama
+    const { rows: existing } = await pool.query(
+      'SELECT id FROM absensi WHERE guru_id = $1 AND tanggal = $2 AND is_deleted = false LIMIT 1',
       [guru_id, tanggal]
     );
 
@@ -100,14 +104,16 @@ router.post('/', async (req, res) => {
       const existingId = existing[0].id;
       await pool.query(`
         UPDATE absensi SET
-          waktu_masuk = COALESCE(?, waktu_masuk),
-          waktu_pulang = COALESCE(?, waktu_pulang),
-          status_kehadiran = ?,
-          keterangan = ?,
-          lampiran_url = ?,
-          lokasi_gps = ?
-        WHERE id = ?
-      `, [waktu_masuk, waktu_pulang, status_kehadiran, keterangan, lampiran_url, lokasi_gps, existingId]);
+          waktu_masuk   = COALESCE($1, waktu_masuk),
+          waktu_pulang  = COALESCE($2, waktu_pulang),
+          status_kehadiran = $3,
+          keterangan    = $4,
+          lampiran_url  = $5,
+          lokasi_gps    = $6,
+          updated_at    = NOW()
+        WHERE id = $7
+      `, [waktu_masuk || null, waktu_pulang || null, status_kehadiran,
+          keterangan, lampiran_url, lokasi_gps, existingId]);
 
       return res.json({
         message: 'Presensi berhasil diperbarui.',
@@ -115,22 +121,21 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const query = `
+    const { rows: inserted } = await pool.query(`
       INSERT INTO absensi (
         guru_id, tanggal, waktu_masuk, waktu_pulang,
         status_kehadiran, keterangan, lampiran_url, lokasi_gps
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const [result] = await pool.query(query, [
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id
+    `, [
       guru_id, tanggal, waktu_masuk || null, waktu_pulang || null,
       status_kehadiran, keterangan, lampiran_url, lokasi_gps
     ]);
 
     res.status(201).json({
       message: 'Presensi berhasil dicatat.',
-      insertId: result.insertId,
-      data: { id: result.insertId, ...req.body }
+      insertId: inserted[0].id,
+      data: { id: inserted[0].id, ...req.body }
     });
   } catch (error) {
     console.error('[ABSENSI] Error saving absensi:', error);
@@ -141,49 +146,59 @@ router.post('/', async (req, res) => {
 // ============================================================================
 // POST /api/absensi/batch — Catat / tandai semua guru hadir (Batch Attendance)
 // ============================================================================
-router.post('/batch', requireRole('admin', 'operator'), async (req, res) => {
-  const conn = await pool.getConnection();
+router.post('/batch', requireRole(['admin', 'operator']), async (req, res) => {
+  const client = await pool.connect();
   try {
-    const { tanggal, status_kehadiran = 'Hadir', waktu_masuk = '06:45', waktu_pulang = '14:30', keterangan = 'Tepat Waktu' } = req.body;
+    const {
+      tanggal,
+      status_kehadiran = 'Hadir',
+      waktu_masuk  = '06:45',
+      waktu_pulang = '14:30',
+      keterangan   = 'Tepat Waktu'
+    } = req.body;
 
     if (!tanggal) {
       return res.status(400).json({ error: 'Tanggal presensi wajib diisi.' });
     }
 
-    await conn.beginTransaction();
+    await client.query('BEGIN');
 
     // Ambil semua guru aktif
-    const [gurus] = await conn.query("SELECT id FROM guru WHERE status_keaktifan = 'Aktif'");
+    const { rows: gurus } = await client.query(
+      "SELECT id FROM guru WHERE status_keaktifan = 'Aktif' AND is_deleted = false"
+    );
     let count = 0;
 
     for (const g of gurus) {
-      const [existing] = await conn.query(
-        'SELECT id FROM absensi WHERE guru_id = ? AND tanggal = ? LIMIT 1',
+      const { rows: existing } = await client.query(
+        'SELECT id FROM absensi WHERE guru_id = $1 AND tanggal = $2 AND is_deleted = false LIMIT 1',
         [g.id, tanggal]
       );
 
       if (existing.length > 0) {
-        await conn.query(
-          'UPDATE absensi SET status_kehadiran = ?, waktu_masuk = ?, waktu_pulang = ?, keterangan = ? WHERE id = ?',
+        await client.query(
+          `UPDATE absensi SET status_kehadiran = $1, waktu_masuk = $2, waktu_pulang = $3,
+           keterangan = $4, updated_at = NOW() WHERE id = $5`,
           [status_kehadiran, waktu_masuk, waktu_pulang, keterangan, existing[0].id]
         );
       } else {
-        await conn.query(
-          'INSERT INTO absensi (guru_id, tanggal, waktu_masuk, waktu_pulang, status_kehadiran, keterangan) VALUES (?, ?, ?, ?, ?, ?)',
+        await client.query(
+          `INSERT INTO absensi (guru_id, tanggal, waktu_masuk, waktu_pulang, status_kehadiran, keterangan)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
           [g.id, tanggal, waktu_masuk, waktu_pulang, status_kehadiran, keterangan]
         );
       }
       count++;
     }
 
-    await conn.commit();
+    await client.query('COMMIT');
     res.json({ message: `Presensi batch berhasil disimpan untuk ${count} guru aktif.`, count, tanggal });
   } catch (error) {
-    await conn.rollback();
+    await client.query('ROLLBACK');
     console.error('[ABSENSI] Error batch absensi:', error);
     res.status(500).json({ error: 'Gagal memproses presensi batch.' });
   } finally {
-    conn.release();
+    client.release();
   }
 });
 
@@ -195,18 +210,22 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const data = req.body;
 
-    const fields = Object.keys(data).filter(k => k !== 'id' && k !== 'created_at' && k !== 'nama_guru' && k !== 'nuptk' && k !== 'nip' && k !== 'foto_url');
+    const IGNORED = new Set(['id', 'created_at', 'nama_guru', 'nuptk', 'nip', 'foto_url']);
+    const fields = Object.keys(data).filter(k => !IGNORED.has(k));
+
     if (fields.length === 0) {
       return res.status(400).json({ error: 'Tidak ada data valid untuk diupdate.' });
     }
 
-    const setClauses = fields.map(f => `\`${f}\` = ?`).join(', ');
-    const values = fields.map(f => data[f]);
-    values.push(id);
+    const setClauses = fields.map((f, i) => `"${f}" = $${i + 1}`).join(', ');
+    const values = [...fields.map(f => data[f]), id];
 
-    const [result] = await pool.query(`UPDATE absensi SET ${setClauses} WHERE id = ?`, values);
+    const { rowCount } = await pool.query(
+      `UPDATE absensi SET ${setClauses}, updated_at = NOW() WHERE id = $${values.length}`,
+      values
+    );
 
-    if (result.affectedRows === 0) {
+    if (rowCount === 0) {
       return res.status(404).json({ error: 'Data absensi tidak ditemukan.' });
     }
 
@@ -218,14 +237,17 @@ router.put('/:id', async (req, res) => {
 });
 
 // ============================================================================
-// DELETE /api/absensi/:id — Hapus absensi
+// DELETE /api/absensi/:id — Hapus absensi (soft delete)
 // ============================================================================
-router.delete('/:id', requireRole('admin', 'operator'), async (req, res) => {
+router.delete('/:id', requireRole(['admin', 'operator']), async (req, res) => {
   try {
     const { id } = req.params;
-    const [result] = await pool.query('UPDATE absensi SET is_deleted = 1 WHERE id = ?', [id]);
+    const { rowCount } = await pool.query(
+      'UPDATE absensi SET is_deleted = true, updated_at = NOW() WHERE id = $1',
+      [id]
+    );
 
-    if (result.affectedRows === 0) {
+    if (rowCount === 0) {
       return res.status(404).json({ error: 'Data absensi tidak ditemukan.' });
     }
 
