@@ -2,96 +2,160 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 
-// Whitelist tables the client is allowed to sync
-const ALLOWED_TABLES = new Set([
-  'guru','kepegawaian','pendidikan','sertifikasi','jadwal_mengajar',
-  'beban_mengajar','absensi','pkg','prestasi','pelatihan','dokumen'
-]);
+// Client keys are mapped to the actual server-side table names.
+const TABLE_MAP = Object.freeze({
+  guru: 'guru',
+  kepegawaian: 'kepegawaian',
+  pendidikan: 'riwayat_pendidikan',
+  sertifikasi: 'sertifikasi',
+  jadwal_mengajar: 'jadwal_mengajar',
+  beban_mengajar: 'beban_mengajar',
+  absensi: 'absensi',
+  pkg: 'penilaian_kinerja_guru',
+  prestasi: 'prestasi_guru',
+  pelatihan: 'pelatihan_guru',
+  dokumen: 'dokumen_guru'
+});
 
-// Helper: build insert query dynamically (parameterized)
+const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const MAX_CHANGES = 100;
+
+function assertIdentifier(value, label = 'field') {
+  if (typeof value !== 'string' || !IDENTIFIER.test(value)) {
+    throw new Error(`Invalid ${label} identifier.`);
+  }
+  return value;
+}
+
+function resolveTable(tableKey) {
+  if (!Object.prototype.hasOwnProperty.call(TABLE_MAP, tableKey)) {
+    throw new Error('Table not allowed.');
+  }
+  return TABLE_MAP[tableKey];
+}
+
 function buildInsert(table, data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('Invalid insert data.');
+  }
+
   const keys = Object.keys(data);
-  const cols = keys.map(k => `\`${k}\``).join(', ');
-  const placeholders = keys.map(() => '?').join(', ');
-  const values = keys.map(k => data[k]);
+  if (!keys.length) throw new Error('Insert data cannot be empty.');
+
+  const safeKeys = keys.map(key => assertIdentifier(key));
+  const cols = safeKeys.map(key => `\`${key}\``).join(', ');
+  const placeholders = safeKeys.map(() => '?').join(', ');
+  const values = safeKeys.map(key => data[key]);
   const sql = `INSERT INTO \`${table}\` (${cols}) VALUES (${placeholders})`;
   return { sql, values };
 }
 
 function buildUpdate(table, data) {
-  // requires id in data
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('Invalid update data.');
+  }
+
   const id = data.id;
-  if (!id) throw new Error('Missing id for update');
-  const keys = Object.keys(data).filter(k => k !== 'id');
-  const set = keys.map(k => `\`${k}\` = ?`).join(', ');
-  const values = keys.map(k => data[k]);
-  const sql = `UPDATE \`${table}\` SET ${set} WHERE id = ?`;
+  if (id === undefined || id === null || id === '') throw new Error('Missing id for update.');
+
+  const keys = Object.keys(data).filter(key => key !== 'id');
+  if (!keys.length) throw new Error('Update data contains no mutable fields.');
+
+  const safeKeys = keys.map(key => assertIdentifier(key));
+  const set = safeKeys.map(key => `\`${key}\` = ?`).join(', ');
+  const values = safeKeys.map(key => data[key]);
   values.push(id);
+
+  const sql = `UPDATE \`${table}\` SET ${set}, updated_at = NOW() WHERE id = ?`;
   return { sql, values };
 }
 
-// POST /changes
-// Body: { clientId: string, changes: [{ op: 'insert'|'update'|'delete', table, data, tempId?, timestamp? }, ...] }
 router.post('/changes', async (req, res) => {
   const payload = req.body;
-  if (!payload || !Array.isArray(payload.changes)) return res.status(400).json({ error: 'Invalid payload' });
+  if (!payload || !Array.isArray(payload.changes)) {
+    return res.status(400).json({ error: 'Invalid payload.' });
+  }
+  if (payload.changes.length === 0) {
+    return res.json({ success: true, results: [], appliedAt: new Date().toISOString() });
+  }
+  if (payload.changes.length > MAX_CHANGES) {
+    return res.status(413).json({ error: `Too many changes. Maximum is ${MAX_CHANGES}.` });
+  }
 
-  const changes = payload.changes;
-  const conn = await pool.getConnection();
+  let conn;
   try {
+    conn = await pool.getConnection();
     await conn.beginTransaction();
 
     const results = [];
 
-    for (const change of changes) {
-      const { op, table, data, tempId } = change;
-      if (!ALLOWED_TABLES.has(table)) throw new Error(`Table not allowed: ${table}`);
+    for (const change of payload.changes) {
+      if (!change || typeof change !== 'object') throw new Error('Invalid change entry.');
+
+      const { op, table: tableKey, data, tempId } = change;
+      const table = resolveTable(tableKey);
 
       if (op === 'insert') {
         const { sql, values } = buildInsert(table, data);
         const [result] = await conn.execute(sql, values);
-        results.push({ tempId: tempId || null, id: result.insertId, table });
-
-        // Optionally write audit log
-        // await conn.execute('INSERT INTO audit_logs (username, aksi, tabel_terkait, deskripsi) VALUES (?, ?, ?, ?)', [payload.username || 'system', 'insert', table, `Created record ${result.insertId}`]);
+        results.push({ tempId: tempId || null, id: result.insertId, table: tableKey });
       } else if (op === 'update') {
         const { sql, values } = buildUpdate(table, data);
-        await conn.execute(sql, values);
-        results.push({ tempId: tempId || null, id: data.id, table });
+        const [result] = await conn.execute(sql, values);
+        if (result.affectedRows === 0) throw new Error(`Record not found for update: ${tableKey}/${data.id}`);
+        results.push({ tempId: tempId || null, id: data.id, table: tableKey });
       } else if (op === 'delete') {
-        if (!data || !data.id) throw new Error('Missing id for delete');
-        await conn.execute(`DELETE FROM \`${table}\` WHERE id = ?`, [data.id]);
-        results.push({ tempId: null, id: data.id, table });
+        if (!data || typeof data !== 'object' || data.id === undefined || data.id === null) {
+          throw new Error('Missing id for delete.');
+        }
+        const [result] = await conn.execute(`DELETE FROM \`${table}\` WHERE id = ?`, [data.id]);
+        if (result.affectedRows === 0) throw new Error(`Record not found for delete: ${tableKey}/${data.id}`);
+        results.push({ tempId: null, id: data.id, table: tableKey });
       } else {
-        throw new Error(`Unsupported op: ${op}`);
+        throw new Error(`Unsupported operation: ${op}`);
       }
     }
 
     await conn.commit();
-    res.json({ success: true, results, appliedAt: new Date().toISOString() });
+    return res.json({ success: true, results, appliedAt: new Date().toISOString() });
   } catch (err) {
-    await conn.rollback();
+    if (conn) await conn.rollback();
     console.error('[SYNC ERROR]', err);
-    res.status(500).json({ error: err.message || 'Sync failed' });
+    return res.status(400).json({ error: err.message || 'Sync failed.' });
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 });
 
-// GET /changes?since=2026-08-19T00:00:00Z&table=guru
-// Simple incremental pull: returns rows from allowed table updated after `since` timestamp
 router.get('/changes', async (req, res) => {
   const since = req.query.since;
-  const table = req.query.table;
-  if (!since || !table) return res.status(400).json({ error: 'Missing since or table parameter' });
-  if (!ALLOWED_TABLES.has(table)) return res.status(400).json({ error: 'Table not allowed' });
+  const tableKey = req.query.table;
+
+  if (!since || !tableKey) {
+    return res.status(400).json({ error: 'Missing since or table parameter.' });
+  }
+
+  let table;
+  try {
+    table = resolveTable(tableKey);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+
+  const parsedSince = new Date(since);
+  if (Number.isNaN(parsedSince.getTime())) {
+    return res.status(400).json({ error: 'Invalid since timestamp.' });
+  }
 
   try {
-    const [rows] = await pool.execute(`SELECT * FROM \`${table}\` WHERE updated_at > ? ORDER BY updated_at ASC LIMIT 1000`, [since]);
-    res.json({ success: true, data: rows, serverTime: new Date().toISOString() });
+    const [rows] = await pool.execute(
+      `SELECT * FROM \`${table}\` WHERE updated_at > ? ORDER BY updated_at ASC LIMIT 1000`,
+      [parsedSince.toISOString().slice(0, 19).replace('T', ' ')]
+    );
+    return res.json({ success: true, data: rows, serverTime: new Date().toISOString() });
   } catch (err) {
     console.error('[SYNC GET ERROR]', err);
-    res.status(500).json({ error: err.message || 'Failed to fetch changes' });
+    return res.status(500).json({ error: 'Failed to fetch changes.' });
   }
 });
 

@@ -1,30 +1,70 @@
+/**
+ * JWT authentication middleware.
+ *
+ * The same module exports both verifyToken and requireRole because all
+ * protected API routes consume those named exports.
+ */
 const jwt = require('jsonwebtoken');
 
-const SECRET = process.env.JWT_SECRET || 'dev_jwt_secret';
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET must be configured in production.');
+  }
+  return secret || 'dev-only-jwt-secret-change-me';
+};
 
-module.exports = function (req, res, next) {
-  // Allow skipping auth in development with env var SKIP_AUTH=true
-  if (process.env.SKIP_AUTH === 'true' && (process.env.NODE_ENV || 'development') === 'development') {
-    req.user = { username: 'dev', role: 'admin' };
-    return next();
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      error: 'Akses ditolak. Token tidak ditemukan.',
+      code: 'NO_TOKEN'
+    });
   }
 
-  const authHeader = req.headers['authorization'] || req.headers['Authorization'];
-  if (!authHeader) return res.status(401).json({ error: 'Authorization header missing' });
-
-  const parts = authHeader.split(' ');
-  if (parts.length !== 2) return res.status(401).json({ error: 'Invalid Authorization header format' });
-
-  const scheme = parts[0];
-  const token = parts[1];
-  if (!/^Bearer$/i.test(scheme)) return res.status(401).json({ error: 'Malformed Authorization header' });
+  const token = authHeader.slice('Bearer '.length).trim();
+  if (!token) {
+    return res.status(401).json({
+      error: 'Akses ditolak. Token tidak ditemukan.',
+      code: 'NO_TOKEN'
+    });
+  }
 
   try {
-    const payload = jwt.verify(token, SECRET);
-    req.user = payload;
-    next();
-  } catch (err) {
-    console.warn('Auth middleware - token verify failed:', err.message);
-    return res.status(401).json({ error: 'Invalid or expired token' });
+    req.user = jwt.verify(token, getJwtSecret());
+    return next();
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        error: 'Sesi Anda telah berakhir. Silakan login kembali.',
+        code: 'TOKEN_EXPIRED'
+      });
+    }
+
+    return res.status(401).json({
+      error: 'Token tidak valid.',
+      code: 'INVALID_TOKEN'
+    });
   }
 };
+
+const requireRole = (...roles) => {
+  const normalizedRoles = roles.map(role => String(role).toLowerCase());
+
+  return (req, res, next) => {
+    const userRole = req.user && String(req.user.role || '').toLowerCase();
+
+    if (!userRole || !normalizedRoles.includes(userRole)) {
+      return res.status(403).json({
+        error: `Akses ditolak. Halaman ini hanya untuk: ${roles.join(', ')}.`,
+        code: 'INSUFFICIENT_ROLE'
+      });
+    }
+
+    return next();
+  };
+};
+
+module.exports = { verifyToken, requireRole };
