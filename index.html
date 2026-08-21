@@ -188,16 +188,25 @@
 
         <div class="topbar-right">
           <!-- Quick Search -->
-          <div class="input-group d-none d-md-flex" style="width: 240px;">
+          <div class="input-group d-none d-md-flex" style="width: 220px;">
             <span class="input-group-text border-end-0"><i class="bi bi-search text-muted"></i></span>
             <input type="text" id="global-search-input" class="form-control border-start-0 ps-0"
               placeholder="Cari guru... (Enter)">
           </div>
 
+          <!-- Server Sync Status Badge -->
+          <div class="d-flex align-items-center">
+            <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 px-2 py-1" id="btn-topbar-sync" title="Status koneksi server. Klik untuk sinkronkan data.">
+              <span class="spinner-border spinner-border-sm text-primary d-none" id="topbar-sync-spinner" style="width: 0.75rem; height: 0.75rem;" role="status"></span>
+              <i class="bi bi-circle-fill text-muted" id="topbar-sync-icon" style="font-size: 0.65rem;"></i>
+              <span class="small d-none d-sm-inline" id="topbar-sync-text" style="font-size: 0.75rem;">Cek Server...</span>
+            </button>
+          </div>
+
           <!-- Role Simulation Switcher -->
           <div class="d-flex align-items-center gap-1">
             <span class="text-muted small d-none d-xl-inline">Peran:</span>
-            <select class="form-select form-select-sm" id="select-simulasi-role" style="width: 125px;">
+            <select class="form-select form-select-sm" id="select-simulasi-role" style="width: 120px;">
               <option value="admin">Admin</option>
               <option value="operator">Operator</option>
               <option value="guru">Guru</option>
@@ -1432,6 +1441,11 @@
                           class="bi bi-plug me-1"></i>Integrasi</button>
                     </li>
                     <li class="nav-item" role="presentation">
+                      <button class="nav-link fw-bold" id="pills-backend-tab" data-bs-toggle="pill"
+                        data-bs-target="#pills-backend" type="button" role="tab"><i
+                          class="bi bi-hdd-network me-1"></i>Server &amp; Sync</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
                       <button class="nav-link fw-bold" id="pills-backup-tab" data-bs-toggle="pill"
                         data-bs-target="#pills-backup" type="button" role="tab"><i
                           class="bi bi-cloud-arrow-down me-1"></i>Backup</button>
@@ -1813,6 +1827,111 @@
                              </form>
                           </div>
                        </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tab Integrasi Backend Server & Sync -->
+                <div class="tab-pane fade" id="pills-backend" role="tabpanel">
+                  <div class="row g-4">
+                    <!-- Konfigurasi Server REST API -->
+                    <div class="col-lg-6">
+                      <div class="card card-glass h-100">
+                        <div class="card-header-glass d-flex justify-content-between align-items-center">
+                          <h5 class="mb-0"><i class="bi bi-hdd-network-fill text-primary"></i> Konfigurasi Backend REST API</h5>
+                          <span class="badge bg-secondary" id="backend-status-badge">Memeriksa...</span>
+                        </div>
+                        <div class="card-body-glass">
+                          <form id="form-backend-config" onsubmit="event.preventDefault(); PengaturanModule.saveBackendConfig();">
+                            <div class="mb-3">
+                              <label class="form-label small fw-bold">Alamat Server Backend (Base URL)</label>
+                              <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                                <input type="url" class="form-control" id="backend-api-url" placeholder="http://localhost:3000" required>
+                                <button type="button" class="btn btn-outline-primary" id="btn-test-server-conn" onclick="PengaturanModule.testServerConnection()">
+                                  <i class="bi bi-broadcast me-1"></i>Uji Koneksi
+                                </button>
+                              </div>
+                              <small class="text-muted d-block mt-1">Default lokal: <code>http://localhost:3000</code>. Ubah jika backend berjalan di host/port lain.</small>
+                            </div>
+
+                            <div class="p-3 bg-light rounded-3 border mb-3">
+                              <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small text-muted">Status Koneksi Server:</span>
+                                <strong id="backend-conn-text" class="small text-dark">-</strong>
+                              </div>
+                              <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small text-muted">Status Database MySQL:</span>
+                                <strong id="backend-db-text" class="small text-dark">-</strong>
+                              </div>
+                              <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small text-muted">Waktu Respon (Latency):</span>
+                                <strong id="backend-latency-text" class="small text-dark">-</strong>
+                              </div>
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted">Token JWT Aktif:</span>
+                                <strong id="backend-jwt-text" class="small text-truncate" style="max-width: 180px;">-</strong>
+                              </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">
+                              <i class="bi bi-save me-1"></i>Simpan Konfigurasi Server
+                            </button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Sinkronisasi Penuh Dua Arah & Antrean Offline -->
+                    <div class="col-lg-6">
+                      <div class="card card-glass h-100">
+                        <div class="card-header-glass d-flex justify-content-between align-items-center">
+                          <h5 class="mb-0"><i class="bi bi-arrow-repeat text-success"></i> Sinkronisasi Data Dua Arah</h5>
+                          <span class="badge bg-primary" id="sync-queue-badge">0 Antrean</span>
+                        </div>
+                        <div class="card-body-glass">
+                          <div class="alert alert-info small mb-3">
+                            <i class="bi bi-info-circle-fill me-1"></i> Sistem beroperasi dengan mode <strong>Offline-First</strong>. Setiap penambahan/perubahan data otomatis disinkronkan ke server saat online.
+                          </div>
+
+                          <div class="d-grid gap-2 mb-3">
+                            <button type="button" class="btn btn-outline-success text-start py-2" id="btn-push-all" onclick="PengaturanModule.handlePushAll()">
+                              <div class="d-flex align-items-center">
+                                <i class="bi bi-cloud-arrow-up-fill fs-4 me-3 text-success"></i>
+                                <div>
+                                  <strong class="d-block">Dorong Semua Data Lokal ke Server (Push All)</strong>
+                                  <small class="text-muted">Kirim seluruh data lokal (IndexedDB) ke database server MySQL.</small>
+                                </div>
+                              </div>
+                            </button>
+
+                            <button type="button" class="btn btn-outline-primary text-start py-2" id="btn-pull-all" onclick="PengaturanModule.handlePullAll()">
+                              <div class="d-flex align-items-center">
+                                <i class="bi bi-cloud-arrow-down-fill fs-4 me-3 text-primary"></i>
+                                <div>
+                                  <strong class="d-block">Tarik Seluruh Data dari Server (Pull All)</strong>
+                                  <small class="text-muted">Ambil salinan data terkini dari server ke penyimpanan lokal.</small>
+                                </div>
+                              </div>
+                            </button>
+                          </div>
+
+                          <div class="p-3 bg-light rounded-3 border">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                              <span class="small fw-bold">Antrean Operasi Offline:</span>
+                              <span class="badge bg-warning text-dark" id="sync-queue-count-text">0 Perubahan Tertunda</span>
+                            </div>
+                            <div class="d-flex gap-2 mt-2">
+                              <button type="button" class="btn btn-sm btn-outline-primary flex-grow-1" onclick="if(window.SyncQueue) window.SyncQueue.processQueue();">
+                                <i class="bi bi-play-circle me-1"></i>Proses Antrean Sekarang
+                              </button>
+                              <button type="button" class="btn btn-sm btn-outline-danger" onclick="PengaturanModule.handleClearSyncQueue()">
+                                <i class="bi bi-trash me-1"></i>Kosongkan
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -3105,6 +3224,8 @@
   <script src="js/utils/theme.js"></script>
   <script src="js/utils/toast.js"></script>
   <script src="js/utils/router.js"></script>
+  <script src="js/utils/api_client.js"></script>
+  <script src="js/state_sync.js"></script>
   <script src="js/state.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/modules/dashboard.js"></script>

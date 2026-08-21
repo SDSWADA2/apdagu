@@ -748,7 +748,7 @@ class StateManager {
     }
 
     return new Promise(async (resolve) => {
-      // 1. Muat dari IndexedDB terlebih dahulu (Cepat)
+      // 1. Muat dari IndexedDB terlebih dahulu (Instan & Offline-First)
       const tx = this.db ? this.db.transaction('store', 'readonly') : null;
       
       const loadFromLocal = () => {
@@ -762,36 +762,92 @@ class StateManager {
       };
 
       const localData = await loadFromLocal();
-      if (localData && localData.profil_sekolah) {
-        this.state = localData;
+      if (localData && (localData.profil_sekolah || localData.guru)) {
+        this.state = {
+          ...INITIAL_STATE,
+          ...localData
+        };
       }
       
       this.isLoaded = true;
-      resolve(); // UI dapat dirender
+      resolve(); // UI dapat langsung dirender
 
-      // 2. Background Sync dengan Backend (Bila Token Tersedia)
+      // 2. Background Sync dengan Backend API
       this._syncWithBackend();
     });
   }
 
+  /**
+   * Sinkronisasi data di latar belakang dengan Backend REST API
+   */
   async _syncWithBackend() {
-    const token = localStorage.getItem('jwt_token') || '';
-    if (!token) return;
+    if (typeof window.Api === 'undefined') return;
 
     try {
-      const response = await fetch('http://localhost:3000/api/guru', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      if (response.ok) {
-        const resJson = await response.json();
-        if (resJson.data && resJson.data.length > 0) {
-           this.state.guru = resJson.data;
-           console.log('[DB] Berhasil sinkronisasi data guru dengan backend.');
-           this.saveState(this.state, true); // Simpan tanpa broadcast ulang
+      // Periksa konektivitas server terlebih dahulu
+      const health = await window.Api.checkHealth();
+      if (!health.connected) {
+        console.log('[DB] Backend server belum terhubung. Beroperasi dalam mode data lokal (IndexedDB).');
+        return;
+      }
+
+      // Jika token tersimpan, coba tarik data terbaru secara menyeluruh
+      const token = localStorage.getItem('jwt_token') || '';
+      if (token) {
+        const res = await window.Api.getAllState();
+        if (res && res.success && res.data) {
+          const serverState = res.data;
+          let changed = false;
+
+          // Merge collections dari server
+          const collections = [
+            'guru', 'kepegawaian', 'pendidikan', 'sertifikasi', 'jadwal_mengajar',
+            'beban_mengajar', 'absensi', 'pkg', 'prestasi', 'pelatihan', 'dokumen', 'audit_logs'
+          ];
+
+          collections.forEach(col => {
+            if (Array.isArray(serverState[col]) && serverState[col].length > 0) {
+              this.state[col] = serverState[col];
+              changed = true;
+            }
+          });
+
+          if (serverState.profil_sekolah && serverState.profil_sekolah.nama_sekolah) {
+            this.state.profil_sekolah = {
+              ...this.state.profil_sekolah,
+              ...serverState.profil_sekolah
+            };
+            changed = true;
+          }
+
+          if (serverState.users && serverState.users.length > 0) {
+            // Update daftar user dengan mempertahankan password lokal jika ada
+            const mergedUsers = serverState.users.map(su => {
+              const localU = (this.state.users || []).find(lu => lu.username === su.username);
+              return {
+                ...su,
+                password: localU ? localU.password : 'guru123',
+                status: su.is_active ? 'aktif' : 'nonaktif'
+              };
+            });
+            this.state.users = mergedUsers;
+            changed = true;
+          }
+
+          if (changed) {
+            console.log('[DB] Berhasil memperbarui state lokal dari Backend Server.');
+            this.saveState(this.state, true);
+            this.notify();
+          }
         }
       }
+
+      // Jalankan pemrosesan antrean offline jika ada
+      if (typeof window.SyncQueue !== 'undefined') {
+        window.SyncQueue.processQueue();
+      }
     } catch (err) {
-      console.warn('[DB] Backend offline. Berjalan murni mode lokal.', err.message);
+      console.warn('[DB] Sinkronisasi background terlewati:', err.message);
     }
   }
 
@@ -807,7 +863,7 @@ class StateManager {
       console.error('Gagal menyimpan ke IndexedDB:', e);
     }
     
-    // Auto-Sync to other tabs
+    // Auto-Sync to other browser tabs
     if (!skipBroadcast && this.syncChannel) {
       try {
         this.syncChannel.postMessage({
@@ -844,31 +900,30 @@ class StateManager {
     return (this.state[collection] || []).find(item => item.id == id);
   }
 
+  /**
+   * Menambahkan data baru (Optimistic Local Update + Backend Dispatch + Offline Queue Fallback)
+   */
   insert(collection, item, logMessage = '') {
     if (!this.state[collection]) this.state[collection] = [];
     const newItem = { ...item, id: item.id || (typeof Helpers !== 'undefined' ? Helpers.generateId() : Date.now()) };
     
-    // Optimistic Update ke Server Backend
-    if (collection === 'guru' || collection === 'kepegawaian') {
-      const token = localStorage.getItem('jwt_token') || '';
-      if (token) {
-        fetch(`http://localhost:3000/api/${collection}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify(newItem)
-        }).catch(err => console.warn(`[DB] Gagal sinkronisasi POST ke backend (${collection}):`, err.message));
-      }
-    }
-
+    // 1. Optimistic Update ke State Lokal & IndexedDB
     this.state[collection].unshift(newItem);
     
     if (logMessage) {
       this.logActivity('Tambah Data', collection, logMessage);
     }
     this.saveState();
+
+    // 2. Dispatch ke Backend REST API atau masukkan ke Offline SyncQueue
+    this._dispatchApiMutation('insert', collection, newItem);
+
     return newItem;
   }
 
+  /**
+   * Mengubah data yang sudah ada (Optimistic Local Update + Backend Dispatch + Offline Queue Fallback)
+   */
   update(collection, id, updatedFields, logMessage = '') {
     if (!this.state[collection]) return null;
     const index = this.state[collection].findIndex(item => item.id == id);
@@ -878,27 +933,24 @@ class StateManager {
         ...updatedFields
       };
 
-      // Optimistic Update ke Server Backend
-      if (collection === 'guru' || collection === 'kepegawaian') {
-        const token = localStorage.getItem('jwt_token') || '';
-        if (token) {
-          fetch(`http://localhost:3000/api/${collection}/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify(this.state[collection][index])
-          }).catch(err => console.warn(`[DB] Gagal sinkronisasi PUT ke backend (${collection}):`, err.message));
-        }
-      }
+      const updatedItem = this.state[collection][index];
 
       if (logMessage) {
         this.logActivity('Ubah Data', collection, logMessage);
       }
       this.saveState();
-      return this.state[collection][index];
+
+      // 2. Dispatch ke Backend REST API atau masukkan ke Offline SyncQueue
+      this._dispatchApiMutation('update', collection, updatedItem);
+
+      return updatedItem;
     }
     return null;
   }
 
+  /**
+   * Menghapus data (Optimistic Local Update + Backend Dispatch + Offline Queue Fallback)
+   */
   delete(collection, id, logMessage = '') {
     if (!this.state[collection]) return false;
     const initialLength = this.state[collection].length;
@@ -912,23 +964,6 @@ class StateManager {
           this.state[col] = this.state[col].filter(item => item.guru_id != id);
         }
       });
-      
-      // Optimistic Update ke Server Backend
-      const token = localStorage.getItem('jwt_token') || '';
-      if (token) {
-        fetch(`http://localhost:3000/api/guru/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': 'Bearer ' + token }
-        }).catch(err => console.warn('[DB] Gagal sinkronisasi DELETE ke backend (guru):', err.message));
-      }
-    } else if (collection === 'kepegawaian') {
-      const token = localStorage.getItem('jwt_token') || '';
-      if (token) {
-        fetch(`http://localhost:3000/api/kepegawaian/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': 'Bearer ' + token }
-        }).catch(err => console.warn('[DB] Gagal sinkronisasi DELETE ke backend (kepegawaian):', err.message));
-      }
     }
 
     if (this.state[collection].length < initialLength) {
@@ -936,9 +971,104 @@ class StateManager {
         this.logActivity('Hapus Data', collection, logMessage);
       }
       this.saveState();
+
+      // 2. Dispatch ke Backend REST API atau masukkan ke Offline SyncQueue
+      this._dispatchApiMutation('delete', collection, { id });
+
       return true;
     }
     return false;
+  }
+
+  /**
+   * Internal Helper: Mengirim mutasi ke Backend API atau menyimpan ke antrean offline
+   */
+  _dispatchApiMutation(op, collection, data) {
+    const token = localStorage.getItem('jwt_token') || '';
+    
+    // Tentukan endpoint API yang sesuai
+    let endpoint = '';
+    if (collection === 'guru') {
+      endpoint = op === 'insert' ? '/api/guru' : `/api/guru/${data.id}`;
+    } else if (collection === 'kepegawaian') {
+      endpoint = op === 'insert' ? '/api/kepegawaian' : `/api/kepegawaian/${data.id}`;
+    } else if (collection === 'jadwal_mengajar' || collection === 'jadwal') {
+      endpoint = op === 'insert' ? '/api/jadwal' : `/api/jadwal/${data.id}`;
+    } else if (collection === 'absensi') {
+      endpoint = op === 'insert' ? '/api/absensi' : `/api/absensi/${data.id}`;
+    } else {
+      endpoint = op === 'insert' ? `/api/data/${collection}` : `/api/data/${collection}/${data.id}`;
+    }
+
+    const method = op === 'insert' ? 'POST' : (op === 'update' ? 'PUT' : 'DELETE');
+
+    // Jika online dan Api Client tersedia, kirim langsung
+    if (navigator.onLine && window.Api && token) {
+      const promise = (method === 'DELETE')
+        ? window.Api.delete(endpoint)
+        : (method === 'POST' ? window.Api.post(endpoint, data) : window.Api.put(endpoint, data));
+
+      promise.catch(err => {
+        console.warn(`[DB] Gagal mengirim ${op} ke backend (${collection}), menyimpan ke antrean offline:`, err.message);
+        if (typeof window.SyncQueue !== 'undefined') {
+          window.SyncQueue.addOperation({ op, table: collection, data, tempId: data.id });
+        }
+      });
+    } else {
+      // Masukkan ke offline sync queue
+      if (typeof window.SyncQueue !== 'undefined') {
+        window.SyncQueue.addOperation({ op, table: collection, data, tempId: data.id });
+      }
+    }
+  }
+
+  /**
+   * Tarik seluruh data terbaru dari Backend Server ke State Lokal
+   */
+  async pullAllFromBackend() {
+    if (!window.Api) throw new Error('ApiClient tidak tersedia.');
+    const res = await window.Api.getAllState();
+    if (!res || !res.success || !res.data) throw new Error('Format data server tidak valid.');
+
+    const serverState = res.data;
+    const collections = [
+      'guru', 'kepegawaian', 'pendidikan', 'sertifikasi', 'jadwal_mengajar',
+      'beban_mengajar', 'absensi', 'pkg', 'prestasi', 'pelatihan', 'dokumen', 'audit_logs'
+    ];
+
+    collections.forEach(col => {
+      if (Array.isArray(serverState[col])) {
+        this.state[col] = serverState[col];
+      }
+    });
+
+    if (serverState.profil_sekolah) {
+      this.state.profil_sekolah = {
+        ...this.state.profil_sekolah,
+        ...serverState.profil_sekolah
+      };
+    }
+
+    if (Array.isArray(serverState.users) && serverState.users.length > 0) {
+      this.state.users = serverState.users.map(su => ({
+        ...su,
+        password: (this.state.users.find(u => u.username === su.username) || {}).password || 'guru123',
+        status: su.is_active ? 'aktif' : 'nonaktif'
+      }));
+    }
+
+    this.saveState();
+    return true;
+  }
+
+  /**
+   * Dorong seluruh data lokal ke Backend Server
+   */
+  async pushAllToBackend() {
+    if (!window.Api) throw new Error('ApiClient tidak tersedia.');
+    const res = await window.Api.pushAllState(this.state);
+    if (!res || !res.success) throw new Error(res.error || 'Gagal mengirim data ke server.');
+    return res;
   }
 
   logActivity(aksi, tabel, deskripsi) {

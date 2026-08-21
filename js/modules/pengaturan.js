@@ -13,6 +13,8 @@ const PengaturanModule = {
     this.renderAdvancedAndIntegration();
     this.renderUsers();
     this.renderAuditLogs();
+    this.renderBackendSettings();
+    this.initSyncWatcher();
     this.applyTheme();
   },
 
@@ -802,5 +804,263 @@ const PengaturanModule = {
       App.showToast('Database Direset', 'Database telah dikembalikan ke data awal demo.', 'warning');
       setTimeout(() => location.reload(), 500);
     });
+  },
+
+  // ==========================================================================
+  // INTEGRASI BACKEND & SYNC CONTROLLER
+  // ==========================================================================
+  renderBackendSettings() {
+    const urlInput = document.getElementById('backend-api-url');
+    if (urlInput && window.Api) {
+      urlInput.value = window.Api.getBaseUrl();
+    }
+    this.updateBackendStatusUI();
+  },
+
+  async updateBackendStatusUI() {
+    const badge = document.getElementById('backend-status-badge');
+    const connText = document.getElementById('backend-conn-text');
+    const dbText = document.getElementById('backend-db-text');
+    const latText = document.getElementById('backend-latency-text');
+    const jwtText = document.getElementById('backend-jwt-text');
+    const queueBadge = document.getElementById('sync-queue-badge');
+    const queueCountText = document.getElementById('sync-queue-count-text');
+
+    const token = localStorage.getItem('jwt_token') || '';
+    if (jwtText) {
+      jwtText.textContent = token ? `✓ Aktif (${token.slice(0, 14)}...)` : 'Belum Login Online';
+      jwtText.className = token ? 'small text-success fw-bold' : 'small text-muted';
+    }
+
+    if (window.SyncQueue) {
+      const ops = await window.SyncQueue.getAllOperations();
+      const count = ops.length;
+      if (queueBadge) queueBadge.textContent = `${count} Antrean`;
+      if (queueCountText) queueCountText.textContent = `${count} Perubahan Tertunda`;
+    }
+
+    if (!window.Api) return;
+
+    const start = performance.now();
+    const res = await window.Api.checkHealth();
+    const latency = Math.round(performance.now() - start);
+
+    if (res.connected) {
+      if (badge) {
+        badge.className = 'badge bg-success';
+        badge.textContent = '● Server Online';
+      }
+      if (connText) {
+        connText.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Terhubung</span>';
+      }
+      if (dbText) {
+        const isDbOk = res.data && res.data.database === 'connected';
+        dbText.innerHTML = isDbOk
+          ? '<span class="text-success fw-bold"><i class="bi bi-database-check me-1"></i>MySQL Terhubung (db_guru_sd)</span>'
+          : `<span class="text-warning fw-bold"><i class="bi bi-database-exclamation me-1"></i>${res.data ? res.data.database : 'Disambungkan'}</span>`;
+      }
+      if (latText) {
+        latText.textContent = `${latency} ms`;
+      }
+    } else {
+      if (badge) {
+        badge.className = 'badge bg-danger';
+        badge.textContent = '● Server Offline';
+      }
+      if (connText) {
+        connText.innerHTML = '<span class="text-danger fw-bold"><i class="bi bi-x-circle-fill me-1"></i>Tidak Terhubung</span>';
+      }
+      if (dbText) {
+        dbText.innerHTML = '<span class="text-muted">-</span>';
+      }
+      if (latText) {
+        latText.textContent = '-';
+      }
+    }
+  },
+
+  async testServerConnection() {
+    const btn = document.getElementById('btn-test-server-conn');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menguji...';
+    }
+
+    try {
+      const urlInput = document.getElementById('backend-api-url');
+      if (urlInput && window.Api) {
+        window.Api.setBaseUrl(urlInput.value.trim());
+      }
+
+      const start = performance.now();
+      const res = await window.Api.checkHealth();
+      const latency = Math.round(performance.now() - start);
+
+      if (res.connected) {
+        App.showToast('Koneksi Berhasil', `Server Backend terhubung aktif (${latency} ms). Database: ${res.data?.database || 'OK'}`, 'success');
+      } else {
+        App.showToast('Koneksi Gagal', `Tidak dapat menghubungi server: ${res.error}`, 'danger');
+      }
+
+      await this.updateBackendStatusUI();
+    } catch (e) {
+      App.showToast('Gagal', `Error: ${e.message}`, 'danger');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-broadcast me-1"></i>Uji Koneksi';
+      }
+    }
+  },
+
+  saveBackendConfig() {
+    const urlInput = document.getElementById('backend-api-url');
+    if (!urlInput || !window.Api) return;
+
+    const newUrl = urlInput.value.trim();
+    window.Api.setBaseUrl(newUrl);
+    App.showToast('Konfigurasi Disimpan', `Alamat Backend API disetel ke ${newUrl}`, 'success');
+    this.updateBackendStatusUI();
+  },
+
+  handlePushAll() {
+    App.showConfirm(
+      'Konfirmasi Dorong Data (Push All)',
+      'Apakah Anda yakin ingin mengirim seluruh data lokal ke Database Server? Data di server akan diperbarui sesuai state lokal.',
+      async () => {
+        const btn = document.getElementById('btn-push-all');
+        if (btn) btn.disabled = true;
+
+        try {
+          App.showToast('Menyinkronkan...', 'Mengirim seluruh koleksi data ke server...', 'info');
+          await DB.pushAllToBackend();
+          App.showToast('Sinkronisasi Berhasil', 'Seluruh data berhasil didorong dan disimpan ke database server.', 'success');
+          this.updateBackendStatusUI();
+        } catch (err) {
+          App.showToast('Sinkronisasi Gagal', err.message, 'danger');
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      },
+      'Ya, Kirim ke Server',
+      'btn-success'
+    );
+  },
+
+  handlePullAll() {
+    App.showConfirm(
+      'Konfirmasi Tarik Data (Pull All)',
+      'Apakah Anda yakin ingin mengambil seluruh salinan data terkini dari Server? Data lokal akan diperbarui mengikuti server.',
+      async () => {
+        const btn = document.getElementById('btn-pull-all');
+        if (btn) btn.disabled = true;
+
+        try {
+          App.showToast('Menyinkronkan...', 'Mengunduh seluruh data dari database server...', 'info');
+          await DB.pullAllFromBackend();
+          App.showToast('Berhasil', 'Seluruh data lokal berhasil diperbarui dari database server.', 'success');
+          App.reRenderCurrentView();
+          this.updateBackendStatusUI();
+        } catch (err) {
+          App.showToast('Gagal Tarik Data', err.message, 'danger');
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      },
+      'Ya, Ambil dari Server',
+      'btn-primary'
+    );
+  },
+
+  async handleClearSyncQueue() {
+    if (window.SyncQueue) {
+      await window.SyncQueue.clearQueue();
+      App.showToast('Antrean Dikosongkan', 'Seluruh antrean operasi offline telah dibersihkan.', 'info');
+      this.updateBackendStatusUI();
+    }
+  },
+
+  initSyncWatcher() {
+    // Listen to SyncQueue changes
+    if (window.SyncQueue) {
+      window.SyncQueue.subscribe((info) => {
+        const queueBadge = document.getElementById('sync-queue-badge');
+        const queueCountText = document.getElementById('sync-queue-count-text');
+        if (queueBadge) queueBadge.textContent = `${info.pendingCount} Antrean`;
+        if (queueCountText) queueCountText.textContent = `${info.pendingCount} Perubahan Tertunda`;
+        this.updateTopbarSyncStatus(info);
+      });
+    }
+
+    // Listen to API status changes
+    if (window.Api) {
+      window.Api.subscribe((ev) => {
+        this.updateBackendStatusUI();
+        this.updateTopbarSyncStatus();
+      });
+    }
+
+    // Topbar Sync button click handler
+    const topbarBtn = document.getElementById('btn-topbar-sync');
+    if (topbarBtn) {
+      topbarBtn.addEventListener('click', async () => {
+        const spinner = document.getElementById('topbar-sync-spinner');
+        const icon = document.getElementById('topbar-sync-icon');
+        const text = document.getElementById('topbar-sync-text');
+
+        if (spinner) spinner.classList.remove('d-none');
+        if (icon) icon.classList.add('d-none');
+        if (text) text.textContent = 'Menyinkronkan...';
+
+        try {
+          if (window.SyncQueue) await window.SyncQueue.processQueue();
+          if (typeof DB._syncWithBackend === 'function') await DB._syncWithBackend();
+          App.showToast('Status Sinkronisasi', 'Sinkronisasi dengan server selesai diperiksa.', 'info');
+        } catch (e) {
+          console.warn('Sync click error:', e);
+        } finally {
+          this.updateTopbarSyncStatus();
+        }
+      });
+    }
+
+    // Initial check
+    setTimeout(() => this.updateTopbarSyncStatus(), 800);
+  },
+
+  updateTopbarSyncStatus(queueInfo = null) {
+    const spinner = document.getElementById('topbar-sync-spinner');
+    const icon = document.getElementById('topbar-sync-icon');
+    const text = document.getElementById('topbar-sync-text');
+    const btn = document.getElementById('btn-topbar-sync');
+
+    if (!icon || !text) return;
+
+    if (queueInfo && queueInfo.isProcessing) {
+      if (spinner) spinner.classList.remove('d-none');
+      icon.classList.add('d-none');
+      text.textContent = 'Sinkronisasi...';
+      return;
+    }
+
+    if (spinner) spinner.classList.add('d-none');
+    icon.classList.remove('d-none');
+
+    const isConnected = window.Api && window.Api.isServerConnected;
+    const isOnline = navigator.onLine;
+
+    if (isConnected) {
+      icon.className = 'bi bi-circle-fill text-success';
+      text.textContent = 'Server Online';
+      if (btn) btn.className = 'btn btn-sm btn-outline-success d-flex align-items-center gap-1 px-2 py-1';
+    } else if (isOnline) {
+      icon.className = 'bi bi-circle-fill text-warning';
+      text.textContent = 'Server Offline (Lokal)';
+      if (btn) btn.className = 'btn btn-sm btn-outline-warning d-flex align-items-center gap-1 px-2 py-1';
+    } else {
+      icon.className = 'bi bi-circle-fill text-danger';
+      text.textContent = 'Mode Offline';
+      if (btn) btn.className = 'btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 px-2 py-1';
+    }
   }
 };

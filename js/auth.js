@@ -135,7 +135,7 @@ const Auth = {
   // ==========================================================================
   // HANDLE LOGIN
   // ==========================================================================
-  handleLogin() {
+  async handleLogin() {
     const usernameEl = document.getElementById('login-username');
     const passwordEl = document.getElementById('login-password');
     const rememberEl = document.getElementById('login-remember');
@@ -165,57 +165,105 @@ const Auth = {
     }
 
     // Loading state
-    if (btn) btn.classList.add('loading');
-    if (btn) btn.disabled = true;
+    if (btn) {
+      btn.classList.add('loading');
+      btn.disabled = true;
+    }
 
-    // Sedikit delay agar spinner terlihat
-    setTimeout(() => {
+    let isOnlineSuccess = false;
+    let loggedUser = null;
+
+    // 1. Coba Login secara Online ke Backend REST API
+    if (window.Api) {
+      try {
+        const response = await window.Api.login(username, password);
+        if (response && response.token && response.user) {
+          isOnlineSuccess = true;
+          loggedUser = {
+            ...response.user,
+            password: password // simpan di sesi lokal untuk demo
+          };
+          window.Api.setToken(response.token);
+        }
+      } catch (apiErr) {
+        console.warn('[Auth] Login online tidak berhasil / server offline:', apiErr.message);
+        // Jika error adalah kredensial salah dari server (401), jangan langsung fallback tanpa verifikasi
+        if (apiErr.status === 401) {
+          // Kredensial memang salah di server
+          if (btn) {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+          }
+          if (usernameEl) usernameEl.classList.add('is-invalid');
+          if (passwordEl) passwordEl.classList.add('is-invalid');
+          this._showError(apiErr.message || 'Username atau password salah.');
+          this._shakeCard();
+          if (passwordEl) { passwordEl.value = ''; passwordEl.focus(); }
+          return;
+        }
+      }
+    }
+
+    // 2. Fallback Mode Lokal (Offline / Server tidak terjangkau)
+    if (!isOnlineSuccess) {
       const users = typeof DB !== 'undefined' ? DB.getAll('users') : [];
-      const user = users.find(u =>
+      const localUser = users.find(u =>
         String(u.username).toLowerCase() === username.toLowerCase() &&
         u.password === password &&
         String(u.status).toLowerCase() !== 'nonaktif'
       );
 
-      if (btn) btn.classList.remove('loading');
-      if (btn) btn.disabled = false;
-
-      if (!user) {
-        if (usernameEl) usernameEl.classList.add('is-invalid');
-        if (passwordEl) passwordEl.classList.add('is-invalid');
-        this._showError('Username atau password salah. Silakan coba lagi.');
-        this._shakeCard();
-        if (passwordEl) { passwordEl.value = ''; passwordEl.focus(); }
-        return;
+      if (localUser) {
+        loggedUser = { ...localUser };
       }
+    }
 
-      // Sukses login
-      this.currentUser = { ...user };
-      if (this.currentUser.role) {
-        this.currentUser.role = String(this.currentUser.role).toLowerCase();
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+
+    if (!loggedUser) {
+      if (usernameEl) usernameEl.classList.add('is-invalid');
+      if (passwordEl) passwordEl.classList.add('is-invalid');
+      this._showError('Username atau password salah. Silakan coba lagi.');
+      this._shakeCard();
+      if (passwordEl) { passwordEl.value = ''; passwordEl.focus(); }
+      return;
+    }
+
+    // Sukses login (Online atau Lokal)
+    this.currentUser = { ...loggedUser };
+    if (this.currentUser.role) {
+      this.currentUser.role = String(this.currentUser.role).toLowerCase();
+    }
+    this._lastActivity = Date.now();
+    this._saveSession(remember);
+    this._startTimeoutChecker();
+
+    if (typeof DB !== 'undefined') {
+      DB.logActivity('Login', 'users', `User "${this.currentUser.username}" (${this.currentUser.role}) berhasil masuk (${isOnlineSuccess ? 'Server Online' : 'Mode Lokal'})`);
+      
+      // Jika login online, jalankan background sync
+      if (isOnlineSuccess && typeof DB._syncWithBackend === 'function') {
+        DB._syncWithBackend();
       }
-      this._lastActivity = Date.now();
-      this._saveSession(remember);
-      this._startTimeoutChecker();
+    }
 
-      if (typeof DB !== 'undefined') {
-        DB.logActivity('Login', 'users', `User "${user.username}" (${user.role}) berhasil masuk`);
-      }
+    this.hideLoginOverlay();
+    this.applyUIPermissions();
+    this._updateSidebarProfile();
+    this._syncRoleSelector();
 
-      this.hideLoginOverlay();
-      this.applyUIPermissions();
-      this._updateSidebarProfile();
-      this._syncRoleSelector();
-
-      if (typeof App !== 'undefined') {
-        App.switchView('view-dashboard');
-        App.showToast(
-          'Login Berhasil',
-          `Selamat datang, ${user.nama_lengkap}! (${String(user.role).toUpperCase()})`,
-          'success'
-        );
-      }
-    }, 700);
+    if (typeof App !== 'undefined') {
+      App.switchView('view-dashboard');
+      const modeLabel = isOnlineSuccess ? '🟢 Terhubung ke Server' : '⚪ Mode Lokal';
+      App.showToast(
+        'Login Berhasil',
+        `Selamat datang, ${this.currentUser.nama_lengkap || this.currentUser.username}! [${modeLabel}]`,
+        'success'
+      );
+    }
   },
 
   // ==========================================================================
@@ -224,6 +272,9 @@ const Auth = {
   logout() {
     if (typeof DB !== 'undefined' && this.currentUser) {
       DB.logActivity('Logout', 'users', `User "${this.currentUser.username}" keluar dari sistem`);
+    }
+    if (window.Api) {
+      window.Api.clearToken();
     }
     this._clearSession();
     this.currentUser = null;
@@ -282,6 +333,27 @@ const Auth = {
       this.currentUser = parsed;
       this._lastActivity = parsed._lastActivity || Date.now();
       this._refreshSession();
+
+      // Sinkronisasi profil terkini dari backend di latar belakang jika token tersedia
+      if (window.Api && localStorage.getItem(JWT_STORAGE_KEY)) {
+        window.Api.getMe().then(res => {
+          if (res && res.user) {
+            this.currentUser = {
+              ...this.currentUser,
+              ...res.user
+            };
+            if (this.currentUser.role) {
+              this.currentUser.role = String(this.currentUser.role).toLowerCase();
+            }
+            this._refreshSession();
+            this._updateSidebarProfile();
+            this.applyUIPermissions();
+          }
+        }).catch(err => {
+          console.log('[Auth] Me check:', err.message);
+        });
+      }
+
       return true;
     } catch (e) {
       console.warn('[Auth] Gagal memulihkan sesi:', e);
@@ -482,7 +554,7 @@ const Auth = {
     }
   },
 
-  handleChangePassword() {
+  async handleChangePassword() {
     const cur = (document.getElementById('cp-current') || {}).value || '';
     const nw = (document.getElementById('cp-new') || {}).value || '';
     const conf = (document.getElementById('cp-confirm') || {}).value || '';
@@ -497,8 +569,22 @@ const Auth = {
     if (nw.length < 6) { showErr('Password baru minimal 6 karakter.'); return; }
     if (nw !== conf) { showErr('Konfirmasi password tidak cocok.'); return; }
     if (!this.currentUser) { showErr('Sesi tidak ditemukan. Silakan login ulang.'); return; }
-    if (cur !== this.currentUser.password) { showErr('Password saat ini salah.'); return; }
     if (cur === nw) { showErr('Password baru tidak boleh sama dengan password lama.'); return; }
+
+    const token = localStorage.getItem('jwt_token') || '';
+    if (window.Api && token) {
+      try {
+        await window.Api.changePassword(cur, nw);
+      } catch (err) {
+        showErr(err.message || 'Gagal mengubah password di server.');
+        return;
+      }
+    } else {
+      if (this.currentUser.password && cur !== this.currentUser.password) {
+        showErr('Password saat ini salah.');
+        return;
+      }
+    }
 
     if (typeof DB !== 'undefined') {
       DB.update('users', this.currentUser.id, { password: nw },

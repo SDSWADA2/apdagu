@@ -2,27 +2,22 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-
 const rateLimit = require('express-rate-limit');
-// bodyParser is not needed as we use express.json and express.urlencoded
-// const bodyParser = require('body-parser');
+const path = require('path');
 const pool = require('./config/db');
 
 // Route imports
+const authRoutes = require('./routes/auth');
 const guruRoutes = require('./routes/guru');
 const kepegawaianRoutes = require('./routes/kepegawaian');
 const jadwalRoutes = require('./routes/jadwal');
+const absensiRoutes = require('./routes/absensi');
 const genericRoutes = require('./routes/generic');
-const authRoutes = require('./routes/auth');
 const syncRoutes = require('./routes/sync');
-
-// Middleware
-const authMiddleware = require('./middleware/auth');
 
 // Swagger / OpenAPI (optional)
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
-const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,28 +26,29 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 // ============================================================================
 // Security Middleware
 // ============================================================================
-
-// Helmet: Security HTTP headers
 app.use(helmet({
-  crossOriginEmbedderPolicy: false, // Diperlukan untuk frontend yang load dari file
-  contentSecurityPolicy: false,     // Dikelola di frontend
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: false,
 }));
 
-// CORS Configuration - read allowed origins from ENV (CSV) with a development fallback
+// CORS Configuration - Permissive for development & configurable for production
 const rawAllowed = process.env.ALLOWED_ORIGINS || '';
 const allowedOrigins = rawAllowed
   ? rawAllowed.split(',').map(s => s.trim()).filter(Boolean)
   : [
-      'http://localhost:5500',   // Live Server VSCode
+      'http://localhost:5500',
       'http://127.0.0.1:5500',
       'http://localhost:3000',
-      'null',                    // file:// protocol (untuk buka HTML langsung)
+      'http://127.0.0.1:3000',
+      'http://localhost:8080',
+      'http://127.0.0.1:8080',
+      'null',
     ];
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Izinkan request tanpa origin (Postman, curl) atau dari origin yang diizinkan
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Di mode development atau jika origin ada di daftar / direct file / curl / postman
+    if (!origin || allowedOrigins.includes(origin) || NODE_ENV === 'development' || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
       callback(null, true);
     } else {
       callback(new Error(`CORS: Origin "${origin}" tidak diizinkan.`));
@@ -60,107 +56,113 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 }));
 
-// ============================================================================
-// Rate Limiting
-// ============================================================================
-
-// Rate limiter global: 100 request per 15 menit per IP
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Terlalu banyak request. Coba lagi dalam 15 menit.' },
-});
-
-// Rate limiter ketat untuk endpoint login: 10 percobaan per 5 menit
-const loginLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Terlalu banyak percobaan login. Coba lagi dalam 5 menit.' },
-  skipSuccessfulRequests: true, // Hanya hitung request gagal
-});
-
-app.use(globalLimiter);
+// Handle preflight OPTIONS explicitly
+app.options('*', cors());
 
 // ============================================================================
 // Body Parsing Middleware
 // ============================================================================
-app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ extended: true, limit: '2mb' }));
-app.use(morgan('combined'));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ============================================================================
-// Request Logging (Development Only)
-// ============================================================================
 if (NODE_ENV === 'development') {
   app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
     next();
   });
+} else {
+  app.use(morgan('combined'));
 }
+
+// ============================================================================
+// Rate Limiting
+// ============================================================================
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 1000, // Longgar untuk penggunaan aplikasi SPA
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Terlalu banyak request. Coba lagi dalam 15 menit.', code: 'RATE_LIMITED' },
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Terlalu banyak percobaan login. Coba lagi dalam 5 menit.', code: 'LOGIN_RATE_LIMITED' },
+  skipSuccessfulRequests: true,
+});
+
+app.use('/api', globalLimiter);
 
 // ============================================================================
 // API Routes
 // ============================================================================
-
-// Auth: rate limit ketat hanya di endpoint login
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/guru', guruRoutes);
 app.use('/api/kepegawaian', kepegawaianRoutes);
+app.use('/api/jadwal', jadwalRoutes);
+app.use('/api/absensi', absensiRoutes);
 app.use('/api/data', genericRoutes);
-
-// Sync endpoints: protected by authMiddleware
-app.use('/api/sync', authMiddleware, syncRoutes);
+app.use('/api/sync', syncRoutes);
 
 // ============================================================================
-// Swagger UI (optional, disabled in production)
+// Swagger UI (optional)
 // ============================================================================
-let swaggerDocument = null;
 try {
   const swaggerPath = path.join(__dirname, 'openapi.yaml');
-  swaggerDocument = YAML.load(swaggerPath);
+  const swaggerDocument = YAML.load(swaggerPath);
+  if (swaggerDocument) {
+    app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, { explorer: true }));
+  }
 } catch (err) {
-  console.warn('Gagal memuat openapi.yaml untuk Swagger UI:', err.message);
-}
-
-const enableSwaggerUI = (process.env.SWAGGER_UI !== 'false' && NODE_ENV !== 'production');
-if (swaggerDocument && enableSwaggerUI) {
-  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, { explorer: true }));
-  console.log('Swagger UI tersedia di /api/docs');
-} else {
-  console.log('Swagger UI dinonaktifkan (SWAGGER_UI=false atau NODE_ENV=production) atau openapi.yaml tidak ditemukan.');
+  // Abaikan jika openapi.yaml tidak ada
 }
 
 // ============================================================================
-// Root Route — Informasi API
+// Root & Healthcheck Endpoints
 // ============================================================================
 app.get('/', (req, res) => {
   res.json({
     message: 'REST API — Aplikasi Database Guru SD Negeri Sumber Waru 2',
-    version: '1.1.0',
-    status: 'running',
+    version: '1.2.0',
+    status: 'online',
     environment: NODE_ENV,
     endpoints: {
-      auth: '/api/auth/login [POST]',
+      auth: '/api/auth/login [POST], /api/auth/me [GET], /api/auth/change-password [POST]',
       guru: '/api/guru [GET, POST, PUT, DELETE]',
       kepegawaian: '/api/kepegawaian [GET, POST, PUT, DELETE]',
+      jadwal: '/api/jadwal [GET, POST, PUT, DELETE]',
+      absensi: '/api/absensi [GET, POST, PUT, DELETE, POST /batch]',
       data: '/api/data/:table [GET, POST, PUT, DELETE]',
-      sync: '/api/sync/changes [POST, GET]'
+      sync: '/api/sync/status [GET], /api/sync/all [GET, POST], /api/sync/changes [GET, POST]'
     },
     timestamp: new Date().toISOString(),
   });
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime() });
+app.get('/health', async (req, res) => {
+  let dbStatus = 'disconnected';
+  try {
+    const [result] = await pool.query('SELECT 1 + 1 AS test');
+    if (result && result[0].test === 2) {
+      dbStatus = 'connected';
+    }
+  } catch (err) {
+    dbStatus = `error: ${err.message}`;
+  }
+
+  res.json({
+    status: 'ok',
+    uptime: process.uptime(),
+    database: dbStatus,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // ============================================================================
@@ -180,12 +182,10 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   console.error('[SERVER ERROR]', err.message || err);
 
-  // CORS error
   if (err.message && err.message.startsWith('CORS')) {
     return res.status(403).json({ error: err.message, code: 'CORS_ERROR' });
   }
 
-  // JSON parse error
   if (err.type === 'entity.parse.failed') {
     return res.status(400).json({ error: 'Format JSON tidak valid.', code: 'INVALID_JSON' });
   }
@@ -199,13 +199,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ============================================================================
-// Start Server
-// ============================================================================
-// Export the app for testing or external usage
+// Export app for testing or external usage
 module.exports = app;
 
-// Start server only when executed directly
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log('============================================================');

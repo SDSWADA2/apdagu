@@ -8,47 +8,60 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, requireRole } = require('../middleware/auth');
 
-// Mapping of frontend IndexedDB keys to MySQL tables (optional)
-// If a key is not listed here, the raw table name will be used directly.
+// Mapping of frontend entity keys to MySQL database tables
 const tableMapping = {
-  pendidikan: 'riwayat_pendidikan',
+  // Master & Core
+  guru: 'guru',
+  kepegawaian: 'kepegawaian',
+  pendidikan: 'pendidikan',
+  riwayat_pendidikan: 'pendidikan',
   sertifikasi: 'sertifikasi',
   jadwal_mengajar: 'jadwal_mengajar',
+  jadwal: 'jadwal_mengajar',
   beban_mengajar: 'beban_mengajar',
+  beban: 'beban_mengajar',
   absensi: 'absensi',
-  pkg: 'penilaian_kinerja_guru',
-  prestasi: 'prestasi_guru',
-  pelatihan: 'pelatihan_guru',
-  dokumen: 'dokumen_guru',
-  audit_logs: 'audit_logs', // optional
+  pkg: 'pkg',
+  penilaian_kinerja_guru: 'pkg',
+  prestasi: 'prestasi',
+  prestasi_guru: 'prestasi',
+  pelatihan: 'pelatihan',
+  pelatihan_guru: 'pelatihan',
+  dokumen: 'dokumen',
+  dokumen_guru: 'dokumen',
+  audit_logs: 'audit_logs',
+  profil_sekolah: 'profil_sekolah',
+  pengaturan_aplikasi: 'pengaturan_aplikasi',
+  users: 'users'
 };
 
-// Whitelist of tables allowed for generic CRUD operations
+// Whitelist of allowed MySQL tables
 const whitelistedTables = [
   'guru',
   'kepegawaian',
-  'riwayat_pendidikan',
+  'pendidikan',
   'sertifikasi',
   'jadwal_mengajar',
   'beban_mengajar',
   'absensi',
-  'penilaian_kinerja_guru',
-  'prestasi_guru',
-  'pelatihan_guru',
-  'dokumen_guru',
+  'pkg',
+  'prestasi',
+  'pelatihan',
+  'dokumen',
   'audit_logs',
+  'profil_sekolah',
+  'pengaturan_aplikasi',
+  'users'
 ];
 
-// Middleware that validates the requested table.
-// Allows any table name; if the table is defined in `tableMapping`, the mapped MySQL
-// name is used, otherwise the raw key is assumed to be the actual table name.
+// Table validation middleware
 const validateTable = (req, res, next) => {
   const tableKey = req.params.table;
-  const resolvedName = tableMapping[tableKey] || tableKey; // fallback to raw name
+  const resolvedName = tableMapping[tableKey] || tableKey;
   if (!whitelistedTables.includes(resolvedName)) {
-    return res.status(403).json({ error: `Akses ke tabel '${resolvedName}' tidak diizinkan.` });
+    return res.status(403).json({ error: `Akses ke tabel '${resolvedName}' tidak diizinkan.`, code: 'TABLE_FORBIDDEN' });
   }
   req.tableName = resolvedName;
   next();
@@ -58,27 +71,69 @@ const validateTable = (req, res, next) => {
 router.use(verifyToken);
 router.use('/:table', validateTable);
 
-// Rate limiter for generic routes (60 req / 5 min per IP)
-const rateLimit = require('express-rate-limit');
-const genericLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000,
-  max: 60,
-  message: { error: 'Terlalu banyak request ke endpoint generic. Coba lagi nanti.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-router.use(genericLimiter);
-
 // ============================================================================
-// GET /api/data/:table — Ambil semua data di tabel tersebut
+// GET /api/data/:table — Ambil semua baris data dari tabel
 // ============================================================================
 router.get('/:table', async (req, res) => {
   try {
-    const [rows] = await pool.query(`SELECT * FROM ${req.tableName}`);
-    res.json({ data: rows });
+    const { guru_id, limit = 500, offset = 0 } = req.query;
+    let query = `SELECT * FROM \`${req.tableName}\``;
+    const params = [];
+
+    // Filter guru_id jika tabel memiliki kolom guru_id
+    if (guru_id && req.tableName !== 'profil_sekolah' && req.tableName !== 'audit_logs' && req.tableName !== 'users') {
+      query += ' WHERE guru_id = ?';
+      params.push(parseInt(guru_id));
+    }
+
+    if (req.tableName === 'audit_logs') {
+      query += ' ORDER BY created_at DESC';
+    } else {
+      query += ' ORDER BY id DESC';
+    }
+
+    query += ' LIMIT ? OFFSET ?';
+    params.push(parseInt(limit), parseInt(offset));
+
+    const [rows] = await pool.query(query, params);
+
+    // Jangan kirim password_hash jika request ke tabel users
+    if (req.tableName === 'users') {
+      const safeRows = rows.map(u => {
+        const { password_hash, ...rest } = u;
+        return rest;
+      });
+      return res.json({ data: safeRows, table: req.tableName, total: safeRows.length });
+    }
+
+    res.json({ data: rows, table: req.tableName, total: rows.length });
   } catch (error) {
     console.error(`[GENERIC] Error fetching ${req.tableName}:`, error);
     res.status(500).json({ error: `Gagal mengambil data ${req.tableName}.` });
+  }
+});
+
+// ============================================================================
+// GET /api/data/:table/:id — Ambil satu baris data berdasarkan ID
+// ============================================================================
+router.get('/:table/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.query(`SELECT * FROM \`${req.tableName}\` WHERE id = ? LIMIT 1`, [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: `Data ${req.tableName} tidak ditemukan.` });
+    }
+
+    const row = rows[0];
+    if (req.tableName === 'users') {
+      delete row.password_hash;
+    }
+
+    res.json({ data: row });
+  } catch (error) {
+    console.error(`[GENERIC] Error fetching detail ${req.tableName}:`, error);
+    res.status(500).json({ error: `Gagal mengambil detail ${req.tableName}.` });
   }
 });
 
@@ -89,23 +144,18 @@ router.post('/:table', async (req, res) => {
   try {
     const data = req.body;
 
-    // Jangan izinkan ID disisipkan jika itu auto_increment, tapi jika ID dikirim untuk sinkronisasi offline (IndexedDB id)
-    // MySQL auto_increment lebih baik mengatur ID-nya, tapi ini bisa bentrok jika offline ID berbeda dengan online ID.
-    // Untuk menyederhanakan (karena DB.insert state lokal memberikan ID lokal), kita akan biarkan DB memberikan InsertId, 
-    // lalu frontend akan mereplace ID aslinya via response.
-
+    // Filter fields yang aman
     const fields = Object.keys(data).filter(k => k !== 'id' && k !== 'created_at' && k !== 'updated_at');
-    const values = fields.map(f => data[f]);
-    const placeholders = fields.map(() => '?').join(', ');
 
-    // Basic validation: ensure at least one field is provided
     if (fields.length === 0) {
-      return res.status(400).json({ error: 'Tidak ada data yang dapat disisipkan.' });
+      return res.status(400).json({ error: 'Tidak ada data valid yang dapat disisipkan.' });
     }
 
-    const queryFields = fields.join(', ');
-    let query = `INSERT INTO ${req.tableName} (${queryFields}) VALUES (${placeholders})`;
+    const queryFields = fields.map(f => `\`${f}\``).join(', ');
+    const placeholders = fields.map(() => '?').join(', ');
+    const values = fields.map(f => data[f]);
 
+    const query = `INSERT INTO \`${req.tableName}\` (${queryFields}) VALUES (${placeholders})`;
     const [result] = await pool.query(query, values);
 
     res.status(201).json({
@@ -120,7 +170,7 @@ router.post('/:table', async (req, res) => {
 });
 
 // ============================================================================
-// PUT /api/data/:table/:id — Update data 
+// PUT /api/data/:table/:id — Update baris data
 // ============================================================================
 router.put('/:table/:id', async (req, res) => {
   try {
@@ -133,20 +183,18 @@ router.put('/:table/:id', async (req, res) => {
       return res.status(400).json({ error: 'Tidak ada data valid untuk diupdate.' });
     }
 
-    const setClauses = fields.map(f => `${f} = ?`).join(', ');
+    const setClauses = fields.map(f => `\`${f}\` = ?`).join(', ');
     const values = fields.map(f => data[f]);
-
-    const query = `UPDATE ${req.tableName} SET ${setClauses} WHERE id = ?`;
     values.push(id);
 
+    const query = `UPDATE \`${req.tableName}\` SET ${setClauses} WHERE id = ?`;
     const [result] = await pool.query(query, values);
 
     if (result.affectedRows === 0) {
-      // Data mungkin baru di lokal dan belum ada di server (Edge case sync offline to online)
-      return res.status(404).json({ error: 'Data tidak ditemukan di server.' });
+      return res.status(404).json({ error: `Data tidak ditemukan di ${req.tableName}.` });
     }
 
-    res.json({ message: `Data berhasil diperbarui di ${req.tableName}` });
+    res.json({ message: `Data berhasil diperbarui di ${req.tableName}`, data: { id: parseInt(id), ...data } });
   } catch (error) {
     console.error(`[GENERIC] Error updating ${req.tableName}:`, error);
     res.status(500).json({ error: `Gagal memperbarui data di ${req.tableName}.` });
@@ -154,15 +202,15 @@ router.put('/:table/:id', async (req, res) => {
 });
 
 // ============================================================================
-// DELETE /api/data/:table/:id — Hapus data
+// DELETE /api/data/:table/:id — Hapus baris data
 // ============================================================================
-router.delete('/:table/:id', async (req, res) => {
+router.delete('/:table/:id', requireRole('admin', 'operator'), async (req, res) => {
   try {
     const { id } = req.params;
-    const [result] = await pool.query(`DELETE FROM ${req.tableName} WHERE id = ?`, [id]);
+    const [result] = await pool.query(`DELETE FROM \`${req.tableName}\` WHERE id = ?`, [id]);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Data tidak ditemukan di server.' });
+      return res.status(404).json({ error: `Data tidak ditemukan di ${req.tableName}.` });
     }
 
     res.json({ message: `Data berhasil dihapus dari ${req.tableName}` });
