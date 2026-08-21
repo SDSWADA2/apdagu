@@ -16,18 +16,29 @@ class ApiClient {
     this.isServerConnected = false;
     this.listeners = [];
     this._initNetworkWatchers();
+    // Periksa koneksi server segera saat modul dimuat
+    if (this.isOnline) {
+      setTimeout(() => this.checkHealth(), 500);
+    }
   }
 
   /**
-   * Mendapatkan Base URL API dari konfigurasi lokal atau default
+   * Mendapatkan Base URL API dari konfigurasi lokal atau auto-detect
+   * 
+   * Prioritas:
+   * 1. URL tersimpan di localStorage (dikonfigurasi user)
+   * 2. Auto-detect: jika halaman dimuat dari http/https, gunakan origin yang sama
+   * 3. Fallback ke localhost:3000
    */
   getBaseUrl() {
     const saved = localStorage.getItem(API_STORAGE_KEY);
     if (saved) return saved.replace(/\/+$/, '');
     
-    // Auto-detect jika di-host langsung dari server backend
-    if (typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
-      if (window.location.port === '3000' || window.location.pathname.startsWith('/api')) {
+    // Auto-detect: Jika dimuat dari server (http:// atau https://), gunakan origin yang sama
+    if (typeof window !== 'undefined' && window.location) {
+      const { protocol, hostname, port } = window.location;
+      if (protocol === 'http:' || protocol === 'https:') {
+        // Bukan file:// → asumsikan backend dan frontend di host yang sama
         return window.location.origin.replace(/\/+$/, '');
       }
     }
@@ -72,8 +83,9 @@ class ApiClient {
   _initNetworkWatchers() {
     window.addEventListener('online', () => {
       this.isOnline = true;
-      this.checkHealth();
       this._emit('NETWORK_ONLINE');
+      // Periksa server setelah koneksi pulih
+      setTimeout(() => this.checkHealth(), 800);
     });
 
     window.addEventListener('offline', () => {

@@ -989,42 +989,68 @@ class StateManager {
 
   /**
    * Internal Helper: Mengirim mutasi ke Backend API atau menyimpan ke antrean offline
+   * 
+   * Perbaikan:
+   *  - Strip field base64 besar (foto_url, tanda_tangan_url, logo_url) sebelum kirim
+   *  - Mapping endpoint lengkap untuk semua collection
+   *  - Fallback ke antrean offline jika gagal/offline
    */
-  _dispatchApiMutation(op, collection, data) {
+  _dispatchApiMutation(op, collection, rawData) {
     const token = localStorage.getItem('jwt_token') || '';
-    
-    // Tentukan endpoint API yang sesuai
+
+    // Strip field base64 besar agar tidak melebihi batas payload (10MB limit)
+    // File gambar disimpan lokal di IndexedDB saja, tidak dikirim ke REST API
+    const BASE64_FIELDS = ['foto_url', 'tanda_tangan_url', 'logo_sekolah', 'stempel_url', 'ttd_kepala_sekolah', 'lampiran_url', 'file_url'];
+    const data = { ...rawData };
+    BASE64_FIELDS.forEach(field => {
+      if (data[field] && typeof data[field] === 'string' && data[field].startsWith('data:')) {
+        delete data[field]; // Hapus base64 — terlalu besar untuk REST API
+      }
+    });
+
+    // Tentukan endpoint API berdasarkan nama collection
+    const ENDPOINT_MAP = {
+      guru:          { list: '/api/guru',            item: '/api/guru' },
+      kepegawaian:   { list: '/api/kepegawaian',     item: '/api/kepegawaian' },
+      jadwal_mengajar:{ list: '/api/jadwal',         item: '/api/jadwal' },
+      jadwal:        { list: '/api/jadwal',           item: '/api/jadwal' },
+      absensi:       { list: '/api/absensi',          item: '/api/absensi' },
+    };
+
     let endpoint = '';
-    if (collection === 'guru') {
-      endpoint = op === 'insert' ? '/api/guru' : `/api/guru/${data.id}`;
-    } else if (collection === 'kepegawaian') {
-      endpoint = op === 'insert' ? '/api/kepegawaian' : `/api/kepegawaian/${data.id}`;
-    } else if (collection === 'jadwal_mengajar' || collection === 'jadwal') {
-      endpoint = op === 'insert' ? '/api/jadwal' : `/api/jadwal/${data.id}`;
-    } else if (collection === 'absensi') {
-      endpoint = op === 'insert' ? '/api/absensi' : `/api/absensi/${data.id}`;
+    const map = ENDPOINT_MAP[collection];
+    if (map) {
+      endpoint = op === 'insert' ? map.list : `${map.item}/${data.id}`;
     } else {
+      // Semua collection lain → Generic /api/data/:table
       endpoint = op === 'insert' ? `/api/data/${collection}` : `/api/data/${collection}/${data.id}`;
     }
 
     const method = op === 'insert' ? 'POST' : (op === 'update' ? 'PUT' : 'DELETE');
 
-    // Jika online dan Api Client tersedia, kirim langsung
+    // Jika online dan token ada, kirim langsung ke backend
     if (navigator.onLine && window.Api && token) {
-      const promise = (method === 'DELETE')
+      const promise = method === 'DELETE'
         ? window.Api.delete(endpoint)
-        : (method === 'POST' ? window.Api.post(endpoint, data) : window.Api.put(endpoint, data));
+        : method === 'POST'
+          ? window.Api.post(endpoint, data)
+          : window.Api.put(endpoint, data);
 
-      promise.catch(err => {
-        console.warn(`[DB] Gagal mengirim ${op} ke backend (${collection}), menyimpan ke antrean offline:`, err.message);
-        if (typeof window.SyncQueue !== 'undefined') {
-          window.SyncQueue.addOperation({ op, table: collection, data, tempId: data.id });
-        }
-      });
+      promise
+        .then(() => {
+          // Sync berhasil — tidak perlu tindakan tambahan
+        })
+        .catch(err => {
+          console.warn(`[DB] Gagal mengirim ${op}(${collection}) ke backend:`, err.message, '→ Masuk antrean offline');
+          if (typeof window.SyncQueue !== 'undefined') {
+            // Simpan rawData ke antrean (termasuk base64 untuk restore nanti)
+            window.SyncQueue.addOperation({ op, table: collection, data: rawData, tempId: rawData.id });
+          }
+        });
     } else {
-      // Masukkan ke offline sync queue
+      // Offline: langsung simpan ke SyncQueue
       if (typeof window.SyncQueue !== 'undefined') {
-        window.SyncQueue.addOperation({ op, table: collection, data, tempId: data.id });
+        window.SyncQueue.addOperation({ op, table: collection, data: rawData, tempId: rawData.id });
       }
     }
   }

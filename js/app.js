@@ -323,9 +323,12 @@ const App = {
     const appSettings = (typeof DB !== 'undefined' && DB.state.pengaturan_aplikasi) || {};
     const logoSrc = appSettings.logo_sekolah || 'assets/logo-placeholder.png';
     const profil = (typeof DB !== 'undefined' && DB.state.profil_sekolah) || {};
-    const namaSekolah = profil.nama || 'SD NEGERI SUMBER WARU 2';
-    const alamat = profil.alamat || 'Jl. Pendidikan No. 45 Desa Sumber Waru, Kec. Waru, Kab. Pamekasan (67291)';
+    // Gunakan field yang benar sesuai INITIAL_STATE
+    const namaSekolah = profil.nama_sekolah || profil.nama || 'SD NEGERI SUMBER WARU 2';
+    const alamat = profil.alamat_lengkap || profil.alamat || 'Jl. Pendidikan No. 45 Desa Sumber Waru, Kec. Waru, Kab. Pamekasan (67291)';
     const email = profil.email || 'sdnsumberwaru2@kemdikbud.go.id';
+    const kecamatan = profil.kecamatan || 'Waru';
+    const kabupaten = profil.kabupaten_kota || 'Kabupaten Pamekasan';
 
     return `
       <div class="kop-surat-resmi" style="display: flex; align-items: center; border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
@@ -353,8 +356,9 @@ const App = {
     const appSettings = (typeof DB !== 'undefined' && DB.state.pengaturan_aplikasi) || {};
     const ttdSrc = appSettings.ttd_kepala_sekolah;
     const profil = (typeof DB !== 'undefined' && DB.state.profil_sekolah) || {};
-    const namaKS = profil.nama_kepsek || 'KUSMIYATI, S.Pd';
-    const nipKS = profil.nip_kepsek || '19700101 200003 2 005';
+    // Field yang benar sesuai INITIAL_STATE
+    const namaKS = profil.nama_kepala_sekolah || profil.nama_kepsek || 'FAUZAN, S.Pd.SD';
+    const nipKS = profil.nip_kepala_sekolah || profil.nip_kepsek || '19720602 199605 1 001';
 
     let ttdHTML = '';
     if (ttdSrc && ttdSrc !== 'assets/ttd-placeholder.png') {
