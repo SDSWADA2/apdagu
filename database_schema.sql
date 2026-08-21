@@ -285,6 +285,7 @@ CREATE INDEX idx_kepegawaian_status ON kepegawaian(status_kepegawaian);
 CREATE INDEX idx_absensi_tanggal ON absensi(tanggal);
 CREATE INDEX idx_absensi_guru_tgl ON absensi(guru_id, tanggal);
 CREATE INDEX idx_jadwal_hari_kelas ON jadwal_mengajar(hari, kelas);
+CREATE INDEX idx_dokumen_kategori ON dokumen(kategori_dokumen);
 CREATE INDEX idx_audit_created ON audit_logs(created_at DESC);
 
 -- ============================================================================
