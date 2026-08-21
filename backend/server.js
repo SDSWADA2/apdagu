@@ -249,16 +249,17 @@ if (require.main === module) {
     if (typeof pool.testDbConnection === 'function') {
       const dbTest = await pool.testDbConnection();
       if (dbTest.connected) {
-        console.log(`  🗄️   Database MySQL               : Terhubung ke \`${dbTest.database}\` (${dbTest.version})`);
+        console.log(`  🗄️   Database PostgreSQL           : Terhubung ke \`${dbTest.database}\` (${dbTest.version})`);
         
-        // Auto-initialize tables if empty
+        // Auto-initialize tables if empty (PostgreSQL syntax)
         try {
-          const [[{ count }]] = await pool.query(`
-            SELECT COUNT(*) AS count FROM information_schema.tables 
-            WHERE table_schema = ? AND table_name = 'users'
-          `, [dbTest.database]);
+          const { rows: tableRows } = await pool.query(
+            `SELECT COUNT(*) AS count FROM pg_tables WHERE schemaname = 'public' AND tablename = $1`,
+            ['users']
+          );
+          const tableCount = parseInt(tableRows[0]?.count || '0');
 
-          if (count === 0) {
+          if (tableCount === 0) {
             console.log('  ⚙️   Inisialisasi otomatis skema & akun demo...');
             const setupDatabase = require('./scripts/setup_db');
             await setupDatabase();
@@ -267,7 +268,7 @@ if (require.main === module) {
           console.warn('  ⚠️   Pengecekan otomatis skema dilewati:', initErr.message);
         }
       } else {
-        console.log(`  ⚠️   Database MySQL               : ${dbTest.message}`);
+        console.log(`  ⚠️   Database PostgreSQL           : ${dbTest.message}`);
         console.log(`  💡  Petunjuk                     : Aplikasi otomatis berjalan dalam mode Offline-First`);
       }
     }
