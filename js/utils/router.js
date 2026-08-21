@@ -143,6 +143,7 @@ const RouterUtil = {
       PengaturanModule.renderUsers();
       PengaturanModule.renderAuditLogs();
       PengaturanModule.renderBackendSettings();
+      PengaturanModule.renderGDriveSettings();
       PengaturanModule.updateBackendStatusUI();
     }
   }

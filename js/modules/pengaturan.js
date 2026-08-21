@@ -14,6 +14,7 @@ const PengaturanModule = {
     this.renderUsers();
     this.renderAuditLogs();
     this.renderBackendSettings();
+    this.renderGDriveSettings();
     this.initSyncWatcher();
     this.applyTheme();
   },
@@ -804,6 +805,15 @@ const PengaturanModule = {
       App.showToast('Database Direset', 'Database telah dikembalikan ke data awal demo.', 'warning');
       setTimeout(() => location.reload(), 500);
     });
+  },
+
+  // ==========================================================================
+  // GOOGLE DRIVE SYNC INTEGRATION
+  // ==========================================================================
+  renderGDriveSettings() {
+    if (typeof window.GoogleDriveSync !== 'undefined') {
+      window.GoogleDriveSync.renderUI();
+    }
   },
 
   // ==========================================================================
