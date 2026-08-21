@@ -108,7 +108,7 @@ router.put('/:id', requireRole('admin', 'operator'), async (req, res) => {
       return res.status(400).json({ error: 'Tidak ada field valid untuk diupdate.' });
     }
 
-    const setClauses = Object.keys(updates).map(f => `${f} = ?`).join(', ');
+    const setClauses = Object.keys(updates).map(f => `\`${f}\` = ?`).join(', ');
     const [result] = await pool.query(
       `UPDATE kepegawaian SET ${setClauses}, updated_at = NOW() WHERE id = ?`,
       [...Object.values(updates), id]

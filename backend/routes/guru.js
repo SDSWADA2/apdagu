@@ -185,7 +185,7 @@ router.put('/:id', requireRole('admin', 'operator'), async (req, res) => {
     }
 
     // Bangun query SET secara dinamis
-    const setClauses = Object.keys(updates).map(f => `${f} = ?`).join(', ');
+    const setClauses = Object.keys(updates).map(f => `\`${f}\` = ?`).join(', ');
     const setValues = Object.values(updates);
 
     await pool.query(

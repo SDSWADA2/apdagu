@@ -103,7 +103,7 @@ router.post('/:table', async (req, res) => {
       return res.status(400).json({ error: 'Tidak ada data yang dapat disisipkan.' });
     }
 
-    const queryFields = fields.join(', ');
+    const queryFields = fields.map(f => `\`${f}\``).join(', ');
     let query = `INSERT INTO ${req.tableName} (${queryFields}) VALUES (${placeholders})`;
 
     const [result] = await pool.query(query, values);
@@ -133,7 +133,7 @@ router.put('/:table/:id', async (req, res) => {
       return res.status(400).json({ error: 'Tidak ada data valid untuk diupdate.' });
     }
 
-    const setClauses = fields.map(f => `${f} = ?`).join(', ');
+    const setClauses = fields.map(f => `\`${f}\` = ?`).join(', ');
     const values = fields.map(f => data[f]);
 
     const query = `UPDATE ${req.tableName} SET ${setClauses} WHERE id = ?`;

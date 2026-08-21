@@ -4,7 +4,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, fix/security-and-ci ]
+    branches: [ main, 'fix/security-and-ci', 'pr/**' ]
   pull_request:
     branches: [ main ]
 
