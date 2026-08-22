@@ -60,15 +60,18 @@ class AppController {
     Theme.init();
     Toast.init();
 
+    // Login overlay tampil by default (HTML), app layout tersembunyi
+    // Kita hanya ungkap app-layout setelah auth selesai dicek
+
     // Inisialisasi Auth
     try {
       const user = await Auth.init();
       if (user) {
-        this.hideLoginOverlay();
+        this.hideLoginOverlay(); // Sembunyikan login, tampilkan app
         this.updateUserUI();
         this.applyRBAC();
       } else {
-        this.showLoginOverlay();
+        this.showLoginOverlay(); // Pastikan login tampil
       }
     } catch (err) {
       console.error('[App] Auth init failed:', err);
@@ -225,41 +228,67 @@ class AppController {
   }
 
   bindAuthEvents() {
-    // Form Login
+    // ── Password Toggle (Show/Hide) ──
+    const eyeBtn = document.getElementById('login-eye-btn');
+    const eyeIcon = document.getElementById('login-eye-icon');
+    const passInput = document.getElementById('login-password');
+    if (eyeBtn && passInput) {
+      eyeBtn.addEventListener('click', () => {
+        const isHidden = passInput.type === 'password';
+        passInput.type = isHidden ? 'text' : 'password';
+        if (eyeIcon) {
+          eyeIcon.className = isHidden ? 'bi bi-eye-slash-fill' : 'bi bi-eye-fill';
+        }
+        passInput.focus();
+      });
+    }
+
+    // ── Form Login Submit ──
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
       loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('login-username')?.value;
+        const email = document.getElementById('login-username')?.value?.trim();
         const pass = document.getElementById('login-password')?.value;
         const btn = document.getElementById('login-submit-btn');
+        const btnText = document.getElementById('login-btn-text');
+        const btnLoading = document.getElementById('login-btn-loading');
         const errEl = document.getElementById('login-error-msg');
+        const errText = document.getElementById('login-error-text');
 
         // Reset error
-        if (errEl) errEl.style.display = 'none';
+        if (errEl) errEl.style.removeProperty('display');
+
+        // Validasi dasar
+        if (!email || !pass) {
+          this._showLoginError('Email dan password tidak boleh kosong.');
+          return;
+        }
 
         try {
-          if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Memuat...'; }
+          // Tampilkan loading state
+          if (btn) btn.disabled = true;
+          if (btnText) btnText.style.display = 'none';
+          if (btnLoading) btnLoading.style.display = 'inline-flex';
+
           await Auth.login(email, pass);
+
           this.hideLoginOverlay();
           this.updateUserUI();
-          // FIX: applyRBAC dipanggil setelah login berhasil
           this.applyRBAC();
           Toast.success('Selamat Datang', `Login berhasil sebagai ${Auth.getProfile().nama_lengkap}.`);
-          // Navigasi ulang ke dashboard agar tampilan sesuai role
           this.navigateTo('view-dashboard');
         } catch (err) {
-          if (errEl) {
-            errEl.textContent = err.message || 'Login gagal. Periksa username dan password.';
-            errEl.style.display = 'block';
-          }
+          this._showLoginError(err.message || 'Login gagal. Periksa email dan password Anda.');
         } finally {
-          if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i> Masuk ke Sistem'; }
+          if (btn) btn.disabled = false;
+          if (btnText) btnText.style.display = '';
+          if (btnLoading) btnLoading.style.display = 'none';
         }
       });
     }
 
-    // Demo autofill buttons
+    // ── Demo Account Autofill (klik langsung submit) ──
     document.querySelectorAll('.login-hint-row').forEach(row => {
       row.addEventListener('click', () => {
         const u = row.getAttribute('data-user');
@@ -268,17 +297,20 @@ class AppController {
         const passInp = document.getElementById('login-password');
         if (userInp) userInp.value = u;
         if (passInp) passInp.value = p;
+        // Auto submit setelah autofill
+        const form = document.getElementById('login-form');
+        if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
       });
     });
 
-    // Logout
+    // ── Logout ──
     const logoutBtn = document.getElementById('btn-logout');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async () => {
         if (confirm('Keluar dari aplikasi?')) {
           await Auth.logout();
           this.showLoginOverlay();
-          // Reset UI nama ke default
+          // Reset topbar ke default
           const nameEl = document.getElementById('topbar-user-name');
           const roleEl = document.getElementById('topbar-user-role');
           if (nameEl) nameEl.textContent = 'Administrator';
@@ -288,14 +320,37 @@ class AppController {
     }
   }
 
+  _showLoginError(message) {
+    const errEl = document.getElementById('login-error-msg');
+    const errText = document.getElementById('login-error-text');
+    if (errEl) {
+      errEl.style.display = 'flex';
+      if (errText) errText.textContent = message;
+      else errEl.textContent = message;
+      // Shake animation (pakai shakeLogin dari CSS)
+      errEl.style.animation = 'none';
+      requestAnimationFrame(() => {
+        errEl.style.animation = 'shakeLogin 0.5s ease';
+      });
+    }
+  }
+
+
   showLoginOverlay() {
     const overlay = document.getElementById('login-overlay');
+    const appLayout = document.getElementById('app-layout');
     if (overlay) overlay.style.display = 'flex';
+    if (appLayout) appLayout.style.visibility = 'hidden';
+    // Reset form error
+    const errEl = document.getElementById('login-error-msg');
+    if (errEl) errEl.style.display = 'none';
   }
 
   hideLoginOverlay() {
     const overlay = document.getElementById('login-overlay');
+    const appLayout = document.getElementById('app-layout');
     if (overlay) overlay.style.display = 'none';
+    if (appLayout) appLayout.style.visibility = 'visible';
   }
 
   updateUserUI() {

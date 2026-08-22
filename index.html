@@ -32,7 +32,7 @@
   <!-- Backdrop for Mobile Sidebar -->
   <div class="sidebar-backdrop"></div>
 
-  <div id="app-layout">
+  <div id="app-layout" style="visibility:hidden;">
     <!-- ====================================================================
          SIDEBAR NAVIGATION
          ==================================================================== -->
@@ -1638,55 +1638,113 @@
   </div>
 
   <!-- ====================================================================
-       LOGIN OVERLAY
+       LOGIN OVERLAY — tampil by default, disembunyikan setelah auth resolve
        ==================================================================== -->
-  <div id="login-overlay" class="login-overlay" role="dialog" aria-modal="true" style="display:none;">
+  <div id="login-overlay" class="login-overlay" role="dialog" aria-modal="true" aria-label="Form Login APDAGU">
     <div class="login-bg-bubbles" aria-hidden="true">
       <span></span><span></span><span></span><span></span><span></span>
     </div>
-    <div class="login-card shadow-lg">
-      <div class="login-card-body p-4 p-md-5">
-        <div class="login-logo-wrap text-center mb-3">
-          <div class="login-logo-icon mb-2">
-            <i class="bi bi-mortarboard-fill fs-1 text-primary"></i>
+    <div class="login-card">
+      <div class="login-card-body">
+
+        <!-- Logo & Identitas Sekolah -->
+        <div class="login-logo-wrap text-center">
+          <div class="login-logo-icon">
+            <i class="bi bi-mortarboard-fill"></i>
           </div>
-          <h5 class="fw-bold mb-0">SD NEGERI SUMBER WARU 2</h5>
-          <small class="text-muted">APDAGU Enterprise v2.0</small>
+          <h1 class="login-school-name">SD NEGERI SUMBER WARU 2</h1>
+          <p class="login-subheading">APDAGU Enterprise v2.0 — Sistem Informasi Guru</p>
         </div>
 
-        <div id="login-error-msg" class="alert alert-danger py-2 fs-7" style="display:none;" role="alert"></div>
+        <!-- Error Message -->
+        <div id="login-error-msg"
+          class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+          style="display:none !important; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5;"
+          role="alert" aria-live="assertive">
+          <i class="bi bi-exclamation-circle-fill"></i>
+          <span id="login-error-text"></span>
+        </div>
 
-        <form id="login-form">
+        <!-- Login Form -->
+        <form id="login-form" novalidate autocomplete="on">
+          <!-- Email -->
           <div class="mb-3">
-            <label class="form-label fs-7 fw-semibold">Email / Username</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
-              <input type="text" id="login-username" class="form-control" placeholder="admin@sdnsumberwaru2.sch.id" required>
+            <label class="login-label" for="login-username">Email / Username</label>
+            <div class="login-input-wrap">
+              <i class="bi bi-person-fill login-input-icon"></i>
+              <input
+                type="text"
+                id="login-username"
+                class="login-input"
+                placeholder="admin@sdnsumberwaru2.sch.id"
+                autocomplete="username"
+                spellcheck="false"
+                required
+              >
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label fs-7 fw-semibold">Password</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-              <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+
+          <!-- Password -->
+          <div class="mb-4">
+            <label class="login-label" for="login-password">Password</label>
+            <div class="login-input-wrap">
+              <i class="bi bi-lock-fill login-input-icon"></i>
+              <input
+                type="password"
+                id="login-password"
+                class="login-input"
+                style="padding-right:2.8rem;"
+                placeholder="••••••••"
+                autocomplete="current-password"
+                required
+              >
+              <button type="button" class="login-eye-btn" id="login-eye-btn"
+                title="Tampilkan/sembunyikan password" aria-label="Toggle password visibility">
+                <i class="bi bi-eye-fill" id="login-eye-icon"></i>
+              </button>
             </div>
           </div>
-          <button type="submit" id="login-submit-btn" class="btn btn-primary w-100 fw-bold py-2 mb-3">
-            <i class="bi bi-box-arrow-in-right me-1"></i> Masuk ke Sistem
+
+          <!-- Submit Button -->
+          <button type="submit" id="login-submit-btn" class="login-btn mb-3">
+            <span id="login-btn-text">
+              <i class="bi bi-box-arrow-in-right me-1"></i> Masuk ke Sistem
+            </span>
+            <span id="login-btn-loading" style="display:none;">
+              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Memverifikasi...
+            </span>
           </button>
         </form>
 
-        <div class="login-hint p-2 bg-light border rounded fs-8">
-          <div class="fw-bold mb-1 text-muted">Demo Shortcut (Autofill):</div>
-          <div class="d-flex gap-1 flex-wrap">
-            <span class="badge bg-primary login-hint-row" data-user="admin" data-pass="admin123" role="button">Admin</span>
-            <span class="badge bg-info text-dark login-hint-row" data-user="operator" data-pass="operator123" role="button">Operator</span>
-            <span class="badge bg-success login-hint-row" data-user="guru" data-pass="guru123" role="button">Guru</span>
+        <!-- Demo Shortcut Autofill -->
+        <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.75rem 1rem;">
+          <div style="font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.45); margin-bottom:0.5rem; letter-spacing:0.05em; text-transform:uppercase;">
+            Demo Akun (Klik untuk Isi Otomatis)
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="login-hint-row"
+              data-user="admin" data-pass="admin123"
+              style="background:rgba(37,99,235,0.35); border:1px solid rgba(37,99,235,0.5); color:#93c5fd; border-radius:6px; padding:0.3rem 0.75rem; font-size:0.78rem; font-weight:600; cursor:pointer;">
+              <i class="bi bi-shield-fill-check me-1"></i>Admin
+            </button>
+            <button type="button" class="login-hint-row"
+              data-user="operator" data-pass="operator123"
+              style="background:rgba(6,182,212,0.25); border:1px solid rgba(6,182,212,0.4); color:#67e8f9; border-radius:6px; padding:0.3rem 0.75rem; font-size:0.78rem; font-weight:600; cursor:pointer;">
+              <i class="bi bi-person-gear me-1"></i>Operator
+            </button>
+            <button type="button" class="login-hint-row"
+              data-user="guru" data-pass="guru123"
+              style="background:rgba(16,185,129,0.25); border:1px solid rgba(16,185,129,0.4); color:#6ee7b7; border-radius:6px; padding:0.3rem 0.75rem; font-size:0.78rem; font-weight:600; cursor:pointer;">
+              <i class="bi bi-person-fill me-1"></i>Guru
+            </button>
           </div>
         </div>
+
       </div>
     </div>
   </div>
+
 
   <!-- Print Container -->
   <div id="print-a4-container"></div>
