@@ -24,6 +24,7 @@ class StateStore {
     });
     this.data.profil_sekolah = {};
     this.data.pengaturan_aplikasi = {};
+    this.data.pengaturan_aplikasi_records = [];
   }
 
   async init() {
@@ -45,11 +46,16 @@ class StateStore {
     for (const col of CONFIG.COLLECTIONS) {
       const records = await LocalDB.getAll(col);
       if (col === 'profil_sekolah') {
-        this.data.profil_sekolah = records[0] || {};
+        this.data.profil_sekolah = records.length > 0 ? records[0] : {};
       } else if (col === 'pengaturan_aplikasi') {
         const map = {};
-        records.forEach(item => { map[item.kunci] = item.nilai; });
+        if (records && records.length > 0) {
+          records.forEach(item => {
+            if (item.kunci) map[item.kunci] = item.nilai;
+          });
+        }
         this.data.pengaturan_aplikasi = map;
+        this.data.pengaturan_aplikasi_records = records || [];
       } else {
         this.data[col] = records || [];
       }
@@ -65,7 +71,16 @@ class StateStore {
       this.data.profil_sekolah = data || {};
       LocalDB.put(table, data);
     } else if (table === 'pengaturan_aplikasi') {
-      if (data?.kunci) this.data.pengaturan_aplikasi[data.kunci] = data.nilai;
+      if (data?.kunci) {
+        this.data.pengaturan_aplikasi[data.kunci] = data.nilai;
+        if (!this.data.pengaturan_aplikasi_records) this.data.pengaturan_aplikasi_records = [];
+        const idx = this.data.pengaturan_aplikasi_records.findIndex(r => r.kunci === data.kunci);
+        if (idx !== -1) {
+          this.data.pengaturan_aplikasi_records[idx] = data;
+        } else {
+          this.data.pengaturan_aplikasi_records.push(data);
+        }
+      }
       LocalDB.put(table, data);
     } else {
       const index = this.data[table].findIndex(item => item.id === data.id);
@@ -102,6 +117,44 @@ class StateStore {
 
   getSetting(key, defaultValue = '') {
     return this.data.pengaturan_aplikasi?.[key] || defaultValue;
+  }
+
+  async updateSetting(key, value) {
+    if (!key) return;
+    
+    // Update memory
+    if (!this.data.pengaturan_aplikasi) {
+      this.data.pengaturan_aplikasi = {};
+    }
+    this.data.pengaturan_aplikasi[key] = value;
+    
+    if (!this.data.pengaturan_aplikasi_records) {
+      this.data.pengaturan_aplikasi_records = [];
+    }
+    let record = this.data.pengaturan_aplikasi_records.find(r => r.kunci === key);
+    
+    if (record) {
+      record.nilai = value;
+      record.updated_at = new Date().toISOString();
+    } else {
+      record = {
+        id: crypto.randomUUID ? crypto.randomUUID() : (Math.random().toString(36).substring(2, 10) + '-' + Date.now()),
+        kunci: key,
+        nilai: value,
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        is_deleted: false
+      };
+      this.data.pengaturan_aplikasi_records.push(record);
+    }
+
+    // Update LocalDB
+    await LocalDB.put('pengaturan_aplikasi', record);
+    
+    this.notify('pengaturan_aplikasi');
+    
+    // Push to remote
+    return await Sync.mutate('pengaturan_aplikasi', record.created_at === record.updated_at ? 'insert' : 'update', record);
   }
 
   async insert(collection, record) {
