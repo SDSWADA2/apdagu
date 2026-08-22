@@ -55,8 +55,8 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Ignore Supabase realtime websocket / non-GET
-  if (event.request.method !== 'GET' || event.request.url.includes('supabase.co')) {
+  // Ignore Supabase realtime websocket / non-GET / non-HTTP(S) extensions
+  if (event.request.method !== 'GET' || event.request.url.includes('supabase.co') || !event.request.url.startsWith('http')) {
     return;
   }
 
