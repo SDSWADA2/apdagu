@@ -25,10 +25,19 @@ window.addEventListener('DOMContentLoaded', () => {
   // Forward semua perubahan data ke DOM event agar module listener yang ada tetap berjalan
   ['data_inserted', 'data_updated', 'data_deleted', 'data_synced'].forEach(ev => {
     window.RealtimeClient.on(ev, (payload) => {
-      // Module-level refresh berdasarkan entitas
+      if (!window.Realtime) return;
       const entity = payload?.entity || '';
-      if (entity && window.Realtime && typeof window.Realtime._handleDataChange === 'function') {
-        window.Realtime._handleDataChange(ev, payload);
+      if (entity) {
+        if (ev === 'data_synced' && typeof window.Realtime._handleSyncComplete === 'function') {
+          window.Realtime._handleSyncComplete(payload);
+        } else if (typeof window.Realtime._handleDataChange === 'function') {
+          const actionMap = {
+            'data_inserted': 'insert',
+            'data_updated': 'update',
+            'data_deleted': 'delete'
+          };
+          window.Realtime._handleDataChange(payload, actionMap[ev] || 'update');
+        }
       }
     });
   });
@@ -351,6 +360,8 @@ const Realtime = (() => {
     connect,
     disconnect,
     updateToken,
+    _handleDataChange,
+    _handleSyncComplete,
     get isConnected() { return _isConnected; },
     get activeUsers() { return _activeUsers; },
     get socket() { return _socket; },

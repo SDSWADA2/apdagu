@@ -32,9 +32,10 @@ function getActor(req) {
   };
 }
 
-async function writeAudit(actor, action, entity, recordId, before, after) {
+async function writeAudit(client, actor, action, entity, recordId, before, after) {
   try {
-    await pool.query(
+    const dbClient = client || pool;
+    await dbClient.query(
       `INSERT INTO audit_logs (user_id, username, aksi, tabel_terkait, deskripsi, ip_address, user_agent, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
       [
@@ -123,6 +124,7 @@ router.get('/:id', async (req, res) => {
    ROUTE: POST /api/guru
 ───────────────────────────────────────────── */
 router.post('/', requireRole(['admin', 'operator']), async (req, res) => {
+  const client = await pool.connect();
   try {
     const actor  = getActor(req);
     const body   = req.body;
@@ -142,28 +144,35 @@ router.post('/', requireRole(['admin', 'operator']), async (req, res) => {
     const allCols = cols ? `${cols}, updated_by` : `updated_by`;
     const allPlaceholders = placeholders ? `${placeholders}, $${fields.length + 1}` : `$1`;
 
-    const { rows: result } = await pool.query(
+    await client.query('BEGIN');
+
+    const { rows: result } = await client.query(
       `INSERT INTO guru (${allCols}) VALUES (${allPlaceholders}) RETURNING id`,
       values
     );
     
     const insertId = result[0].id;
-    const { rows: newRow } = await pool.query('SELECT * FROM guru WHERE id = $1 LIMIT 1', [insertId]);
+    const { rows: newRow } = await client.query('SELECT * FROM guru WHERE id = $1 LIMIT 1', [insertId]);
     const data = { ...newRow[0], _action: 'insert' };
+
+    await writeAudit(client, actor, 'insert', 'guru', insertId, null, data);
+
+    await client.query('COMMIT');
 
     // Realtime: WebSocket + SSE
     try { SocketServer.notifyInsert('guru', data, actor); } catch {}
     try { sseEmitAll('data_inserted', { entity: 'guru', action: 'insert', data, by: actor, at: new Date().toISOString() }); } catch {}
-    
-    await writeAudit(actor, 'insert', 'guru', insertId, null, data);
 
     res.status(201).json({ message: 'Data guru berhasil ditambahkan.', data: newRow[0] });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('[GURU] POST error:', err);
     if (err.code === '23505') { // PostgreSQL unique violation code
       return res.status(409).json({ error: 'Data duplikat: NUPTK, NIP, atau NIK sudah terdaftar.' });
     }
     res.status(500).json({ error: 'Gagal menambahkan data guru.' });
+  } finally {
+    client.release();
   }
 });
 
@@ -171,38 +180,52 @@ router.post('/', requireRole(['admin', 'operator']), async (req, res) => {
    ROUTE: PUT /api/guru/:id
 ───────────────────────────────────────────── */
 router.put('/:id', requireRole(['admin', 'operator']), async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id }  = req.params;
     const actor   = getActor(req);
     const body    = req.body;
 
-    const { rows: before } = await pool.query('SELECT * FROM guru WHERE id = $1 AND is_deleted = false LIMIT 1', [id]);
-    if (!before.length) return res.status(404).json({ error: 'Data guru tidak ditemukan.' });
+    const { rows: before } = await client.query('SELECT * FROM guru WHERE id = $1 AND is_deleted = false LIMIT 1', [id]);
+    if (!before.length) {
+      client.release();
+      return res.status(404).json({ error: 'Data guru tidak ditemukan.' });
+    }
 
     const fields = ALLOWED_UPDATE_FIELDS.filter(f => body[f] !== undefined);
-    if (!fields.length) return res.status(400).json({ error: 'Tidak ada field yang diperbarui.' });
+    if (!fields.length) {
+      client.release();
+      return res.status(400).json({ error: 'Tidak ada field yang diperbarui.' });
+    }
 
     const set = fields.map((f, i) => `${f} = $${i + 1}`).join(', ');
     const values = [...fields.map(f => body[f]), actor.username, id];
 
-    await pool.query(`UPDATE guru SET ${set}, updated_by = $${fields.length + 1}, updated_at = NOW() WHERE id = $${fields.length + 2} AND is_deleted = false`, values);
+    await client.query('BEGIN');
 
-    const { rows: after } = await pool.query('SELECT * FROM guru WHERE id = $1 LIMIT 1', [id]);
+    await client.query(`UPDATE guru SET ${set}, updated_by = $${fields.length + 1}, updated_at = NOW() WHERE id = $${fields.length + 2} AND is_deleted = false`, values);
+
+    const { rows: after } = await client.query('SELECT * FROM guru WHERE id = $1 LIMIT 1', [id]);
     const data = { ...after[0], _action: 'update' };
+
+    await writeAudit(client, actor, 'update', 'guru', id, before[0], data);
+    
+    await client.query('COMMIT');
 
     // Realtime: WebSocket + SSE
     try { SocketServer.notifyUpdate('guru', data, actor); } catch {}
     try { sseEmitAll('data_updated', { entity: 'guru', action: 'update', data, by: actor, at: new Date().toISOString() }); } catch {}
-    
-    await writeAudit(actor, 'update', 'guru', id, before[0], data);
 
     res.json({ message: 'Data guru berhasil diperbarui.', data: after[0] });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('[GURU] PUT error:', err);
     if (err.code === '23505') { 
       return res.status(409).json({ error: 'Data duplikat: NUPTK, NIP, atau NIK sudah terdaftar.' });
     }
     res.status(500).json({ error: 'Gagal memperbarui data guru.' });
+  } finally {
+    client.release();
   }
 });
 
@@ -210,28 +233,49 @@ router.put('/:id', requireRole(['admin', 'operator']), async (req, res) => {
    ROUTE: DELETE /api/guru/:id (Soft Delete)
 ───────────────────────────────────────────── */
 router.delete('/:id', requireRole(['admin']), async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
     const actor  = getActor(req);
 
-    const { rows } = await pool.query('SELECT id, nama_lengkap FROM guru WHERE id = $1 AND is_deleted = false LIMIT 1', [id]);
-    if (!rows.length) return res.status(404).json({ error: 'Data guru tidak ditemukan.' });
+    const { rows } = await client.query('SELECT id, nama_lengkap FROM guru WHERE id = $1 AND is_deleted = false LIMIT 1', [id]);
+    if (!rows.length) {
+      client.release();
+      return res.status(404).json({ error: 'Data guru tidak ditemukan.' });
+    }
 
-    await pool.query(
+    await client.query('BEGIN');
+
+    // Hapus guru
+    await client.query(
       'UPDATE guru SET is_deleted = true, updated_by = $1, updated_at = NOW() WHERE id = $2',
       [actor.username, id]
     );
 
+    // Cascading soft delete untuk tabel anak
+    const childTables = ['kepegawaian', 'pendidikan', 'sertifikasi', 'jadwal_mengajar', 'beban_mengajar', 'absensi', 'pkg', 'prestasi', 'pelatihan', 'dokumen'];
+    for (const table of childTables) {
+      await client.query(
+        `UPDATE ${table} SET is_deleted = true, updated_by = $1, updated_at = NOW() WHERE guru_id = $2 AND is_deleted = false`,
+        [actor.username, id]
+      );
+    }
+
+    await writeAudit(client, actor, 'delete', 'guru', id, rows[0], { is_deleted: true });
+    
+    await client.query('COMMIT');
+
     // Realtime: WebSocket + SSE
     try { SocketServer.notifyDelete('guru', parseInt(id), actor); } catch {}
     try { sseEmitAll('data_deleted', { entity: 'guru', action: 'delete', data: { id: parseInt(id) }, by: actor, at: new Date().toISOString() }); } catch {}
-    
-    await writeAudit(actor, 'delete', 'guru', id, rows[0], { is_deleted: true });
 
-    res.json({ message: `Data guru "${rows[0].nama_lengkap}" berhasil dihapus.`, id: parseInt(id) });
+    res.json({ message: `Data guru "${rows[0].nama_lengkap}" berhasil dihapus beserta data terkaitnya.`, id: parseInt(id) });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('[GURU] DELETE error:', err);
     res.status(500).json({ error: 'Gagal menghapus data guru.' });
+  } finally {
+    client.release();
   }
 });
 

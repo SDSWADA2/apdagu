@@ -9,6 +9,8 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth');
+const SocketServer = require('../socket');
+const { sseEmitAll } = require('./events');
 
 router.use(verifyToken);
 
@@ -124,10 +126,17 @@ router.post('/', requireRole(['admin', 'operator']), async (req, res) => {
       kelas, mata_pelajaran, ruangan, parseInt(jumlah_jp) || 2
     ]);
 
+    const insertId = rows[0].id;
+    const actor = { username: req.user?.username || 'system', name: req.user?.nama_lengkap || req.user?.username || 'System' };
+    const newData = { id: insertId, ...req.body, _action: 'insert' };
+
+    try { SocketServer.notifyInsert('jadwal_mengajar', newData, actor); } catch {}
+    try { sseEmitAll('data_inserted', { entity: 'jadwal_mengajar', action: 'insert', data: newData, by: actor, at: new Date().toISOString() }); } catch {}
+
     res.status(201).json({
       message: 'Jadwal mengajar berhasil ditambahkan.',
-      insertId: rows[0].id,
-      data: { id: rows[0].id, ...req.body }
+      insertId,
+      data: newData
     });
   } catch (error) {
     console.error('[JADWAL] Error inserting:', error);
@@ -158,6 +167,11 @@ router.put('/:id', requireRole(['admin', 'operator']), async (req, res) => {
       return res.status(404).json({ error: 'Data jadwal tidak ditemukan.' });
     }
 
+    const actor = { username: req.user?.username || 'system', name: req.user?.nama_lengkap || req.user?.username || 'System' };
+    const newData = { ...data, id, _action: 'update' };
+    try { SocketServer.notifyUpdate('jadwal_mengajar', newData, actor); } catch {}
+    try { sseEmitAll('data_updated', { entity: 'jadwal_mengajar', action: 'update', data: newData, by: actor, at: new Date().toISOString() }); } catch {}
+
     res.json({ message: 'Jadwal mengajar berhasil diperbarui.' });
   } catch (error) {
     console.error('[JADWAL] Error updating:', error);
@@ -176,6 +190,10 @@ router.delete('/:id', requireRole(['admin', 'operator']), async (req, res) => {
     if (rowCount === 0) {
       return res.status(404).json({ error: 'Data jadwal tidak ditemukan.' });
     }
+
+    const actor = { username: req.user?.username || 'system', name: req.user?.nama_lengkap || req.user?.username || 'System' };
+    try { SocketServer.notifyDelete('jadwal_mengajar', parseInt(id), actor); } catch {}
+    try { sseEmitAll('data_deleted', { entity: 'jadwal_mengajar', action: 'delete', data: { id: parseInt(id) }, by: actor, at: new Date().toISOString() }); } catch {}
 
     res.json({ message: 'Jadwal mengajar berhasil dihapus.' });
   } catch (error) {

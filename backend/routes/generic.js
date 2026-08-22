@@ -62,6 +62,12 @@ const validateTable = (req, res, next) => {
   if (!whitelistedTables.has(resolved)) {
     return res.status(403).json({ error: `Akses ke tabel '${resolved}' tidak diizinkan.`, code: 'TABLE_FORBIDDEN' });
   }
+  
+  // Mencegah modifikasi tabel users melalui generic API (hanya boleh READ)
+  if (resolved === 'users' && req.method !== 'GET') {
+    return res.status(403).json({ error: `Modifikasi tabel 'users' tidak diizinkan melalui jalur umum.`, code: 'USERS_MODIFICATION_FORBIDDEN' });
+  }
+  
   req.tableName = resolved;
   next();
 };
@@ -150,7 +156,7 @@ router.get('/:table/:id', async (req, res) => {
 /* ─────────────────────────────────────────────
    POST /api/data/:table
 ───────────────────────────────────────────── */
-router.post('/:table', async (req, res) => {
+router.post('/:table', requireRole(['admin', 'operator']), async (req, res) => {
   try {
     const actor  = getActor(req);
     const body   = req.body;
@@ -187,7 +193,7 @@ router.post('/:table', async (req, res) => {
 /* ─────────────────────────────────────────────
    PUT /api/data/:table/:id
 ───────────────────────────────────────────── */
-router.put('/:table/:id', async (req, res) => {
+router.put('/:table/:id', requireRole(['admin', 'operator']), async (req, res) => {
   try {
     const { id } = req.params;
     const actor  = getActor(req);

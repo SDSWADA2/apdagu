@@ -9,6 +9,8 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth');
+const SocketServer = require('../socket');
+const { sseEmitAll } = require('./events');
 
 router.use(verifyToken);
 
@@ -83,7 +85,14 @@ router.post('/', requireRole(['admin', 'operator']), async (req, res) => {
       gaji_pokok || null, tunjangan || null, keterangan || null
     ]);
 
-    res.status(201).json({ message: 'Data kepegawaian berhasil ditambahkan.', insertId: rows[0].id });
+    const insertId = rows[0].id;
+    const actor = { username: req.user?.username || 'system', name: req.user?.nama_lengkap || req.user?.username || 'System' };
+    const newData = { id: insertId, guru_id, status_kepegawaian, jabatan, pangkat_golongan, tmt_pengangkatan, _action: 'insert' };
+    
+    try { SocketServer.notifyInsert('kepegawaian', newData, actor); } catch {}
+    try { sseEmitAll('data_inserted', { entity: 'kepegawaian', action: 'insert', data: newData, by: actor, at: new Date().toISOString() }); } catch {}
+
+    res.status(201).json({ message: 'Data kepegawaian berhasil ditambahkan.', insertId });
   } catch (error) {
     console.error('[KEPEGAWAIAN] Error inserting:', error);
     res.status(500).json({ error: 'Gagal menambahkan data kepegawaian.' });
@@ -118,6 +127,12 @@ router.put('/:id', requireRole(['admin', 'operator']), async (req, res) => {
     );
 
     if (rowCount === 0) return res.status(404).json({ error: 'Data kepegawaian tidak ditemukan.' });
+    
+    const actor = { username: req.user?.username || 'system', name: req.user?.nama_lengkap || req.user?.username || 'System' };
+    const newData = { ...updates, id, _action: 'update' };
+    try { SocketServer.notifyUpdate('kepegawaian', newData, actor); } catch {}
+    try { sseEmitAll('data_updated', { entity: 'kepegawaian', action: 'update', data: newData, by: actor, at: new Date().toISOString() }); } catch {}
+
     res.json({ message: 'Data kepegawaian berhasil diperbarui.' });
   } catch (error) {
     console.error('[KEPEGAWAIAN] Error updating:', error);
@@ -132,6 +147,11 @@ router.delete('/:id', requireRole(['admin']), async (req, res) => {
   try {
     const { rowCount } = await pool.query('UPDATE kepegawaian SET is_deleted = true, updated_at = NOW() WHERE id = $1', [req.params.id]);
     if (rowCount === 0) return res.status(404).json({ error: 'Data kepegawaian tidak ditemukan.' });
+    
+    const actor = { username: req.user?.username || 'system', name: req.user?.nama_lengkap || req.user?.username || 'System' };
+    try { SocketServer.notifyDelete('kepegawaian', parseInt(req.params.id), actor); } catch {}
+    try { sseEmitAll('data_deleted', { entity: 'kepegawaian', action: 'delete', data: { id: parseInt(req.params.id) }, by: actor, at: new Date().toISOString() }); } catch {}
+
     res.json({ message: 'Data kepegawaian berhasil dihapus.' });
   } catch (error) {
     console.error('[KEPEGAWAIAN] Error deleting:', error);

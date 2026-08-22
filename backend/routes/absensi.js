@@ -11,6 +11,8 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth');
+const SocketServer = require('../socket');
+const { sseEmitAll } = require('./events');
 
 router.use(verifyToken);
 
@@ -115,9 +117,14 @@ router.post('/', async (req, res) => {
       `, [waktu_masuk || null, waktu_pulang || null, status_kehadiran,
           keterangan, lampiran_url, lokasi_gps, existingId]);
 
+      const actor = { username: req.user?.username || 'system', name: req.user?.nama_lengkap || req.user?.username || 'System' };
+      const newData = { id: existingId, ...req.body, _action: 'update' };
+      try { SocketServer.notifyUpdate('absensi', newData, actor); } catch {}
+      try { sseEmitAll('data_updated', { entity: 'absensi', action: 'update', data: newData, by: actor, at: new Date().toISOString() }); } catch {}
+
       return res.json({
         message: 'Presensi berhasil diperbarui.',
-        data: { id: existingId, ...req.body }
+        data: newData
       });
     }
 
@@ -132,10 +139,17 @@ router.post('/', async (req, res) => {
       status_kehadiran, keterangan, lampiran_url, lokasi_gps
     ]);
 
+    const insertId = inserted[0].id;
+    const actor = { username: req.user?.username || 'system', name: req.user?.nama_lengkap || req.user?.username || 'System' };
+    const newData = { id: insertId, ...req.body, _action: 'insert' };
+
+    try { SocketServer.notifyInsert('absensi', newData, actor); } catch {}
+    try { sseEmitAll('data_inserted', { entity: 'absensi', action: 'insert', data: newData, by: actor, at: new Date().toISOString() }); } catch {}
+
     res.status(201).json({
       message: 'Presensi berhasil dicatat.',
-      insertId: inserted[0].id,
-      data: { id: inserted[0].id, ...req.body }
+      insertId,
+      data: newData
     });
   } catch (error) {
     console.error('[ABSENSI] Error saving absensi:', error);
@@ -192,6 +206,11 @@ router.post('/batch', requireRole(['admin', 'operator']), async (req, res) => {
     }
 
     await client.query('COMMIT');
+    
+    const actor = { username: req.user?.username || 'system', name: req.user?.nama_lengkap || req.user?.username || 'System' };
+    try { SocketServer.notifySync('absensi', count, actor); } catch {}
+    try { sseEmitAll('data_synced', { entity: 'absensi', count, by: actor, at: new Date().toISOString() }); } catch {}
+
     res.json({ message: `Presensi batch berhasil disimpan untuk ${count} guru aktif.`, count, tanggal });
   } catch (error) {
     await client.query('ROLLBACK');
@@ -229,6 +248,11 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Data absensi tidak ditemukan.' });
     }
 
+    const actor = { username: req.user?.username || 'system', name: req.user?.nama_lengkap || req.user?.username || 'System' };
+    const newData = { ...data, id, _action: 'update' };
+    try { SocketServer.notifyUpdate('absensi', newData, actor); } catch {}
+    try { sseEmitAll('data_updated', { entity: 'absensi', action: 'update', data: newData, by: actor, at: new Date().toISOString() }); } catch {}
+
     res.json({ message: 'Presensi berhasil diperbarui.' });
   } catch (error) {
     console.error('[ABSENSI] Error updating:', error);
@@ -250,6 +274,10 @@ router.delete('/:id', requireRole(['admin', 'operator']), async (req, res) => {
     if (rowCount === 0) {
       return res.status(404).json({ error: 'Data absensi tidak ditemukan.' });
     }
+
+    const actor = { username: req.user?.username || 'system', name: req.user?.nama_lengkap || req.user?.username || 'System' };
+    try { SocketServer.notifyDelete('absensi', parseInt(id), actor); } catch {}
+    try { sseEmitAll('data_deleted', { entity: 'absensi', action: 'delete', data: { id: parseInt(id) }, by: actor, at: new Date().toISOString() }); } catch {}
 
     res.json({ message: 'Data absensi berhasil dihapus.' });
   } catch (error) {

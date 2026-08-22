@@ -26,6 +26,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
+// Trust reverse proxy (Nginx/Cloudflare) so rate limit uses real IP
+app.set('trust proxy', 1);
+
 // ============================================================================
 // Security Middleware
 // ============================================================================
