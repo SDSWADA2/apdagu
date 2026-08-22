@@ -285,6 +285,9 @@ class AppController {
       } else if (target.id === 'form-profil-sekolah') {
         e.preventDefault();
         PengaturanPage.saveProfilSekolah(target);
+      } else if (target.id === 'form-pengaturan-sistem') {
+        e.preventDefault();
+        PengaturanPage.saveSettings(target);
       }
     });
   }

@@ -34,6 +34,23 @@ export const PengaturanPage = {
     setField('sekolah-email', s.email || 'sdnegerisumberwaru2@gmail.com');
     setField('sekolah-kepala', s.nama_kepala_sekolah || CONFIG.SEKOLAH.KEPALA_SEKOLAH);
     setField('sekolah-nip-kepala', s.nip_kepala_sekolah || CONFIG.SEKOLAH.NIP_KEPALA_SEKOLAH);
+
+    const logoPreview = document.getElementById('sekolah-logo-preview');
+    if (logoPreview && s.logo_url) {
+      logoPreview.src = s.logo_url;
+    }
+
+    const fileInput = document.getElementById('sekolah-logo-file');
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file && logoPreview) {
+          const reader = new FileReader();
+          reader.onload = (ev) => { logoPreview.src = ev.target.result; };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
   },
 
   renderSettings() {
@@ -81,6 +98,21 @@ export const PengaturanPage = {
       if (existing?.id) payload.id = existing.id;
       await Store.update('profil_sekolah', payload);
       Toast.success('Berhasil', 'Profil sekolah berhasil disimpan.');
+    } catch (e) {
+      Toast.error('Gagal', e.message);
+    }
+  },
+
+  async saveSettings(formEl) {
+    const formData = new FormData(formEl);
+    try {
+      Store.updateSetting('tahun_ajaran_aktif', formData.get('tahun_ajaran_aktif'));
+      Store.updateSetting('semester_aktif', formData.get('semester_aktif'));
+      Store.updateSetting('jam_masuk_kerja', formData.get('jam_masuk_kerja'));
+      Store.updateSetting('jam_pulang_kerja', formData.get('jam_pulang_kerja'));
+      Store.updateSetting('radius_absen_meter', formData.get('radius_absen_meter'));
+      
+      Toast.success('Berhasil', 'Pengaturan sistem berhasil disimpan.');
     } catch (e) {
       Toast.error('Gagal', e.message);
     }

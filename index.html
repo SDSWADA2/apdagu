@@ -830,6 +830,26 @@
             </div>
             <button class="btn btn-success btn-sm" onclick="AuditLogsPage.exportExcel()"><i class="bi bi-file-earmark-excel me-1"></i>Ekspor Excel</button>
           </div>
+
+          <!-- Filter & Search Bar -->
+          <div class="card border-0 shadow-sm p-3 mb-3">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text"><i class="bi bi-search"></i></span>
+                  <input type="text" id="audit-search-input" class="form-control" placeholder="Cari pengguna, tabel, atau deskripsi...">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <select id="audit-filter-aksi" class="form-select form-select-sm">
+                  <option value="all">Semua Aksi</option>
+                  <option value="INSERT">Data Baru (INSERT)</option>
+                  <option value="UPDATE">Ubah Data (UPDATE)</option>
+                  <option value="DELETE">Hapus Data (DELETE)</option>
+                </select>
+              </div>
+            </div>
+          </div>
           <div class="card border-0 shadow-sm">
             <div class="table-responsive">
               <table class="table table-hover align-middle mb-0">
@@ -889,8 +909,50 @@
                       <label class="form-label fs-7 fw-semibold">NIP Kepala Sekolah</label>
                       <input type="text" name="nip_kepala_sekolah" id="sekolah-nip-kepala" class="form-control">
                     </div>
+                    <div class="col-12 mt-2">
+                      <label class="form-label fs-7 fw-semibold">Logo Sekolah (PNG/JPG)</label>
+                      <div class="d-flex align-items-center gap-3 mt-1">
+                        <img id="sekolah-logo-preview" src="assets/img/logo-default.png" class="rounded border p-1" width="60" height="60" alt="Logo" style="object-fit: contain;">
+                        <input type="file" id="sekolah-logo-file" class="form-control form-control-sm" accept="image/png, image/jpeg">
+                      </div>
+                    </div>
                     <div class="col-12 mt-3">
                       <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Simpan Profil Sekolah</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Pengaturan Sistem -->
+              <div class="card border-0 shadow-sm p-4 mt-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-sliders me-2 text-primary"></i>Pengaturan Sistem</h5>
+                <form id="form-pengaturan-sistem">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label fs-7 fw-semibold">Tahun Ajaran Aktif</label>
+                      <input type="text" name="tahun_ajaran_aktif" id="setting-tahun-ajaran" class="form-control" placeholder="Misal: 2026/2027">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fs-7 fw-semibold">Semester Aktif</label>
+                      <select name="semester_aktif" id="setting-semester" class="form-select">
+                        <option value="Ganjil">Ganjil</option>
+                        <option value="Genap">Genap</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fs-7 fw-semibold">Jam Masuk Kerja</label>
+                      <input type="time" name="jam_masuk_kerja" id="setting-jam-masuk" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fs-7 fw-semibold">Jam Pulang Kerja</label>
+                      <input type="time" name="jam_pulang_kerja" id="setting-jam-pulang" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fs-7 fw-semibold">Radius Presensi GPS (Meter)</label>
+                      <input type="number" name="radius_absen_meter" id="setting-radius-absen" class="form-control" min="50" max="1000">
+                    </div>
+                    <div class="col-12 mt-3">
+                      <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Simpan Pengaturan</button>
                     </div>
                   </div>
                 </form>

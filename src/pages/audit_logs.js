@@ -11,15 +11,51 @@ import { Helpers } from '../utils/helpers.js';
 import { ExportUtils } from '../utils/export_utils.js';
 
 export const AuditLogsPage = {
+  searchQuery: '',
+  filterAksi: 'all',
+
   init() {
+    this.bindEvents();
     this.render();
+  },
+
+  bindEvents() {
+    const searchInput = document.getElementById('audit-search-input');
+    const filterAksi = document.getElementById('audit-filter-aksi');
+
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        this.searchQuery = e.target.value.toLowerCase();
+        this.render();
+      });
+    }
+
+    if (filterAksi) {
+      filterAksi.addEventListener('change', (e) => {
+        this.filterAksi = e.target.value;
+        this.render();
+      });
+    }
   },
 
   render() {
     const tbody = document.getElementById('audit-table-body');
     if (!tbody) return;
 
-    const list = Store.getAll('audit_logs');
+    let list = Store.getAll('audit_logs');
+    
+    // Apply Filters
+    if (this.filterAksi !== 'all') {
+      list = list.filter(a => a.aksi === this.filterAksi);
+    }
+    if (this.searchQuery) {
+      list = list.filter(a => 
+        (a.username || '').toLowerCase().includes(this.searchQuery) ||
+        (a.tabel_terkait || '').toLowerCase().includes(this.searchQuery) ||
+        (a.deskripsi || '').toLowerCase().includes(this.searchQuery)
+      );
+    }
+
     if (list.length === 0) {
       tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Belum ada catatan aktivitas audit log.</td></tr>`;
       return;
