@@ -603,12 +603,15 @@ class GoogleDriveSync {
           const backupData = await this.downloadBackupContent(fileId);
 
           if (typeof ExportUtils !== 'undefined' && typeof ExportUtils.commitImportJSON === 'function') {
-            ExportUtils.commitImportJSON(backupData);
+            await ExportUtils.commitImportJSON(backupData);
           } else if (typeof DB !== 'undefined') {
+            if (typeof window.Api !== 'undefined' && window.Api.isServerConnected) {
+              await window.Api.pushAllState(backupData);
+            }
             DB.state = backupData;
             DB.saveState();
             App.showToast('Pemulihan Sukses', 'Database berhasil dipulihkan dari Google Drive.', 'success');
-            setTimeout(() => location.reload(), 600);
+            setTimeout(() => location.reload(), 1500);
           }
         } catch (e) {
           App.showToast('Gagal Restore', e.message, 'danger');

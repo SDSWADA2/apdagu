@@ -167,14 +167,25 @@ const ExportUtils = {
   /**
    * Eksekusi restore database dari parsed JSON data
    */
-  commitImportJSON(parsedData) {
-    const success = DB.importJSON(JSON.stringify(parsedData));
-    if (success) {
-      DB.logActivity('Restore Database', 'system', `Database dipulihkan dari backup JSON (${(parsedData.guru || []).length} guru)`);
-      App.showToast('Restore Berhasil', 'Database berhasil dipulihkan dari cadangan. Memuat ulang...', 'success');
-      setTimeout(() => location.reload(), 1200);
-    } else {
-      App.showToast('Restore Gagal', 'Gagal memulihkan database. Data tidak valid.', 'danger');
+  async commitImportJSON(parsedData) {
+    App.showToast('Memulihkan...', 'Sedang memulihkan dan sinkronisasi ke server. Mohon tunggu...', 'info');
+    try {
+      if (typeof window.Api !== 'undefined' && window.Api.isServerConnected) {
+        // Push the entire restored state to the backend
+        await window.Api.pushAllState(parsedData);
+      }
+
+      const success = DB.importJSON(JSON.stringify(parsedData));
+      if (success) {
+        DB.logActivity('Restore Database', 'system', `Database dipulihkan dari backup JSON (${(parsedData.guru || []).length} guru)`);
+        App.showToast('Restore Berhasil', 'Database berhasil dipulihkan dan disinkronkan. Memuat ulang...', 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        App.showToast('Restore Gagal', 'Gagal memulihkan database lokal. Data tidak valid.', 'danger');
+      }
+    } catch (err) {
+      console.error('Gagal sinkronisasi restore ke server:', err);
+      App.showToast('Sinkronisasi Gagal', 'Gagal mengunggah cadangan ke server: ' + (err.message || 'Error server'), 'danger');
     }
   },
 

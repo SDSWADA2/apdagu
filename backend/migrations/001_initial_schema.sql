@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS guru (
     status_keaktifan VARCHAR(30) DEFAULT 'Aktif',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted SMALLINT DEFAULT 0,
+    is_deleted BOOLEAN DEFAULT false,
     updated_by VARCHAR(50)
 );
 
@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS kepegawaian (
     keterangan TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted SMALLINT DEFAULT 0,
+    is_deleted BOOLEAN DEFAULT false,
     CONSTRAINT fk_kepegawaian_guru FOREIGN KEY (guru_id) REFERENCES guru(id) ON DELETE CASCADE
 );
 
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS pendidikan (
     file_ijazah_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted SMALLINT DEFAULT 0,
+    is_deleted BOOLEAN DEFAULT false,
     CONSTRAINT fk_pendidikan_guru FOREIGN KEY (guru_id) REFERENCES guru(id) ON DELETE CASCADE
 );
 
@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS sertifikasi (
     file_sertifikat_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted SMALLINT DEFAULT 0,
+    is_deleted BOOLEAN DEFAULT false,
     CONSTRAINT fk_sertifikasi_guru FOREIGN KEY (guru_id) REFERENCES guru(id) ON DELETE CASCADE
 );
 
@@ -157,7 +157,7 @@ CREATE TABLE IF NOT EXISTS jadwal_mengajar (
     jumlah_jp INT NOT NULL DEFAULT 2,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted SMALLINT DEFAULT 0,
+    is_deleted BOOLEAN DEFAULT false,
     CONSTRAINT fk_jadwal_guru FOREIGN KEY (guru_id) REFERENCES guru(id) ON DELETE CASCADE
 );
 
@@ -177,7 +177,7 @@ CREATE TABLE IF NOT EXISTS beban_mengajar (
     keterangan TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted SMALLINT DEFAULT 0,
+    is_deleted BOOLEAN DEFAULT false,
     CONSTRAINT fk_beban_guru FOREIGN KEY (guru_id) REFERENCES guru(id) ON DELETE CASCADE
 );
 
@@ -194,7 +194,7 @@ CREATE TABLE IF NOT EXISTS absensi (
     lokasi_gps VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted SMALLINT DEFAULT 0,
+    is_deleted BOOLEAN DEFAULT false,
     CONSTRAINT fk_absensi_guru FOREIGN KEY (guru_id) REFERENCES guru(id) ON DELETE CASCADE,
     UNIQUE (guru_id, tanggal)
 );
@@ -218,7 +218,7 @@ CREATE TABLE IF NOT EXISTS pkg (
     file_laporan_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted SMALLINT DEFAULT 0,
+    is_deleted BOOLEAN DEFAULT false,
     CONSTRAINT fk_pkg_guru FOREIGN KEY (guru_id) REFERENCES guru(id) ON DELETE CASCADE
 );
 
@@ -236,7 +236,7 @@ CREATE TABLE IF NOT EXISTS prestasi (
     file_piagam_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted SMALLINT DEFAULT 0,
+    is_deleted BOOLEAN DEFAULT false,
     CONSTRAINT fk_prestasi_guru FOREIGN KEY (guru_id) REFERENCES guru(id) ON DELETE CASCADE
 );
 
@@ -255,7 +255,7 @@ CREATE TABLE IF NOT EXISTS pelatihan (
     file_sertifikat_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted SMALLINT DEFAULT 0,
+    is_deleted BOOLEAN DEFAULT false,
     CONSTRAINT fk_pelatihan_guru FOREIGN KEY (guru_id) REFERENCES guru(id) ON DELETE CASCADE
 );
 
@@ -273,7 +273,7 @@ CREATE TABLE IF NOT EXISTS dokumen (
     keterangan TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted SMALLINT DEFAULT 0,
+    is_deleted BOOLEAN DEFAULT false,
     CONSTRAINT fk_dokumen_guru FOREIGN KEY (guru_id) REFERENCES guru(id) ON DELETE CASCADE
 );
 

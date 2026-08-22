@@ -226,7 +226,7 @@ router.delete('/:id', requireRole(['admin']), async (req, res) => {
     try { SocketServer.notifyDelete('guru', parseInt(id), actor); } catch {}
     try { sseEmitAll('data_deleted', { entity: 'guru', action: 'delete', data: { id: parseInt(id) }, by: actor, at: new Date().toISOString() }); } catch {}
     
-    await writeAudit(actor, 'delete', 'guru', id, rows[0], { is_deleted: 1 });
+    await writeAudit(actor, 'delete', 'guru', id, rows[0], { is_deleted: true });
 
     res.json({ message: `Data guru "${rows[0].nama_lengkap}" berhasil dihapus.`, id: parseInt(id) });
   } catch (err) {
