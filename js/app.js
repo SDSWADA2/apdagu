@@ -379,15 +379,14 @@ const App = {
   },
 
   /**
-   * Mendaftarkan Service Worker Progressive Web App (PWA) jika didukung peramban.
+   * Menonaktifkan Service Worker (PWA) untuk mode 100% Online
    */
   registerPWA() {
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').then(
-          reg => console.log('ServiceWorker SDN Sumber Waru 2 aktif:', reg.scope),
-          err => console.log('ServiceWorker gagal:', err)
-        );
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.unregister();
+        }
       });
     }
   }

@@ -1,7 +1,16 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_key_sdn_sumber_waru_2_2026';
+const DEFAULT_SECRET = 'super_secret_key_sdn_sumber_waru_2_2026';
+let JWT_SECRET = process.env.JWT_SECRET || DEFAULT_SECRET;
 
+// Mencegah penggunaan secret default di lingkungan production demi keamanan
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET === DEFAULT_SECRET) {
+    console.error('FATAL ERROR: JWT_SECRET tidak diatur dengan aman di environment variables pada mode production!');
+    console.error('Silakan atur JWT_SECRET di file .env Anda dengan string acak (misal: openssl rand -base64 48).');
+    process.exit(1);
+  }
+}
 /**
  * Middleware untuk memverifikasi JWT token pada header Authorization
  */

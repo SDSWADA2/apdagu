@@ -31,7 +31,16 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 // ============================================================================
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: NODE_ENV === 'production' ? {
+    directives: {
+      defaultSrc: ["'self'", "http://localhost:*", "ws://localhost:*", "https://cdn.jsdelivr.net"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "data:", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https://*"],
+      connectSrc: ["'self'", "http://localhost:*", "ws://localhost:*", "wss://*", "https://*"],
+    }
+  } : false,
 }));
 
 // CORS Configuration - Permissive for development & configurable for production
@@ -132,7 +141,15 @@ try {
 // Auto-Serve Frontend Single Page Application (SPA) & Static Assets
 // ============================================================================
 const frontendPath = path.join(__dirname, '..');
-app.use(express.static(frontendPath));
+app.use(express.static(frontendPath, {
+  maxAge: NODE_ENV === 'production' ? '1d' : 0,
+  setHeaders: (res, path) => {
+    // Jangan cache file index.html agar update PWA / frontend selalu terbaru
+    if (path.endsWith('index.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  }
+}));
 
 // API Info endpoint
 app.get('/api', (req, res) => {
