@@ -61,16 +61,27 @@ class AppController {
     Toast.init();
 
     // Inisialisasi Auth
-    const user = await Auth.init();
-    if (user) {
-      this.hideLoginOverlay();
-      this.updateUserUI();
-    } else {
+    try {
+      const user = await Auth.init();
+      if (user) {
+        this.hideLoginOverlay();
+        this.updateUserUI();
+      } else {
+        this.showLoginOverlay();
+      }
+    } catch(err) {
+      console.error('[App] Auth init failed:', err);
       this.showLoginOverlay();
+      Toast.error('Autentikasi Gagal', 'Gagal memuat sesi pengguna. Silakan login kembali.');
     }
 
     // Inisialisasi Database Store & Realtime
-    await Store.init();
+    try {
+      await Store.init();
+    } catch(err) {
+      console.error('[App] Store init failed:', err);
+      Toast.warning('Koneksi Terbatas', 'Gagal menyinkronkan data dengan server. Anda berada dalam mode offline.');
+    }
 
     // Status listeners
     this.bindRealtimeAndSyncStatus();

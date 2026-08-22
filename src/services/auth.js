@@ -18,23 +18,32 @@ class AuthService {
     const supabase = await getSupabase();
     if (!supabase) return null;
 
-    // Listen for Supabase auth state change
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await this.loadProfile(session.user.id);
-      } else {
-        this.currentUser = null;
-        this.currentProfile = null;
-      }
-      this.notifyListeners(event);
-    });
+    try {
+      // Listen for Supabase auth state change
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+          await this.loadProfile(session.user.id);
+        } else {
+          this.currentUser = null;
+          this.currentProfile = null;
+        }
+        this.notifyListeners(event);
+      });
 
-    // Check existing session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      this.currentUser = session.user;
-      await this.loadProfile(session.user.id);
+      // Check existing session
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.warn('[AuthService] getSession error:', error.message);
+      }
+      
+      if (session?.user) {
+        this.currentUser = session.user;
+        await this.loadProfile(session.user.id);
+      }
+    } catch (err) {
+      console.error('[AuthService] init error:', err);
     }
+    
     return this.currentUser;
   }
 
