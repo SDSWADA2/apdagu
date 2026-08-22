@@ -1,84 +1,116 @@
 /**
  * ============================================================================
- * KONFIGURASI DATABASE POSTGRESQL (NEON)
+ * KONFIGURASI DATABASE: SUPABASE (PostgreSQL)
  * Aplikasi Database Guru SD Negeri Sumber Waru 2
  * ============================================================================
  *
- * File ini mengekspor:
- *   - pool          : pg pool (default export)
- *   - testDbConnection() : fungsi diagnostik koneksi
- *   - dbConfig      : objek konfigurasi yang dipakai
+ * Supabase menggunakan PostgreSQL standar — semua query SQL yang ada
+ * tetap berjalan tanpa perubahan apapun.
+ *
+ * Exports:
+ *   - pool                : pg Pool (default export) — untuk semua raw SQL
+ *   - supabaseAdmin       : Supabase JS Client (server-side, service role)
+ *   - testDbConnection()  : fungsi diagnostik koneksi
  */
 
 'use strict';
 
-const { Pool } = require('pg');
+const { Pool }              = require('pg');
+const { createClient }      = require('@supabase/supabase-js');
 require('dotenv').config();
 
 // ============================================================================
-// Baca konfigurasi dari environment variables
+// 1. SUPABASE JS CLIENT — untuk fitur Supabase (Realtime, Storage, Auth RPC)
 // ============================================================================
-const dbConfig = {
-  // Jika DATABASE_URL tersedia (untuk Neon), gunakan itu
-  connectionString: process.env.DATABASE_URL,
-  
-  // Fallback jika tidak menggunakan connectionString
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT, 10) || 5432,
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || process.env.DB_PASS || '',
-  database: process.env.DB_NAME || process.env.DB_DATABASE || 'db_guru_sd',
+const SUPABASE_URL              = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  // SSL dibutuhkan untuk Neon dan kebanyakan cloud DB
-  ssl: {
-    rejectUnauthorized: false // Izinkan sertifikat self-signed / cloud
-  },
-
-  // Pool Settings
-  max: parseInt(process.env.DB_CONNECTION_LIMIT, 10) || 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-};
-
-// Hapus parameter individual jika connectionString digunakan agar tidak konflik
-if (dbConfig.connectionString) {
-  delete dbConfig.host;
-  delete dbConfig.port;
-  delete dbConfig.user;
-  delete dbConfig.password;
-  delete dbConfig.database;
+let supabaseAdmin = null;
+if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+  supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {
+      autoRefreshToken : false,
+      persistSession   : false,
+    },
+    db: {
+      schema: 'public',
+    },
+  });
+  console.log('[DB] Supabase Admin Client berhasil diinisialisasi.');
+} else {
+  console.warn('[DB] Supabase Admin Client tidak diinisialisasi — SUPABASE_URL atau SUPABASE_SERVICE_ROLE_KEY belum diset.');
 }
 
 // ============================================================================
-// Inisialisasi Connection Pool
+// 2. PG POOL — untuk semua raw SQL queries (tetap performa tinggi)
 // ============================================================================
+const isPoolerUrl = process.env.DATABASE_URL?.includes('pooler.supabase.com');
+
+const dbConfig = {
+  connectionString : process.env.DATABASE_URL,
+  ssl              : { rejectUnauthorized: false },
+
+  // Pengaturan pool optimal untuk Supabase Free Tier (max 20 connections)
+  // Supabase Pooler (Transaction Mode) recommended max: 20
+  max                    : parseInt(process.env.DB_CONNECTION_LIMIT, 10) || (isPoolerUrl ? 20 : 10),
+  idleTimeoutMillis      : 30000,
+  connectionTimeoutMillis: 5000,   // Supabase perlu waktu sedikit lebih lama saat cold start
+  allowExitOnIdle        : false,
+};
+
 const pool = new Pool(dbConfig);
 
+// Event listener untuk deteksi error koneksi
+pool.on('error', (err) => {
+  console.error('[DB] Unexpected error on idle PostgreSQL client:', err.message);
+});
+
+pool.on('connect', () => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[DB] Koneksi baru ke Supabase PostgreSQL dibuat.');
+  }
+});
+
 // ============================================================================
-// Helper: Uji koneksi ke database PostgreSQL saat startup / health check
+// 3. HELPER: Uji koneksi ke Supabase saat startup / health check
 // ============================================================================
 async function testDbConnection() {
   let client;
   try {
     client = await pool.connect();
-    const result = await client.query("SELECT 1+1 AS test, version() AS version, current_database() AS db_name");
+    const result = await client.query(
+      "SELECT 1+1 AS test, version() AS version, current_database() AS db_name, NOW() AS server_time"
+    );
     const row = result.rows[0];
+
+    // Test Supabase Client jika tersedia
+    let supabaseStatus = 'not_configured';
+    if (supabaseAdmin) {
+      try {
+        const { error } = await supabaseAdmin.from('profil_sekolah').select('id').limit(1);
+        supabaseStatus = error ? `error: ${error.message}` : 'connected';
+      } catch {
+        supabaseStatus = 'client_error';
+      }
+    }
+
     return {
-      connected: true,
-      message:   'Koneksi database PostgreSQL berhasil.',
-      version:   row?.version  || 'unknown',
-      database:  row?.db_name  || 'unknown',
-      host:      dbConfig.host || 'Neon Cloud',
-      port:      dbConfig.port || 5432,
+      connected       : true,
+      message         : 'Koneksi ke Supabase PostgreSQL berhasil.',
+      version         : row?.version   || 'unknown',
+      database        : row?.db_name   || 'unknown',
+      server_time     : row?.server_time,
+      host            : 'Supabase Cloud (ap-southeast-1)',
+      port            : 5432,
+      supabase_client : supabaseStatus,
+      pool_mode       : isPoolerUrl ? 'Transaction Pooler' : 'Direct',
     };
   } catch (error) {
     return {
-      connected: false,
-      message:   `Gagal terhubung ke database PostgreSQL: ${error.message}`,
-      error:     error.code || error.message,
-      database:  dbConfig.database || 'unknown',
-      host:      dbConfig.host || 'unknown',
-      port:      dbConfig.port || 5432,
+      connected : false,
+      message   : `Gagal terhubung ke Supabase: ${error.message}`,
+      error     : error.code || error.message,
+      hint      : 'Periksa DATABASE_URL di .env — pastikan password database sudah diisi dari Supabase Dashboard > Settings > Database',
     };
   } finally {
     if (client) client.release();
@@ -86,8 +118,10 @@ async function testDbConnection() {
 }
 
 // ============================================================================
-// Exports
+// 4. EXPORTS
 // ============================================================================
-module.exports                   = pool;
-module.exports.testDbConnection  = testDbConnection;
-module.exports.dbConfig          = dbConfig;
+module.exports                  = pool;
+module.exports.pool             = pool;
+module.exports.supabaseAdmin    = supabaseAdmin;
+module.exports.testDbConnection = testDbConnection;
+module.exports.dbConfig         = dbConfig;

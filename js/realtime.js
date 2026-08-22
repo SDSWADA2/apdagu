@@ -16,6 +16,83 @@
 'use strict';
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   SUPABASE REALTIME BRIDGE — Sumber utama perubahan data (Production Grade)
+   Supabase Postgres Changes → window event → modul reload otomatis
+   Socket.IO tetap aktif sebagai fallback dan untuk presence (active users)
+───────────────────────────────────────────────────────────────────────────── */
+(async () => {
+  try {
+    // Import Supabase client (ES module dari CDN)
+    const { createClient } = await import(
+      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+    );
+
+    const supabase = createClient(
+      'https://cjijssmdrmzufacisrjn.supabase.co',
+      'sb_publishable_Z7mmjmgqmYcOBpjlD9IKZA_JNj8D5HD',
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    );
+
+    // Daftar tabel yang di-subscribe
+    const REALTIME_TABLES = [
+      'guru', 'kepegawaian', 'pendidikan', 'sertifikasi',
+      'jadwal_mengajar', 'beban_mengajar', 'absensi',
+      'pkg', 'prestasi', 'pelatihan', 'dokumen',
+      'profil_sekolah', 'users',
+    ];
+
+    // Buat satu channel untuk semua tabel (lebih efisien)
+    const channel = supabase.channel('db-changes');
+
+    REALTIME_TABLES.forEach(table => {
+      channel.on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table },
+        (payload) => {
+          const { eventType, new: newRec, old: oldRec } = payload;
+          const actionMap = { INSERT: 'insert', UPDATE: 'update', DELETE: 'delete' };
+          const action    = actionMap[eventType] || 'update';
+          const data      = eventType === 'DELETE'
+            ? { id: oldRec?.id, _action: 'delete' }
+            : { ...newRec, _action: action };
+
+          // Dispatch ke window agar semua listener bisa merespons
+          window.dispatchEvent(new CustomEvent('supabase:change', {
+            detail: { source: 'supabase_realtime', entity: table, action, data, at: new Date().toISOString() }
+          }));
+
+          // Forward ke sistem Realtime yang sudah ada
+          if (window.Realtime?._handleDataChange) {
+            window.Realtime._handleDataChange({ entity: table, action, data }, action);
+          }
+        }
+      );
+    });
+
+    channel.subscribe(status => {
+      if (status === 'SUBSCRIBED') {
+        console.log('[Supabase Realtime] ✅ Terhubung — Memantau', REALTIME_TABLES.length, 'tabel secara langsung.');
+        // Update badge status ke online via Supabase
+        setTimeout(() => {
+          if (window.Realtime?._updateStatusBadge) {
+            window.Realtime._updateStatusBadge('online');
+          }
+        }, 500);
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.warn('[Supabase Realtime] ⚠️ Status channel:', status);
+      }
+    });
+
+    // Simpan referensi global untuk akses dari modul lain
+    window._supabaseClient  = supabase;
+    window._supabaseChannel = channel;
+
+  } catch (err) {
+    console.warn('[Supabase Realtime] Gagal inisialisasi, fallback ke Socket.IO:', err.message);
+  }
+})();
+
+/* ─────────────────────────────────────────────────────────────────────────────
    BRIDGE — Hubungkan RealtimeClient baru (WS+SSE) ke modul lama ini
    Setiap event dari RealtimeClient diteruskan ke sistem refresh yang sudah ada
 ───────────────────────────────────────────────────────────────────────────── */
@@ -45,6 +122,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Aktifkan koneksi RealtimeClient segera
   window.RealtimeClient.connect();
 });
+
 
 const Realtime = (() => {
   // ── Config ──────────────────────────────────────────────────────────────────
