@@ -1238,7 +1238,63 @@ class StateManager {
   exportJSON() {
     return JSON.stringify(this.state, null, 2);
   }
+
+  /**
+   * Terapkan perubahan dari event realtime (Socket.IO/SSE) ke IndexedDB lokal
+   * tanpa memicu full pull dari server. Optimistic update yang lebih cerdas.
+   *
+   * @param {string} entity  - Nama koleksi (mis. 'guru', 'absensi')
+   * @param {string} action  - 'insert' | 'update' | 'delete'
+   * @param {Object} data    - Data dari payload event
+   * @param {string} senderUsername - Username pengirim perubahan (agar self-change diabaikan)
+   */
+  applyRealtimeChange(entity, action, data, senderUsername) {
+    // Abaikan perubahan yang dikirim oleh diri sendiri (sudah diaplikasikan secara optimistic)
+    const currentUser = typeof Auth !== 'undefined' ? Auth.getCurrentUser() : null;
+    if (currentUser && senderUsername && currentUser.username === senderUsername) {
+      return;
+    }
+
+    if (!this.state[entity] && action !== 'insert') return;
+    if (!this.state[entity]) this.state[entity] = [];
+
+    if (action === 'insert') {
+      // Cegah duplikat jika data sudah ada
+      const exists = this.state[entity].some(item => item.id == data.id);
+      if (!exists) {
+        this.state[entity].unshift(data);
+        this.saveState(this.state, true); // skipBroadcast=true agar tidak loop ke tab lain
+        this.notify();
+        console.log(`[DB] Realtime INSERT: ${entity}#${data.id}`);
+      }
+    } else if (action === 'update') {
+      const idx = this.state[entity].findIndex(item => item.id == data.id);
+      if (idx !== -1) {
+        this.state[entity][idx] = { ...this.state[entity][idx], ...data };
+        this.saveState(this.state, true);
+        this.notify();
+        console.log(`[DB] Realtime UPDATE: ${entity}#${data.id}`);
+      }
+    } else if (action === 'delete') {
+      const before = this.state[entity].length;
+      this.state[entity] = this.state[entity].filter(item => item.id != data.id);
+      if (this.state[entity].length < before) {
+        this.saveState(this.state, true);
+        this.notify();
+        console.log(`[DB] Realtime DELETE: ${entity}#${data.id}`);
+      }
+    }
+  }
 }
 
 // Global Singleton Instance
 const DB = new StateManager();
+
+// ============================================================================
+// Listener global: setelah realtime pull selesai, re-render modul yang aktif
+// ============================================================================
+window.addEventListener('realtime:pull_complete', () => {
+  if (typeof App !== 'undefined' && typeof App.reRenderCurrentView === 'function') {
+    App.reRenderCurrentView();
+  }
+});

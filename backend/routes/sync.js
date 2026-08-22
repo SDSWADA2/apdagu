@@ -86,8 +86,9 @@ function buildInsert(table, data) {
   const keys = Object.keys(data).filter(k => {
     if (isIgnoredField(table, k)) return false;
     const val = data[k];
-    // Buang field object/array kecuali jika tabel mengizinkan JSONB (pengaturan_aplikasi)
-    if (typeof val === 'object' && val !== null) return false;
+    // Izinkan null (agar kolom nullable terkirim dengan benar)
+    // Buang object/array non-null kecuali tabel pengaturan_aplikasi yang punya JSONB
+    if (val !== null && typeof val === 'object') return false;
     return true;
   });
 
@@ -108,7 +109,8 @@ function buildUpdate(table, data) {
     if (k === 'id') return false; // ID tidak diupdate
     if (isIgnoredField(table, k)) return false;
     const val = data[k];
-    if (typeof val === 'object' && val !== null) return false;
+    // Izinkan null — kolom nullable harus bisa dikosongkan
+    if (val !== null && typeof val === 'object') return false;
     return true;
   });
 
@@ -168,7 +170,8 @@ router.get('/all', async (req, res) => {
 
     for (const table of collectionTables) {
       try {
-        const { rows } = await pool.query(`SELECT * FROM "${table}" WHERE is_deleted = 0 OR is_deleted IS NULL`);
+        // PostgreSQL: is_deleted adalah BOOLEAN, bukan integer
+        const { rows } = await pool.query(`SELECT * FROM "${table}" WHERE is_deleted = false`);
         state[table] = rows;
       } catch (err) {
         console.warn(`[SYNC GET] Gagal membaca tabel ${table}:`, err.message);
@@ -501,8 +504,9 @@ router.post('/changes', async (req, res) => {
           if (targetTable === 'users') {
             await client.query(`UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1`, [data.id]);
           } else {
+            // PostgreSQL: is_deleted adalah BOOLEAN (bukan integer)
             await client.query(
-              `UPDATE "${targetTable}" SET is_deleted = 1, updated_at = NOW() WHERE id = $1`,
+              `UPDATE "${targetTable}" SET is_deleted = true, updated_at = NOW() WHERE id = $1`,
               [data.id]
             );
           }

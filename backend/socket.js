@@ -253,11 +253,13 @@ function broadcastToRoom(entity, event, payload) {
   if (!io) return;
   stats.totalBroadcasts++;
   const enriched = { ...payload, _server_ts: Date.now() };
-  // Kirim ke room spesifik SEKALIGUS ke semua (agar client yg belum subscribe tetap update)
+  // Kirim hanya ke room spesifik (client yg sudah subscribe entitas ini)
+  // Client yg belum subscribe akan tetap menerima event via listener 'any_change'
+  // di realtime_client.js — tidak perlu global fallback yang menyebabkan duplikasi.
   io.to(`entity:${entity}`).emit(event, enriched);
-  io.emit(event, enriched);   // global fallback
   _log(event, payload);
 }
+
 
 /**
  * Broadcast ke semua client KECUALI pengirim.

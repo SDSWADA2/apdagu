@@ -225,20 +225,28 @@ const SyncQueue = (function () {
           );
         }
         _retryCount = 0;
+        // isProcessing akan direset di finally
       } else {
         // Retry dengan exponential backoff
+        // isProcessing TETAP true selama backoff agar tidak ada pemrosesan ganda
         const backoffMs = Math.min(5000 * Math.pow(2, _retryCount - 1), 60000);
         console.log(`[SyncQueue] Retry dalam ${backoffMs / 1000}s...`);
         setTimeout(() => {
-          isProcessing = false;
+          isProcessing = false; // Reset HANYA di sini, tepat sebelum retry
           processQueue();
         }, backoffMs);
-        return; // Jangan reset isProcessing di finally
+        // Jangan jalankan finally-reset, keluar dari fungsi
+        emitStatus({ syncing: false });
+        return;
       }
     } finally {
-      isProcessing = false;
-      emitStatus({ syncing: false });
+      // Hanya reset isProcessing jika tidak sedang dalam mode retry (ditangani di setTimeout di atas)
+      if (isProcessing) {
+        isProcessing = false;
+        emitStatus({ syncing: false });
+      }
     }
+
   }
 
   // ============================================================================

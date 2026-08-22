@@ -49,11 +49,13 @@
      HELPER — token dari localStorage / sessionStorage
   ───────────────────────────────────────────── */
   function _getToken() {
+    // Standardisasi: selalu baca dari 'jwt_token'
+    // Fallback ke 'auth_token' untuk kompatibilitas mundur
     return (
-      sessionStorage.getItem('auth_token') ||
-      localStorage.getItem('auth_token')   ||
+      localStorage.getItem('jwt_token')    ||
       sessionStorage.getItem('jwt_token')  ||
-      localStorage.getItem('jwt_token')    || ''
+      localStorage.getItem('auth_token')   ||
+      sessionStorage.getItem('auth_token') || ''
     );
   }
 
@@ -75,8 +77,8 @@
   ───────────────────────────────────────────── */
   function _handleEvent(event, payload) {
     console.log(`[Realtime][${_mode}] 📥 ${event} | entity=${payload?.entity} | action=${payload?.action}`);
-    
-    // Debounce data_synced or data_bulk events to prevent UI freezing
+
+    // Debounce data_synced / data_bulk untuk mencegah UI freeze
     if (event === 'data_synced' || event === 'data_bulk') {
       if (_eventDebounceTimers[event]) {
         clearTimeout(_eventDebounceTimers[event]);
@@ -84,10 +86,74 @@
       _eventDebounceTimers[event] = setTimeout(() => {
         _emit(event, payload);
         _emit('any_change', { event, payload });
+        // Bug 7: Sync IndexedDB lokal saat menerima data_synced dari server
+        _triggerLocalPull(payload);
       }, 300);
+    } else if (event === 'data_inserted' || event === 'data_updated' || event === 'data_deleted') {
+      // Debounce per-entitas untuk menghindari reload berulang dalam 500ms
+      const debounceKey = `${event}:${payload?.entity || 'all'}`;
+      if (_eventDebounceTimers[debounceKey]) {
+        clearTimeout(_eventDebounceTimers[debounceKey]);
+      }
+      _eventDebounceTimers[debounceKey] = setTimeout(() => {
+        _emit(event, payload);
+        _emit('any_change', { event, payload });
+        // Terapkan perubahan ke IndexedDB lokal secara optimistic
+        if (payload?.entity && payload?.data) {
+          _applyLocalChange(payload.entity, payload.action, payload.data, payload.by?.username);
+        }
+      }, 150);
     } else {
       _emit(event, payload);
       _emit('any_change', { event, payload });
+    }
+  }
+
+  /**
+   * Terapkan perubahan realtime langsung ke IndexedDB lokal (optimistic update)
+   * Dipanggil saat menerima data_inserted / data_updated / data_deleted
+   */
+  function _applyLocalChange(entity, action, data, senderUsername) {
+    // Gunakan DB.applyRealtimeChange jika tersedia (lebih canggih, dengan self-change guard)
+    if (typeof DB !== 'undefined' && typeof DB.applyRealtimeChange === 'function') {
+      DB.applyRealtimeChange(entity, action, data, senderUsername);
+      return;
+    }
+    // Fallback manual jika DB.applyRealtimeChange belum tersedia
+    if (typeof DB === 'undefined') return;
+    try {
+      if (action === 'insert') {
+        const existing = DB.getById(entity, data.id);
+        if (!existing) DB.insert(entity, data);
+      } else if (action === 'update') {
+        if (data.id) DB.update(entity, data.id, data);
+      } else if (action === 'delete') {
+        if (data.id) DB.delete(entity, data.id);
+      }
+    } catch (e) {
+      // Operasi optimistic tidak kritis — abaikan error
+    }
+  }
+
+
+  /**
+   * Tarik data terbaru dari backend ke IndexedDB lokal setelah sync massal.
+   * Dipanggil saat menerima event data_synced dari server.
+   */
+  function _triggerLocalPull(payload) {
+    // Hindari pull berulang — tunggu setidaknya 3 detik antara dua pull
+    if (_triggerLocalPull._lastPull && (Date.now() - _triggerLocalPull._lastPull < 3000)) return;
+    _triggerLocalPull._lastPull = Date.now();
+
+    if (typeof DB !== 'undefined' && typeof DB.pullAllFromBackend === 'function') {
+      console.log('[Realtime] data_synced diterima — memperbarui IndexedDB lokal dari server...');
+      DB.pullAllFromBackend().then(() => {
+        console.log('[Realtime] ✅ IndexedDB berhasil diperbarui dari server.');
+        // Emit event agar modul aktif bisa re-render
+        window.dispatchEvent(new CustomEvent('realtime:pull_complete', { detail: payload }));
+      }).catch(e => {
+        console.warn('[Realtime] Gagal pull setelah data_synced:', e.message);
+      });
     }
   }
 
