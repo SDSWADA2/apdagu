@@ -1,19 +1,14 @@
 -- ============================================================================
--- MASTER SCHEMA SUPABASE — APDAGU ENTERPRISE v2.0
+-- APDAGU ENTERPRISE v2.0 — SUPABASE POSTGRESQL NATIVE SCHEMA
 -- SD NEGERI SUMBER WARU 2 (KABUPATEN PAMEKASAN)
 -- ============================================================================
--- CARA MENJALANKAN:
--- 1. Buka Supabase Dashboard > SQL Editor
--- 2. Klik "New Query", paste seluruh isi file ini
--- 3. Klik "Run" (Ctrl+Enter)
--- 4. Semua tabel (UUID), Trigger, Audit Logs, RLS, Storage & Realtime aktif!
--- ============================================================================
 
+-- Aktifkan Ekstensi UUID & pgcrypto
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================================================
--- 1. TABEL UTAMA
+-- 1. TABEL PROFIL SEKOLAH
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS public.profil_sekolah (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -41,6 +36,9 @@ CREATE TABLE IF NOT EXISTS public.profil_sekolah (
     updated_at          TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW())
 );
 
+-- ============================================================================
+-- 2. TABEL MASTER GURU
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.guru (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nuptk             VARCHAR(30) UNIQUE,
@@ -76,6 +74,9 @@ CREATE TABLE IF NOT EXISTS public.guru (
     updated_at        TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW())
 );
 
+-- ============================================================================
+-- 3. TABEL PROFILES (Terhubung ke Supabase auth.users)
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.profiles (
     id           UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     role         VARCHAR(30) NOT NULL DEFAULT 'guru' CHECK (role IN ('admin', 'operator', 'guru')),
@@ -89,6 +90,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at   TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW())
 );
 
+-- ============================================================================
+-- 4. TABEL KEPEGAWAIAN
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.kepegawaian (
     id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     guru_id            UUID NOT NULL REFERENCES public.guru(id) ON DELETE CASCADE,
@@ -110,6 +114,9 @@ CREATE TABLE IF NOT EXISTS public.kepegawaian (
     updated_at         TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW())
 );
 
+-- ============================================================================
+-- 5. TABEL RIWAYAT PENDIDIKAN
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.pendidikan (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     guru_id         UUID NOT NULL REFERENCES public.guru(id) ON DELETE CASCADE,
@@ -129,6 +136,9 @@ CREATE TABLE IF NOT EXISTS public.pendidikan (
     updated_at      TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW())
 );
 
+-- ============================================================================
+-- 6. TABEL SERTIFIKASI GURU
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.sertifikasi (
     id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     guru_id               UUID NOT NULL REFERENCES public.guru(id) ON DELETE CASCADE,
@@ -147,6 +157,9 @@ CREATE TABLE IF NOT EXISTS public.sertifikasi (
     updated_at            TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW())
 );
 
+-- ============================================================================
+-- 7. TABEL JADWAL MENGAJAR
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.jadwal_mengajar (
     id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     guru_id        UUID NOT NULL REFERENCES public.guru(id) ON DELETE CASCADE,
@@ -167,6 +180,9 @@ CREATE TABLE IF NOT EXISTS public.jadwal_mengajar (
     updated_at     TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW())
 );
 
+-- ============================================================================
+-- 8. TABEL BEBAN MENGAJAR (24 JP VALIDATION)
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.beban_mengajar (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     guru_id           UUID NOT NULL REFERENCES public.guru(id) ON DELETE CASCADE,
@@ -187,6 +203,9 @@ CREATE TABLE IF NOT EXISTS public.beban_mengajar (
     updated_at        TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW())
 );
 
+-- ============================================================================
+-- 9. TABEL ABSENSI (GPS & FOTO SELFIE)
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.absensi (
     id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     guru_id          UUID NOT NULL REFERENCES public.guru(id) ON DELETE CASCADE,
@@ -206,6 +225,9 @@ CREATE TABLE IF NOT EXISTS public.absensi (
     CONSTRAINT uq_guru_tanggal UNIQUE (guru_id, tanggal)
 );
 
+-- ============================================================================
+-- 10. TABEL PKG (PENILAIAN KINERJA GURU / SKP)
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.pkg (
     id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     guru_id              UUID NOT NULL REFERENCES public.guru(id) ON DELETE CASCADE,
@@ -229,6 +251,9 @@ CREATE TABLE IF NOT EXISTS public.pkg (
     updated_at           TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW())
 );
 
+-- ============================================================================
+-- 11. TABEL PRESTASI
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.prestasi (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     guru_id         UUID NOT NULL REFERENCES public.guru(id) ON DELETE CASCADE,
@@ -247,6 +272,9 @@ CREATE TABLE IF NOT EXISTS public.prestasi (
     updated_at      TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW())
 );
 
+-- ============================================================================
+-- 12. TABEL PELATIHAN (PMM, GURU PENGGERAK, WORKSHOP)
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.pelatihan (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     guru_id             UUID NOT NULL REFERENCES public.guru(id) ON DELETE CASCADE,
@@ -266,6 +294,9 @@ CREATE TABLE IF NOT EXISTS public.pelatihan (
     updated_at          TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW())
 );
 
+-- ============================================================================
+-- 13. TABEL DOKUMEN & BERKAS
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.dokumen (
     id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     guru_id            UUID NOT NULL REFERENCES public.guru(id) ON DELETE CASCADE,
@@ -284,6 +315,9 @@ CREATE TABLE IF NOT EXISTS public.dokumen (
     updated_at         TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW())
 );
 
+-- ============================================================================
+-- 14. TABEL AUDIT LOGS (RIWAYAT AKTIVITAS LENGKAP)
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.audit_logs (
     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id       UUID,
@@ -300,6 +334,9 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
     created_at    TIMESTAMPTZ DEFAULT TIMEZONE('utc', NOW())
 );
 
+-- ============================================================================
+-- 15. TABEL PENGATURAN APLIKASI
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.pengaturan_aplikasi (
     id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     kunci      VARCHAR(100) NOT NULL UNIQUE,
@@ -311,7 +348,7 @@ CREATE TABLE IF NOT EXISTS public.pengaturan_aplikasi (
 );
 
 -- ============================================================================
--- 2. INDEXES
+-- INDEXES UNTUK KECEPATAN QUERY TINGGI (<100ms)
 -- ============================================================================
 CREATE INDEX IF NOT EXISTS idx_guru_nama          ON public.guru(nama_lengkap);
 CREATE INDEX IF NOT EXISTS idx_guru_nuptk         ON public.guru(nuptk);
@@ -334,261 +371,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_created      ON public.audit_logs(created_a
 CREATE INDEX IF NOT EXISTS idx_profiles_guru      ON public.profiles(guru_id);
 
 -- ============================================================================
--- 3. TRIGGERS: TIMESTAMP & AUDIT LOGS & NEW USER
--- ============================================================================
-CREATE OR REPLACE FUNCTION public.update_timestamp()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = TIMEZONE('utc', NOW());
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DO $$ 
-DECLARE
-    tbl text;
-BEGIN
-    FOR tbl IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename != 'audit_logs' LOOP
-        EXECUTE format('DROP TRIGGER IF EXISTS trg_%I_updated ON public.%I; CREATE TRIGGER trg_%I_updated BEFORE UPDATE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.update_timestamp();', tbl, tbl, tbl, tbl);
-    END LOOP;
-END $$;
-
-CREATE OR REPLACE FUNCTION public.process_audit_log()
-RETURNS TRIGGER AS $$
-DECLARE
-    current_uid UUID;
-    current_user_name TEXT := 'Sistem / Anonim';
-    current_user_role TEXT := 'guru';
-    rec_id UUID;
-    old_row JSONB := NULL;
-    new_row JSONB := NULL;
-    desc_text TEXT;
-BEGIN
-    current_uid := auth.uid();
-    IF current_uid IS NOT NULL THEN
-        SELECT nama_lengkap, role INTO current_user_name, current_user_role 
-        FROM public.profiles WHERE id = current_uid;
-        IF current_user_name IS NULL THEN
-            current_user_name := 'User ' || SUBSTRING(current_uid::TEXT FROM 1 FOR 8);
-        END IF;
-    END IF;
-
-    IF (TG_OP = 'DELETE') THEN
-        rec_id := OLD.id;
-        old_row := to_jsonb(OLD);
-        desc_text := 'Menghapus data di tabel ' || TG_TABLE_NAME;
-    ELSIF (TG_OP = 'UPDATE') THEN
-        rec_id := NEW.id;
-        old_row := to_jsonb(OLD);
-        new_row := to_jsonb(NEW);
-        desc_text := 'Memperbarui data di tabel ' || TG_TABLE_NAME;
-    ELSIF (TG_OP = 'INSERT') THEN
-        rec_id := NEW.id;
-        new_row := to_jsonb(NEW);
-        desc_text := 'Menambahkan data baru di tabel ' || TG_TABLE_NAME;
-    END IF;
-
-    INSERT INTO public.audit_logs (
-        user_id, username, role, aksi, tabel_terkait, record_id, data_lama, data_baru, deskripsi, created_at
-    ) VALUES (
-        current_uid, COALESCE(current_user_name, 'Sistem'), COALESCE(current_user_role, 'guru'),
-        TG_OP, TG_TABLE_NAME, rec_id, old_row, new_row, desc_text, TIMEZONE('utc', NOW())
-    );
-
-    IF (TG_OP = 'DELETE') THEN RETURN OLD; ELSE RETURN NEW; END IF;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS audit_guru ON public.guru;
-CREATE TRIGGER audit_guru AFTER INSERT OR UPDATE OR DELETE ON public.guru FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
-DROP TRIGGER IF EXISTS audit_kepegawaian ON public.kepegawaian;
-CREATE TRIGGER audit_kepegawaian AFTER INSERT OR UPDATE OR DELETE ON public.kepegawaian FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
-DROP TRIGGER IF EXISTS audit_pendidikan ON public.pendidikan;
-CREATE TRIGGER audit_pendidikan AFTER INSERT OR UPDATE OR DELETE ON public.pendidikan FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
-DROP TRIGGER IF EXISTS audit_sertifikasi ON public.sertifikasi;
-CREATE TRIGGER audit_sertifikasi AFTER INSERT OR UPDATE OR DELETE ON public.sertifikasi FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
-DROP TRIGGER IF EXISTS audit_jadwal ON public.jadwal_mengajar;
-CREATE TRIGGER audit_jadwal AFTER INSERT OR UPDATE OR DELETE ON public.jadwal_mengajar FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
-DROP TRIGGER IF EXISTS audit_beban ON public.beban_mengajar;
-CREATE TRIGGER audit_beban AFTER INSERT OR UPDATE OR DELETE ON public.beban_mengajar FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
-DROP TRIGGER IF EXISTS audit_absensi ON public.absensi;
-CREATE TRIGGER audit_absensi AFTER INSERT OR UPDATE OR DELETE ON public.absensi FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
-DROP TRIGGER IF EXISTS audit_pkg ON public.pkg;
-CREATE TRIGGER audit_pkg AFTER INSERT OR UPDATE OR DELETE ON public.pkg FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
-DROP TRIGGER IF EXISTS audit_prestasi ON public.prestasi;
-CREATE TRIGGER audit_prestasi AFTER INSERT OR UPDATE OR DELETE ON public.prestasi FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
-DROP TRIGGER IF EXISTS audit_pelatihan ON public.pelatihan;
-CREATE TRIGGER audit_pelatihan AFTER INSERT OR UPDATE OR DELETE ON public.pelatihan FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
-DROP TRIGGER IF EXISTS audit_dokumen ON public.dokumen;
-CREATE TRIGGER audit_dokumen AFTER INSERT OR UPDATE OR DELETE ON public.dokumen FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
-
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO public.profiles (id, email, nama_lengkap, role)
-    VALUES (
-        NEW.id,
-        NEW.email,
-        COALESCE(NEW.raw_user_meta_data->>'nama_lengkap', split_part(NEW.email, '@', 1)),
-        COALESCE(NEW.raw_user_meta_data->>'role', 'guru')
-    )
-    ON CONFLICT (id) DO UPDATE SET
-        email = EXCLUDED.email,
-        nama_lengkap = COALESCE(EXCLUDED.nama_lengkap, profiles.nama_lengkap),
-        role = COALESCE(EXCLUDED.role, profiles.role);
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
--- ============================================================================
--- 4. ROW LEVEL SECURITY (RLS)
--- ============================================================================
-ALTER TABLE public.profil_sekolah       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.guru                 ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.profiles             ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.kepegawaian          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.pendidikan           ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sertifikasi          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.jadwal_mengajar      ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.beban_mengajar       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.absensi              ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.pkg                  ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.prestasi             ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.pelatihan            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.dokumen              ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.audit_logs           ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.pengaturan_aplikasi  ENABLE ROW LEVEL SECURITY;
-
-CREATE OR REPLACE FUNCTION public.get_current_user_role()
-RETURNS TEXT AS $$
-    SELECT COALESCE((SELECT role FROM public.profiles WHERE id = auth.uid()), 'guru');
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
-
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS BOOLEAN AS $$
-    SELECT public.get_current_user_role() = 'admin';
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
-
-CREATE OR REPLACE FUNCTION public.is_admin_or_operator()
-RETURNS BOOLEAN AS $$
-    SELECT public.get_current_user_role() IN ('admin', 'operator');
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
-
-CREATE OR REPLACE FUNCTION public.get_user_guru_id()
-RETURNS UUID AS $$
-    SELECT guru_id FROM public.profiles WHERE id = auth.uid();
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
-
--- Policies
-CREATE POLICY "ps_sel" ON public.profil_sekolah FOR SELECT USING (true);
-CREATE POLICY "ps_ins" ON public.profil_sekolah FOR INSERT WITH CHECK (public.is_admin());
-CREATE POLICY "ps_upd" ON public.profil_sekolah FOR UPDATE USING (public.is_admin_or_operator());
-CREATE POLICY "ps_del" ON public.profil_sekolah FOR DELETE USING (public.is_admin());
-
-CREATE POLICY "prof_sel" ON public.profiles FOR SELECT USING (true);
-CREATE POLICY "prof_ins" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id OR public.is_admin());
-CREATE POLICY "prof_upd" ON public.profiles FOR UPDATE USING (auth.uid() = id OR public.is_admin());
-CREATE POLICY "prof_del" ON public.profiles FOR DELETE USING (public.is_admin());
-
-CREATE POLICY "guru_sel" ON public.guru FOR SELECT USING (true);
-CREATE POLICY "guru_ins" ON public.guru FOR INSERT WITH CHECK (public.is_admin_or_operator());
-CREATE POLICY "guru_upd" ON public.guru FOR UPDATE USING (public.is_admin_or_operator() OR id = public.get_user_guru_id());
-CREATE POLICY "guru_del" ON public.guru FOR DELETE USING (public.is_admin_or_operator());
-
-CREATE POLICY "kepeg_sel" ON public.kepegawaian FOR SELECT USING (true);
-CREATE POLICY "kepeg_ins" ON public.kepegawaian FOR INSERT WITH CHECK (public.is_admin_or_operator());
-CREATE POLICY "kepeg_upd" ON public.kepegawaian FOR UPDATE USING (public.is_admin_or_operator() OR guru_id = public.get_user_guru_id());
-CREATE POLICY "kepeg_del" ON public.kepegawaian FOR DELETE USING (public.is_admin_or_operator());
-
-CREATE POLICY "pend_sel" ON public.pendidikan FOR SELECT USING (true);
-CREATE POLICY "pend_ins" ON public.pendidikan FOR INSERT WITH CHECK (public.is_admin_or_operator() OR guru_id = public.get_user_guru_id());
-CREATE POLICY "pend_upd" ON public.pendidikan FOR UPDATE USING (public.is_admin_or_operator() OR guru_id = public.get_user_guru_id());
-CREATE POLICY "pend_del" ON public.pendidikan FOR DELETE USING (public.is_admin_or_operator());
-
-CREATE POLICY "sertif_sel" ON public.sertifikasi FOR SELECT USING (true);
-CREATE POLICY "sertif_ins" ON public.sertifikasi FOR INSERT WITH CHECK (public.is_admin_or_operator() OR guru_id = public.get_user_guru_id());
-CREATE POLICY "sertif_upd" ON public.sertifikasi FOR UPDATE USING (public.is_admin_or_operator() OR guru_id = public.get_user_guru_id());
-CREATE POLICY "sertif_del" ON public.sertifikasi FOR DELETE USING (public.is_admin_or_operator());
-
-CREATE POLICY "jadwal_sel" ON public.jadwal_mengajar FOR SELECT USING (true);
-CREATE POLICY "jadwal_ins" ON public.jadwal_mengajar FOR INSERT WITH CHECK (public.is_admin_or_operator());
-CREATE POLICY "jadwal_upd" ON public.jadwal_mengajar FOR UPDATE USING (public.is_admin_or_operator());
-CREATE POLICY "jadwal_del" ON public.jadwal_mengajar FOR DELETE USING (public.is_admin_or_operator());
-
-CREATE POLICY "beban_sel" ON public.beban_mengajar FOR SELECT USING (true);
-CREATE POLICY "beban_ins" ON public.beban_mengajar FOR INSERT WITH CHECK (public.is_admin_or_operator());
-CREATE POLICY "beban_upd" ON public.beban_mengajar FOR UPDATE USING (public.is_admin_or_operator());
-CREATE POLICY "beban_del" ON public.beban_mengajar FOR DELETE USING (public.is_admin_or_operator());
-
-CREATE POLICY "abs_sel" ON public.absensi FOR SELECT USING (true);
-CREATE POLICY "abs_ins" ON public.absensi FOR INSERT WITH CHECK (public.is_admin_or_operator() OR guru_id = public.get_user_guru_id());
-CREATE POLICY "abs_upd" ON public.absensi FOR UPDATE USING (public.is_admin_or_operator() OR guru_id = public.get_user_guru_id());
-CREATE POLICY "abs_del" ON public.absensi FOR DELETE USING (public.is_admin_or_operator());
-
-CREATE POLICY "pkg_sel" ON public.pkg FOR SELECT USING (true);
-CREATE POLICY "pkg_ins" ON public.pkg FOR INSERT WITH CHECK (public.is_admin_or_operator());
-CREATE POLICY "pkg_upd" ON public.pkg FOR UPDATE USING (public.is_admin_or_operator());
-CREATE POLICY "pkg_del" ON public.pkg FOR DELETE USING (public.is_admin_or_operator());
-
-CREATE POLICY "pres_sel" ON public.prestasi FOR SELECT USING (true);
-CREATE POLICY "pres_ins" ON public.prestasi FOR INSERT WITH CHECK (public.is_admin_or_operator() OR guru_id = public.get_user_guru_id());
-CREATE POLICY "pres_upd" ON public.prestasi FOR UPDATE USING (public.is_admin_or_operator() OR guru_id = public.get_user_guru_id());
-CREATE POLICY "pres_del" ON public.prestasi FOR DELETE USING (public.is_admin_or_operator());
-
-CREATE POLICY "pel_sel" ON public.pelatihan FOR SELECT USING (true);
-CREATE POLICY "pel_ins" ON public.pelatihan FOR INSERT WITH CHECK (public.is_admin_or_operator() OR guru_id = public.get_user_guru_id());
-CREATE POLICY "pel_upd" ON public.pelatihan FOR UPDATE USING (public.is_admin_or_operator() OR guru_id = public.get_user_guru_id());
-CREATE POLICY "pel_del" ON public.pelatihan FOR DELETE USING (public.is_admin_or_operator());
-
-CREATE POLICY "dok_sel" ON public.dokumen FOR SELECT USING (true);
-CREATE POLICY "dok_ins" ON public.dokumen FOR INSERT WITH CHECK (public.is_admin_or_operator() OR guru_id = public.get_user_guru_id());
-CREATE POLICY "dok_upd" ON public.dokumen FOR UPDATE USING (public.is_admin_or_operator() OR guru_id = public.get_user_guru_id());
-CREATE POLICY "dok_del" ON public.dokumen FOR DELETE USING (public.is_admin_or_operator());
-
-CREATE POLICY "audit_sel" ON public.audit_logs FOR SELECT USING (true);
-CREATE POLICY "audit_ins" ON public.audit_logs FOR INSERT WITH CHECK (true);
-CREATE POLICY "audit_del" ON public.audit_logs FOR DELETE USING (public.is_admin());
-
-CREATE POLICY "peng_sel" ON public.pengaturan_aplikasi FOR SELECT USING (true);
-CREATE POLICY "peng_ins" ON public.pengaturan_aplikasi FOR INSERT WITH CHECK (public.is_admin_or_operator());
-CREATE POLICY "peng_upd" ON public.pengaturan_aplikasi FOR UPDATE USING (public.is_admin_or_operator());
-CREATE POLICY "peng_del" ON public.pengaturan_aplikasi FOR DELETE USING (public.is_admin());
-
--- ============================================================================
--- 5. REALTIME PUBLICATION & STORAGE BUCKETS
--- ============================================================================
-DO $$
-BEGIN
-  ALTER PUBLICATION supabase_realtime ADD TABLE 
-    public.guru, public.profiles, public.kepegawaian, public.pendidikan,
-    public.sertifikasi, public.jadwal_mengajar, public.beban_mengajar,
-    public.absensi, public.pkg, public.prestasi, public.pelatihan,
-    public.dokumen, public.profil_sekolah, public.pengaturan_aplikasi,
-    public.audit_logs;
-EXCEPTION WHEN OTHERS THEN
-  NULL;
-END $$;
-
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES 
-  ('foto-guru', 'foto-guru', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp']),
-  ('dokumen', 'dokumen', true, 10485760, ARRAY['application/pdf', 'image/jpeg', 'image/png']),
-  ('ijazah', 'ijazah', true, 10485760, ARRAY['application/pdf', 'image/jpeg', 'image/png']),
-  ('sertifikat', 'sertifikat', true, 10485760, ARRAY['application/pdf', 'image/jpeg', 'image/png']),
-  ('ttd', 'ttd', true, 2097152, ARRAY['image/png', 'image/webp', 'image/svg+xml']),
-  ('logo', 'logo', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
-ON CONFLICT (id) DO UPDATE SET
-  public = EXCLUDED.public,
-  file_size_limit = EXCLUDED.file_size_limit,
-  allowed_mime_types = EXCLUDED.allowed_mime_types;
-
--- ============================================================================
--- 6. SEED DATA AWAL
+-- SEED DATA AWAL PROFIL SEKOLAH & PENGATURAN
 -- ============================================================================
 INSERT INTO public.profil_sekolah (
     npsn, nss, nama_sekolah, status_sekolah, akreditasi, alamat_lengkap,
@@ -612,5 +395,3 @@ INSERT INTO public.pengaturan_aplikasi (kunci, nilai, keterangan) VALUES
 ('latitude_sekolah', '-6.981234', 'Koordinat Latitude SDN Sumber Waru 2'),
 ('longitude_sekolah', '113.567890', 'Koordinat Longitude SDN Sumber Waru 2')
 ON CONFLICT (kunci) DO NOTHING;
-
-SELECT 'Schema Supabase APDAGU Enterprise v2.0 Berhasil Diterapkan! 🎉' AS status;
