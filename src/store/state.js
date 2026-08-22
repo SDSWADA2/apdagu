@@ -180,23 +180,28 @@ class StateStore {
     }
 
     this.notify(collection);
+    this._logAudit('INSERT', collection, null, record);
     return await Sync.mutate(collection, 'insert', record);
   }
 
   async update(collection, record) {
     record.updated_at = new Date().toISOString();
+    let oldData = null;
 
     // Optimistic local update
     if (collection === 'profil_sekolah') {
+      oldData = { ...this.data.profil_sekolah };
       this.data.profil_sekolah = { ...this.data.profil_sekolah, ...record };
     } else {
       const index = this.data[collection]?.findIndex(item => item.id === record.id);
       if (index !== undefined && index !== -1) {
+        oldData = { ...this.data[collection][index] };
         this.data[collection][index] = { ...this.data[collection][index], ...record };
       }
     }
 
     this.notify(collection);
+    this._logAudit('UPDATE', collection, oldData, record);
     return await Sync.mutate(collection, 'update', record);
   }
 
@@ -204,15 +209,62 @@ class StateStore {
     const record = this.getById(collection, id) || { id };
     record.is_deleted = true;
     record.updated_at = new Date().toISOString();
+    let oldData = null;
 
     // Optimistic local update (soft delete)
     const index = this.data[collection]?.findIndex(item => item.id === id);
     if (index !== undefined && index !== -1) {
+      oldData = { ...this.data[collection][index] };
       this.data[collection].splice(index, 1);
     }
 
     this.notify(collection);
+    this._logAudit('DELETE', collection, oldData, record);
     return await Sync.mutate(collection, 'delete', record);
+  }
+
+  async _logAudit(aksi, collection, oldData, newData) {
+    if (collection === 'audit_logs') return; // Prevent infinite loop
+    
+    let username = 'Unknown';
+    let role = 'Unknown';
+
+    if (typeof window !== 'undefined') {
+      try {
+        const token = localStorage.getItem('apdagu_auth_token') || localStorage.getItem('apdagu_demo_auth');
+        if (token) {
+          const parsed = JSON.parse(token);
+          username = parsed.profile?.nama_lengkap || parsed.profile?.email || parsed.user?.email || 'Unknown';
+          role = parsed.profile?.role || 'Unknown';
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    const logRecord = {
+      id: crypto.randomUUID ? crypto.randomUUID() : (Math.random().toString(36).substring(2, 10) + '-' + Date.now()),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      is_deleted: false,
+      username: username,
+      role: role,
+      aksi: aksi,
+      tabel_terkait: collection,
+      record_id: newData?.id || null,
+      data_lama: oldData ? JSON.stringify(oldData) : null,
+      data_baru: newData ? JSON.stringify(newData) : null,
+      deskripsi: `Melakukan ${aksi} pada ${collection}`
+    };
+
+    if (!this.data.audit_logs) this.data.audit_logs = [];
+    this.data.audit_logs.unshift(logRecord);
+    this.notify('audit_logs');
+    
+    // Call Sync directly without calling insert to avoid any accidental loops
+    try {
+      await Sync.mutate('audit_logs', 'insert', logRecord);
+    } catch(e) {}
   }
 
   subscribe(listener) {
