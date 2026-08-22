@@ -96,8 +96,6 @@ class AuthService {
 
   async login(email, password) {
     const supabase = await getSupabase();
-    if (!supabase) throw new Error('Koneksi Supabase tidak tersedia.');
-
     // Support demo shortcut login
     let loginEmail = email.trim();
     if (!loginEmail.includes('@')) {
@@ -109,15 +107,19 @@ class AuthService {
     let loginResult = null;
     let loginError = null;
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password: password
-      });
-      if (error) throw error;
-      loginResult = data;
-    } catch (err) {
-      loginError = err;
+    if (!supabase) {
+      loginError = new Error('Koneksi Supabase tidak tersedia.');
+    } else {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: loginEmail,
+          password: password
+        });
+        if (error) throw error;
+        loginResult = data;
+      } catch (err) {
+        loginError = err;
+      }
     }
 
     // ── FALLBACK DEMO / OFFLINE MODE ──

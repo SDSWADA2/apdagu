@@ -150,12 +150,16 @@ class AppController {
     this.currentView = viewId;
 
     // Sembunyikan semua view
-    document.querySelectorAll('.app-view').forEach(v => v.classList.add('d-none'));
+    document.querySelectorAll('.app-view').forEach(v => {
+      v.classList.remove('active');
+      v.classList.add('d-none');
+    });
 
     // Tampilkan view target
     const target = document.getElementById(viewId);
     if (target) {
       target.classList.remove('d-none');
+      target.classList.add('active');
     }
 
     // Update active class di sidebar
