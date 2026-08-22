@@ -7,7 +7,7 @@
 
 const API_STORAGE_KEY = 'SDN_SW2_API_BASE_URL';
 const JWT_STORAGE_KEY = 'jwt_token';
-const DEFAULT_API_BASE = 'http://localhost:3001';
+const DEFAULT_API_BASE = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
 
 class ApiClient {
   constructor() {

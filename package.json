@@ -4,6 +4,8 @@
   "description": "Aplikasi Database Guru SD - lint helper",
   "private": true,
   "scripts": {
+    "postinstall": "cd backend && npm install",
+    "start": "node backend/server.js",
     "lint": "eslint 'js/**/*.js' --fix",
     "lint:check": "eslint 'js/**/*.js'"
   },

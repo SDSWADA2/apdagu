@@ -33,7 +33,7 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: NODE_ENV === 'production' ? {
     directives: {
-      defaultSrc: ["'self'", "http://localhost:*", "ws://localhost:*", "https://cdn.jsdelivr.net"],
+      defaultSrc: ["'self'", "http://localhost:*", "ws://localhost:*", "https://cdn.jsdelivr.net", "wss://*", "https://*"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "data:", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
