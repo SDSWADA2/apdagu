@@ -69,7 +69,7 @@
               <span>Data Guru</span>
             </a>
           </li>
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin,operator,guru">
             <a href="#" class="nav-menu-link" data-view="view-profil-guru">
               <i class="bi bi-person-badge-fill"></i>
               <span>Profil Guru (10 Tab)</span>
@@ -1640,7 +1640,7 @@
   <!-- ====================================================================
        LOGIN OVERLAY
        ==================================================================== -->
-  <div id="login-overlay" class="login-overlay" role="dialog" aria-modal="true">
+  <div id="login-overlay" class="login-overlay" role="dialog" aria-modal="true" style="display:none;">
     <div class="login-bg-bubbles" aria-hidden="true">
       <span></span><span></span><span></span><span></span><span></span>
     </div>

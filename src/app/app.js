@@ -2,7 +2,7 @@
  * ============================================================================
  * MAIN APPLICATION CONTROLLER & ROUTER
  * APDAGU Enterprise v2.0
- * Multi-user realtime, Offline-first, Supabase Auth & RLS
+ * Multi-user realtime, Offline-first, Supabase Auth & RLS, RBAC
  * ============================================================================
  */
 
@@ -70,7 +70,7 @@ class AppController {
       } else {
         this.showLoginOverlay();
       }
-    } catch(err) {
+    } catch (err) {
       console.error('[App] Auth init failed:', err);
       this.showLoginOverlay();
       Toast.error('Autentikasi Gagal', 'Gagal memuat sesi pengguna. Silakan login kembali.');
@@ -79,23 +79,23 @@ class AppController {
     // Inisialisasi Database Store & Realtime
     try {
       await Store.init();
-    } catch(err) {
+    } catch (err) {
       console.error('[App] Store init failed:', err);
-      Toast.warning('Koneksi Terbatas', 'Gagal menyinkronkan data dengan server. Anda berada dalam mode offline.');
+      Toast.warning('Koneksi Terbatas', 'Gagal menyinkronkan data dari server. Mode offline aktif.');
     }
 
-    // Status listeners
+    // Bind events
     this.bindRealtimeAndSyncStatus();
     this.bindNavigation();
     this.bindAuthEvents();
     this.bindGlobalForms();
 
-    // Auto-refresh active view when store changes
-    Store.subscribe((data, changedCollection) => {
+    // Auto-refresh view aktif saat Store berubah
+    Store.subscribe(() => {
       this.refreshCurrentView();
     });
 
-    // Render initial page
+    // Render halaman awal
     this.navigateTo(this.currentView);
   }
 
@@ -129,25 +129,27 @@ class AppController {
   }
 
   navigateTo(viewId, params = {}) {
-    // RBAC Check
+    // ── RBAC Check ──
     const navLink = document.querySelector(`.nav-menu-link[data-view="${viewId}"]`);
-    const parentLi = navLink ? navLink.closest('li') : null;
-    if (parentLi && parentLi.hasAttribute('data-allowed-roles')) {
-      const allowedRoles = parentLi.getAttribute('data-allowed-roles').split(',');
+    const parentLi = navLink ? navLink.closest('li[data-allowed-roles]') : null;
+
+    if (parentLi) {
+      const allowedRoles = parentLi.getAttribute('data-allowed-roles').split(',').map(r => r.trim());
       const currentRole = Auth.getRole();
       if (!allowedRoles.includes(currentRole)) {
         Toast.error('Akses Ditolak', 'Anda tidak memiliki izin untuk mengakses halaman ini.');
-        if (this.currentView && this.currentView !== viewId) return;
-        viewId = 'view-dashboard'; // Fallback
+        // Kembali ke view saat ini (tidak redirect paksa jika sudah di dashboard)
+        if (this.currentView !== viewId) return;
+        viewId = 'view-dashboard';
       }
     }
 
     this.currentView = viewId;
 
-    // Sembunyikan semua view container
+    // Sembunyikan semua view
     document.querySelectorAll('.app-view').forEach(v => v.classList.add('d-none'));
 
-    // Tampilkan view aktif
+    // Tampilkan view target
     const target = document.getElementById(viewId);
     if (target) {
       target.classList.remove('d-none');
@@ -159,13 +161,28 @@ class AppController {
       else link.classList.remove('active');
     });
 
-    // Init module
+    // Tutup sidebar mobile setelah navigasi
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.querySelector('.sidebar-backdrop');
+    if (sidebar) sidebar.classList.remove('show');
+    if (backdrop) backdrop.classList.remove('show');
+
+    // Init module halaman
     const module = this.views[viewId];
     if (module && typeof module.init === 'function') {
-      if (viewId === 'view-profil-guru') {
-        module.init(params.guruId);
-      } else {
-        module.init();
+      try {
+        if (viewId === 'view-profil-guru') {
+          // Guru hanya bisa lihat profilnya sendiri
+          let guruId = params.guruId;
+          if (!guruId && !Auth.isAdminOrOperator()) {
+            guruId = Auth.getProfile()?.guru_id || null;
+          }
+          module.init(guruId);
+        } else {
+          module.init();
+        }
+      } catch (e) {
+        console.error(`[App] Error initializing module ${viewId}:`, e);
       }
     }
 
@@ -175,7 +192,11 @@ class AppController {
   refreshCurrentView() {
     const module = this.views[this.currentView];
     if (module && typeof module.render === 'function') {
-      module.render();
+      try {
+        module.render();
+      } catch (e) {
+        console.warn('[App] refreshCurrentView error:', e.message);
+      }
     }
   }
 
@@ -185,13 +206,13 @@ class AppController {
 
     Realtime.onStatusChange((status) => {
       if (status === 'online') {
-        badge.className = 'badge bg-success-subtle text-success border border-success';
+        badge.className = 'badge bg-success-subtle text-success border border-success w-100 py-1';
         badge.innerHTML = '<i class="bi bi-broadcast me-1"></i> Realtime Aktif';
       } else if (status === 'connecting') {
-        badge.className = 'badge bg-warning-subtle text-warning border border-warning';
+        badge.className = 'badge bg-warning-subtle text-warning border border-warning w-100 py-1';
         badge.innerHTML = '<i class="bi bi-arrow-repeat me-1 spin"></i> Menghubungkan...';
       } else {
-        badge.className = 'badge bg-secondary-subtle text-secondary border';
+        badge.className = 'badge bg-secondary-subtle text-secondary border w-100 py-1';
         badge.innerHTML = '<i class="bi bi-cloud-slash me-1"></i> Mode Offline';
       }
     });
@@ -204,7 +225,7 @@ class AppController {
   }
 
   bindAuthEvents() {
-    // Form Login Submit
+    // Form Login
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
       loginForm.addEventListener('submit', async (e) => {
@@ -212,26 +233,33 @@ class AppController {
         const email = document.getElementById('login-username')?.value;
         const pass = document.getElementById('login-password')?.value;
         const btn = document.getElementById('login-submit-btn');
+        const errEl = document.getElementById('login-error-msg');
+
+        // Reset error
+        if (errEl) errEl.style.display = 'none';
 
         try {
-          if (btn) btn.disabled = true;
+          if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Memuat...'; }
           await Auth.login(email, pass);
           this.hideLoginOverlay();
           this.updateUserUI();
+          // FIX: applyRBAC dipanggil setelah login berhasil
+          this.applyRBAC();
           Toast.success('Selamat Datang', `Login berhasil sebagai ${Auth.getProfile().nama_lengkap}.`);
+          // Navigasi ulang ke dashboard agar tampilan sesuai role
+          this.navigateTo('view-dashboard');
         } catch (err) {
-          const errEl = document.getElementById('login-error-msg');
           if (errEl) {
             errEl.textContent = err.message || 'Login gagal. Periksa username dan password.';
             errEl.style.display = 'block';
           }
         } finally {
-          if (btn) btn.disabled = false;
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i> Masuk ke Sistem'; }
         }
       });
     }
 
-    // Demo account autofill buttons
+    // Demo autofill buttons
     document.querySelectorAll('.login-hint-row').forEach(row => {
       row.addEventListener('click', () => {
         const u = row.getAttribute('data-user');
@@ -250,6 +278,11 @@ class AppController {
         if (confirm('Keluar dari aplikasi?')) {
           await Auth.logout();
           this.showLoginOverlay();
+          // Reset UI nama ke default
+          const nameEl = document.getElementById('topbar-user-name');
+          const roleEl = document.getElementById('topbar-user-role');
+          if (nameEl) nameEl.textContent = 'Administrator';
+          if (roleEl) roleEl.textContent = 'ADMIN';
         }
       });
     }
@@ -273,31 +306,25 @@ class AppController {
     if (roleEl) roleEl.textContent = (p.role || 'guru').toUpperCase();
   }
 
+  /**
+   * Terapkan RBAC: sembunyikan/tampilkan elemen berdasarkan role
+   */
   applyRBAC() {
     const role = Auth.getRole();
-    
-    // Sembunyikan elemen berdasarkan data-allowed-roles
+
+    // 1. Sembunyikan menu sidebar berdasarkan data-allowed-roles
     document.querySelectorAll('[data-allowed-roles]').forEach(el => {
-      const allowedRoles = el.getAttribute('data-allowed-roles').split(',');
-      if (!allowedRoles.includes(role)) {
-        el.style.display = 'none';
-      } else {
-        el.style.display = '';
-      }
+      const allowedRoles = el.getAttribute('data-allowed-roles').split(',').map(r => r.trim());
+      el.style.display = allowedRoles.includes(role) ? '' : 'none';
     });
 
-    // Sembunyikan tombol dengan class rbac-restricted
+    // 2. Sembunyikan tombol aksi (Tambah/Simpan/Hapus) dari Guru
     document.querySelectorAll('.rbac-restricted').forEach(el => {
-      if (!Auth.isAdminOrOperator()) {
-        el.style.display = 'none';
-      } else {
-        el.style.display = '';
-      }
+      el.style.display = Auth.isAdminOrOperator() ? '' : 'none';
     });
   }
 
   bindGlobalForms() {
-    // Form submissions routing
     document.addEventListener('submit', (e) => {
       const target = e.target;
       if (target.id === 'form-guru') {
@@ -343,7 +370,7 @@ class AppController {
 
 export const App = new AppController();
 
-// Expose modules to window for inline onclick attributes & console
+// Expose ke window untuk inline onclick & debugging
 if (typeof window !== 'undefined') {
   window.App = App;
   window.GuruPage = GuruPage;
@@ -367,7 +394,7 @@ if (typeof window !== 'undefined') {
   window.Theme = Theme;
 }
 
-// Bootstrap application on DOM ready
+// Bootstrap pada DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
   App.init();
 });

@@ -31,9 +31,9 @@ class StateStore {
     await LocalDB.init();
     await this.loadFromLocalDB();
 
-    // Inisialisasi sinkronisasi
-    Sync.init().then(() => {
-      this.loadFromLocalDB();
+    // Inisialisasi sinkronisasi — setelah selesai, reload dari IndexedDB
+    Sync.init().then(async () => {
+      await this.loadFromLocalDB();
     });
 
     // Inisialisasi realtime changes
@@ -44,20 +44,25 @@ class StateStore {
 
   async loadFromLocalDB() {
     for (const col of CONFIG.COLLECTIONS) {
-      const records = await LocalDB.getAll(col);
-      if (col === 'profil_sekolah') {
-        this.data.profil_sekolah = records.length > 0 ? records[0] : {};
-      } else if (col === 'pengaturan_aplikasi') {
-        const map = {};
-        if (records && records.length > 0) {
-          records.forEach(item => {
-            if (item.kunci) map[item.kunci] = item.nilai;
-          });
+      try {
+        const records = await LocalDB.getAll(col);
+        if (col === 'profil_sekolah') {
+          this.data.profil_sekolah = records.length > 0 ? records[0] : {};
+        } else if (col === 'pengaturan_aplikasi') {
+          const map = {};
+          if (records && records.length > 0) {
+            records.forEach(item => {
+              if (item.kunci) map[item.kunci] = item.nilai;
+            });
+          }
+          this.data.pengaturan_aplikasi = map;
+          this.data.pengaturan_aplikasi_records = records || [];
+        } else {
+          this.data[col] = records || [];
         }
-        this.data.pengaturan_aplikasi = map;
-        this.data.pengaturan_aplikasi_records = records || [];
-      } else {
-        this.data[col] = records || [];
+      } catch (e) {
+        console.warn(`[Store] loadFromLocalDB error for ${col}:`, e.message);
+        this.data[col] = [];
       }
     }
     this.notify();
@@ -102,7 +107,6 @@ class StateStore {
 
   getAll(collection) {
     const list = this.data[collection] || [];
-    // Filter non-deleted items by default
     return list.filter(item => !item.is_deleted);
   }
 
@@ -116,23 +120,25 @@ class StateStore {
   }
 
   getSetting(key, defaultValue = '') {
-    return this.data.pengaturan_aplikasi?.[key] || defaultValue;
+    return this.data.pengaturan_aplikasi?.[key] ?? defaultValue;
   }
 
   async updateSetting(key, value) {
     if (!key) return;
-    
+
     // Update memory
     if (!this.data.pengaturan_aplikasi) {
       this.data.pengaturan_aplikasi = {};
     }
     this.data.pengaturan_aplikasi[key] = value;
-    
+
     if (!this.data.pengaturan_aplikasi_records) {
       this.data.pengaturan_aplikasi_records = [];
     }
+
     let record = this.data.pengaturan_aplikasi_records.find(r => r.kunci === key);
-    
+    const isNew = !record;
+
     if (record) {
       record.nilai = value;
       record.updated_at = new Date().toISOString();
@@ -141,8 +147,8 @@ class StateStore {
         id: crypto.randomUUID ? crypto.randomUUID() : (Math.random().toString(36).substring(2, 10) + '-' + Date.now()),
         kunci: key,
         nilai: value,
-        updated_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         is_deleted: false
       };
       this.data.pengaturan_aplikasi_records.push(record);
@@ -150,11 +156,11 @@ class StateStore {
 
     // Update LocalDB
     await LocalDB.put('pengaturan_aplikasi', record);
-    
+
     this.notify('pengaturan_aplikasi');
-    
-    // Push to remote
-    return await Sync.mutate('pengaturan_aplikasi', record.created_at === record.updated_at ? 'insert' : 'update', record);
+
+    // FIX: Gunakan flag isNew, bukan perbandingan timestamp yang selalu false
+    return await Sync.mutate('pengaturan_aplikasi', isNew ? 'insert' : 'update', record);
   }
 
   async insert(collection, record) {
@@ -185,7 +191,7 @@ class StateStore {
       this.data.profil_sekolah = { ...this.data.profil_sekolah, ...record };
     } else {
       const index = this.data[collection]?.findIndex(item => item.id === record.id);
-      if (index !== -1) {
+      if (index !== undefined && index !== -1) {
         this.data[collection][index] = { ...this.data[collection][index], ...record };
       }
     }
@@ -201,7 +207,7 @@ class StateStore {
 
     // Optimistic local update (soft delete)
     const index = this.data[collection]?.findIndex(item => item.id === id);
-    if (index !== -1) {
+    if (index !== undefined && index !== -1) {
       this.data[collection].splice(index, 1);
     }
 

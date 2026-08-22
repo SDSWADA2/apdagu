@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * SERVICE WORKER — APDAGU ENTERPRISE v2.0
- * Offline Cache & PWA Support
+ * Offline Cache & PWA Support — Stale-While-Revalidate Strategy
  * ============================================================================
  */
 
@@ -55,24 +55,42 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Ignore Supabase realtime websocket / non-GET / non-HTTP(S) extensions
-  if (event.request.method !== 'GET' || event.request.url.includes('supabase.co') || !event.request.url.startsWith('http')) {
+  const url = event.request.url;
+
+  // Abaikan: non-GET, Supabase API, chrome-extension, non-HTTP(S)
+  if (
+    event.request.method !== 'GET' ||
+    url.includes('supabase.co') ||
+    !url.startsWith('http')
+  ) {
     return;
   }
 
+  // Strategi Stale-While-Revalidate yang benar
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+    caches.open(CACHE_NAME).then(async (cache) => {
+      const cachedResponse = await cache.match(event.request);
+
+      // Selalu ambil dari network di background untuk update cache
+      const networkFetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type !== 'opaque') {
+          cache.put(event.request, networkResponse.clone());
         }
         return networkResponse;
-      }).catch(() => cachedResponse);
+      }).catch(() => null); // Saat offline, network fetch akan null
 
-      return cachedResponse || fetchPromise;
+      // Jika ada cache, langsung kembalikan dan perbarui di background
+      if (cachedResponse) {
+        event.waitUntil(networkFetchPromise);
+        return cachedResponse;
+      }
+
+      // Jika tidak ada cache, tunggu network
+      const networkResponse = await networkFetchPromise;
+      return networkResponse || new Response('Offline - Konten tidak tersedia', {
+        status: 503,
+        statusText: 'Service Unavailable'
+      });
     })
   );
 });

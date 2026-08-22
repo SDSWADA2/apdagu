@@ -10,6 +10,16 @@ import { getSupabase } from './supabase.js';
 import { LocalDB } from '../store/db.js';
 import { CONFIG } from '../app/config.js';
 
+// Lazy import Store agar tidak circular dependency saat init
+let _Store = null;
+async function getStore() {
+  if (!_Store) {
+    const mod = await import('../store/state.js');
+    _Store = mod.Store;
+  }
+  return _Store;
+}
+
 class SyncEngine {
   constructor() {
     this.isSyncing = false;
@@ -21,11 +31,11 @@ class SyncEngine {
   bindNetworkEvents() {
     if (typeof window === 'undefined') return;
 
-    window.addEventListener('online', () => {
+    window.addEventListener('online', async () => {
       this.isOnline = true;
       this.notifyStatus('online');
-      this.syncPendingQueue();
-      this.pullAllTables();
+      await this.syncPendingQueue();
+      await this.pullAllTables();
     });
 
     window.addEventListener('offline', () => {
@@ -46,7 +56,6 @@ class SyncEngine {
    * Mengirim mutasi (Insert, Update, Delete) dengan strategi Offline-First
    */
   async mutate(table, operation, record) {
-    // Pastikan UUID & timestamp ada
     if (!record.id) {
       record.id = crypto.randomUUID ? crypto.randomUUID() : (Math.random().toString(36).substring(2, 15) + '-' + Date.now());
     }
@@ -81,17 +90,13 @@ class SyncEngine {
           }
         }
       } catch (err) {
-        console.warn(`[SyncEngine] Direct push failed for ${table}, saving to pending queue:`, err.message);
+        console.warn(`[SyncEngine] Direct push failed for ${table}, queuing:`, err.message);
+        // Jatuh ke bawah untuk masuk queue
       }
     }
 
     // 3. Jika offline atau direct push gagal, masukkan ke antrean pending_sync
-    await LocalDB.addPendingMutation({
-      collection: table,
-      operation,
-      record
-    });
-
+    await LocalDB.addPendingMutation({ collection: table, operation, record });
     return record;
   }
 
@@ -112,14 +117,13 @@ class SyncEngine {
         const { queue_id, collection, operation, record } = item;
         try {
           if (operation === 'insert' || operation === 'update') {
-            // Upsert with conflict resolution
             await supabase.from(collection).upsert(record, { onConflict: 'id' });
           } else if (operation === 'delete') {
             await supabase.from(collection).delete().eq('id', record.id);
           }
           await LocalDB.removePendingMutation(queue_id);
         } catch (err) {
-          console.error(`[SyncEngine] Failed syncing mutation queue item ${queue_id}:`, err);
+          console.error(`[SyncEngine] Failed syncing queue item ${queue_id}:`, err);
         }
       }
     } catch (e) {
@@ -131,7 +135,8 @@ class SyncEngine {
   }
 
   /**
-   * Menarik seluruh data terbaru dari Supabase ke IndexedDB
+   * Menarik seluruh data terbaru dari Supabase ke IndexedDB,
+   * kemudian memperbarui Store in-memory
    */
   async pullAllTables() {
     const supabase = await getSupabase();
@@ -141,12 +146,19 @@ class SyncEngine {
       try {
         const { data, error } = await supabase.from(table).select('*');
         if (!error && Array.isArray(data)) {
-          // Merge ke IndexedDB
           await LocalDB.putBulk(table, data);
         }
       } catch (e) {
         console.warn(`[SyncEngine] Pull failed for ${table}:`, e.message);
       }
+    }
+
+    // FIX: Setelah pull selesai, reload Store dari IndexedDB agar UI terupdate
+    try {
+      const Store = await getStore();
+      await Store.loadFromLocalDB();
+    } catch (e) {
+      console.warn('[SyncEngine] Store reload after pull failed:', e.message);
     }
   }
 
@@ -155,7 +167,7 @@ class SyncEngine {
       try {
         listener(status);
       } catch (e) {
-        console.error(e);
+        console.error('[SyncEngine] Status listener error:', e);
       }
     }
   }

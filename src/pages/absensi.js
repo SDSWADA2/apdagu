@@ -52,6 +52,8 @@ export const AbsensiPage = {
 
     const guruList = Store.getAll('guru');
     const absensiList = Store.getAll('absensi').filter(a => a.tanggal === this.activeDate);
+    const canEdit = Auth.isAdminOrOperator();
+    const myGuruId = Auth.getProfile()?.guru_id;
 
     if (guruList.length === 0) {
       tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted">Belum ada data guru.</td></tr>`;
@@ -62,6 +64,8 @@ export const AbsensiPage = {
       const absen = absensiList.find(a => a.guru_id === g.id);
       const status = absen ? absen.status_kehadiran : 'Belum Absen';
       const badge = absen ? Helpers.getStatusKehadiranBadge(status) : 'bg-secondary text-white';
+      // Guru hanya bisa presensi dirinya sendiri
+      const canPresensi = canEdit || g.id === myGuruId;
 
       return `
         <tr>
@@ -78,9 +82,10 @@ export const AbsensiPage = {
           <td><small class="text-muted">${absen?.lokasi_gps ? '📍 Ada GPS' : '-'}</small></td>
           <td><small class="text-muted">${absen?.keterangan || '-'}</small></td>
           <td class="text-center">
-            <button class="btn btn-sm btn-outline-primary" onclick="AbsensiPage.openPresensiModal('${g.id}')">
-              <i class="bi bi-camera-fill me-1"></i>Presensi
-            </button>
+            ${canPresensi ? `
+              <button class="btn btn-sm btn-outline-primary" onclick="AbsensiPage.openPresensiModal('${g.id}')">
+                <i class="bi bi-camera-fill me-1"></i>Presensi
+              </button>` : '<span class="text-muted fs-8">—</span>'}
           </td>
         </tr>
       `;

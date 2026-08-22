@@ -2,7 +2,7 @@
  * ============================================================================
  * PENGATURAN & BACKUP / RESTORE PAGE MODULE
  * APDAGU Enterprise v2.0
- * Profil Sekolah, Konfigurasi Jam Kerja, Dark Mode, Backup JSON/SQL, Restore
+ * Profil Sekolah, Konfigurasi Jam Kerja, Dark Mode, Backup JSON, Restore
  * ============================================================================
  */
 
@@ -42,7 +42,10 @@ export const PengaturanPage = {
 
     const fileInput = document.getElementById('sekolah-logo-file');
     if (fileInput) {
-      fileInput.addEventListener('change', (e) => {
+      // Hapus listener lama sebelum tambah baru agar tidak terduplikasi
+      const newInput = fileInput.cloneNode(true);
+      fileInput.parentNode.replaceChild(newInput, fileInput);
+      newInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file && logoPreview) {
           const reader = new FileReader();
@@ -96,7 +99,12 @@ export const PengaturanPage = {
     try {
       const existing = Store.getSchoolProfile();
       if (existing?.id) payload.id = existing.id;
-      await Store.update('profil_sekolah', payload);
+
+      if (existing?.id) {
+        await Store.update('profil_sekolah', payload);
+      } else {
+        await Store.insert('profil_sekolah', payload);
+      }
       Toast.success('Berhasil', 'Profil sekolah berhasil disimpan.');
     } catch (e) {
       Toast.error('Gagal', e.message);
@@ -106,12 +114,13 @@ export const PengaturanPage = {
   async saveSettings(formEl) {
     const formData = new FormData(formEl);
     try {
-      Store.updateSetting('tahun_ajaran_aktif', formData.get('tahun_ajaran_aktif'));
-      Store.updateSetting('semester_aktif', formData.get('semester_aktif'));
-      Store.updateSetting('jam_masuk_kerja', formData.get('jam_masuk_kerja'));
-      Store.updateSetting('jam_pulang_kerja', formData.get('jam_pulang_kerja'));
-      Store.updateSetting('radius_absen_meter', formData.get('radius_absen_meter'));
-      
+      // FIX: await semua updateSetting karena async
+      await Store.updateSetting('tahun_ajaran_aktif', formData.get('tahun_ajaran_aktif'));
+      await Store.updateSetting('semester_aktif', formData.get('semester_aktif'));
+      await Store.updateSetting('jam_masuk_kerja', formData.get('jam_masuk_kerja'));
+      await Store.updateSetting('jam_pulang_kerja', formData.get('jam_pulang_kerja'));
+      await Store.updateSetting('radius_absen_meter', formData.get('radius_absen_meter'));
+
       Toast.success('Berhasil', 'Pengaturan sistem berhasil disimpan.');
     } catch (e) {
       Toast.error('Gagal', e.message);
@@ -126,6 +135,7 @@ export const PengaturanPage = {
       app: 'APDAGU Enterprise',
       version: '2.0.0',
       exported_at: new Date().toISOString(),
+      sekolah: CONFIG.SEKOLAH.NAMA,
       data: {}
     };
 
@@ -156,15 +166,20 @@ export const PengaturanPage = {
       const backup = JSON.parse(text);
       if (!backup.data) throw new Error('Format file backup tidak valid.');
 
+      let count = 0;
       for (const col of Object.keys(backup.data)) {
         if (Array.isArray(backup.data[col])) {
           for (const item of backup.data[col]) {
-            await Store.insert(col, item);
+            // Hanya insert jika ID belum ada
+            if (item.id && !Store.getById(col, item.id)) {
+              await Store.insert(col, item);
+              count++;
+            }
           }
         }
       }
 
-      Toast.success('Restore Berhasil', 'Database berhasil dipulihkan dari file backup.');
+      Toast.success('Restore Berhasil', `${count} data berhasil dipulihkan dari file backup.`);
       setTimeout(() => window.location.reload(), 1500);
     } catch (e) {
       Toast.error('Restore Gagal', e.message);
