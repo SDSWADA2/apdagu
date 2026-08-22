@@ -19,6 +19,19 @@ class AuthService {
     if (!supabase) return null;
 
     try {
+      // ── MOCK SESSION CHECK ──
+      const mockSession = localStorage.getItem('apdagu_demo_auth');
+      if (mockSession) {
+        try {
+          const parsed = JSON.parse(mockSession);
+          this.currentUser = parsed.user;
+          this.currentProfile = parsed.profile;
+          return this.currentUser;
+        } catch (e) {
+          localStorage.removeItem('apdagu_demo_auth');
+        }
+      }
+
       // Listen for Supabase auth state change
       supabase.auth.onAuthStateChange(async (event, session) => {
         if (session?.user) {
@@ -93,14 +106,67 @@ class AuthService {
       else loginEmail = `${loginEmail}@sdnsumberwaru2.sch.id`;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: loginEmail,
-      password: password
-    });
+    let loginResult = null;
+    let loginError = null;
 
-    if (error) throw error;
-    this.currentUser = data.user;
-    await this.loadProfile(data.user.id);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: password
+      });
+      if (error) throw error;
+      loginResult = data;
+    } catch (err) {
+      loginError = err;
+    }
+
+    // ── FALLBACK DEMO / OFFLINE MODE ──
+    // Jika gagal login ke Supabase (karena belum daftar, offline, dll), gunakan mock login
+    if (loginError) {
+      console.warn('[AuthService] Supabase login failed, attempting local fallback...', loginError.message);
+
+      const isDemoAdmin = loginEmail === 'admin@sdnsumberwaru2.sch.id' && password === 'admin123';
+      const isDemoOperator = loginEmail === 'operator@sdnsumberwaru2.sch.id' && password === 'operator123';
+      const isDemoGuru = loginEmail === 'guru@sdnsumberwaru2.sch.id' && password === 'guru123';
+
+      if (isDemoAdmin || isDemoOperator || isDemoGuru) {
+        const role = isDemoAdmin ? 'admin' : isDemoOperator ? 'operator' : 'guru';
+        const nama = isDemoAdmin ? 'Administrator' : isDemoOperator ? 'Operator Sekolah' : 'Guru Demo';
+        const fakeUserId = `demo-${role}-${Date.now()}`;
+
+        // Mock Supabase session behavior for frontend
+        this.currentUser = {
+          id: fakeUserId,
+          email: loginEmail,
+          user_metadata: { role }
+        };
+
+        this.currentProfile = {
+          id: fakeUserId,
+          role: role,
+          nama_lengkap: nama,
+          email: loginEmail,
+          _is_demo: true
+        };
+
+        // Persist mock session
+        localStorage.setItem('apdagu_demo_auth', JSON.stringify({
+          user: this.currentUser,
+          profile: this.currentProfile
+        }));
+
+        // Notify app
+        this.notifyListeners('SIGNED_IN');
+        return { user: this.currentUser, profile: this.currentProfile };
+      } else {
+        // Jika bukan demo/hardcoded fallback, lemparkan error aslinya
+        throw loginError;
+      }
+    }
+
+    // ── ONLINE SUCCESS ──
+    this.currentUser = loginResult.user;
+    await this.loadProfile(loginResult.user.id);
     this.notifyListeners('SIGNED_IN');
     return { user: this.currentUser, profile: this.currentProfile };
   }
@@ -113,6 +179,7 @@ class AuthService {
     this.currentUser = null;
     this.currentProfile = null;
     localStorage.removeItem('apdagu_auth_token');
+    localStorage.removeItem('apdagu_demo_auth');
     this.notifyListeners('SIGNED_OUT');
   }
 
