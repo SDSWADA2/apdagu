@@ -738,10 +738,10 @@
 
           <div class="row g-4">
             <div class="col-md-6">
-              <div class="card border-0 shadow-sm p-4">
-                <h5 class="fw-bold text-primary mb-3"><i class="bi bi-file-earmark-text me-2"></i>Buat Surat Tugas</h5>
+              <div class="card border-0 shadow-sm p-4 h-100">
+                <h5 class="fw-bold text-primary mb-3"><i class="bi bi-file-earmark-text me-2"></i>Surat Tugas Guru</h5>
                 <div class="mb-3">
-                  <label class="form-label fw-semibold fs-7">Pilih Guru</label>
+                  <label class="form-label fw-semibold fs-7">Pilih Guru Yang Ditugaskan</label>
                   <select id="surat-tugas-guru-id" class="form-select"></select>
                 </div>
                 <div class="mb-3">
@@ -760,7 +760,18 @@
                   <label class="form-label fw-semibold fs-7">Tanggal Kegiatan</label>
                   <input type="date" id="surat-tugas-tanggal" class="form-control">
                 </div>
-                <button class="btn btn-primary w-100 fw-bold" onclick="AdministrasiPage.cetakSuratTugas()"><i class="bi bi-printer me-2"></i>Cetak Surat Tugas (A4)</button>
+                <button class="btn btn-primary w-100 fw-bold mt-auto" onclick="AdministrasiPage.cetakSuratTugas()"><i class="bi bi-printer me-2"></i>Cetak Surat Tugas (A4)</button>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="card border-0 shadow-sm p-4 h-100">
+                <h5 class="fw-bold text-success mb-3"><i class="bi bi-file-earmark-spreadsheet me-2"></i>SK Pembagian Tugas Mengajar</h5>
+                <p class="text-muted fs-7">Cetak Surat Keputusan (SK) resmi Kepala Sekolah mengenai pembagian tugas mengajar seluruh guru SD Negeri Sumber Waru 2 beserta rincian JP per minggu.</p>
+                <div class="alert alert-info py-2 fs-8 mb-3">
+                  <i class="bi bi-info-circle me-1"></i> Data guru, beban JP tatap muka, dan tugas tambahan diambil otomatis dari database.
+                </div>
+                <button class="btn btn-success w-100 fw-bold mt-auto" onclick="AdministrasiPage.cetakSKPembagianTugas()"><i class="bi bi-printer me-2"></i>Cetak SK Pembagian Tugas (A4)</button>
               </div>
             </div>
           </div>
@@ -996,6 +1007,302 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
             <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Kepegawaian -->
+  <div class="modal fade" id="modal-kepegawaian" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="form-kepegawaian">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold">Data Kepegawaian</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fs-7 fw-semibold">Pilih Guru</label>
+              <select name="guru_id" id="form-kepegawaian-guru-id" class="form-select" required></select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fs-7 fw-semibold">Status Kepegawaian</label>
+              <select name="status_kepegawaian" class="form-select" required>
+                <option value="PNS">PNS</option>
+                <option value="PPPK">PPPK</option>
+                <option value="Honorer Daerah">Honorer Daerah</option>
+                <option value="Honorer Sekolah (BOS)">Honorer Sekolah (BOS)</option>
+                <option value="GTY">GTY</option>
+                <option value="GTT">GTT</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fs-7 fw-semibold">Jabatan</label>
+              <input type="text" name="jabatan" class="form-control" value="Guru Kelas" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fs-7 fw-semibold">Pangkat / Golongan</label>
+              <input type="text" name="pangkat_golongan" class="form-control" placeholder="Contoh: Penata Muda / III-a">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fs-7 fw-semibold">TMT Pengangkatan</label>
+              <input type="date" name="tmt_pengangkatan" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fs-7 fw-semibold">Nomor SK</label>
+              <input type="text" name="nomor_sk" class="form-control" placeholder="Contoh: 800/123/432.301/2024">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fs-7 fw-semibold">Gaji Pokok (Opsional)</label>
+              <input type="number" name="gaji_pokok" class="form-control" value="0">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pendidikan -->
+  <div class="modal fade" id="modal-pendidikan" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="form-pendidikan">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold">Riwayat Pendidikan Guru</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-2">
+              <label class="form-label fs-7 fw-semibold">Guru</label>
+              <select name="guru_id" id="form-pendidikan-guru-id" class="form-select" required></select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label fs-7 fw-semibold">Jenjang</label>
+              <select name="jenjang" class="form-select" required>
+                <option value="S1">S1 (Sarjana)</option>
+                <option value="S2">S2 (Magister)</option>
+                <option value="S3">S3 (Doktor)</option>
+                <option value="D4">D4</option>
+                <option value="D3">D3</option>
+                <option value="SMA/SMK">SMA/SMK</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label fs-7 fw-semibold">Nama Institusi / Kampus</label>
+              <input type="text" name="nama_institusi" class="form-control" placeholder="Contoh: Universitas Negeri Surabaya" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label fs-7 fw-semibold">Program Studi / Jurusan</label>
+              <input type="text" name="program_studi" class="form-control" placeholder="Contoh: Pendidikan Guru Sekolah Dasar (PGSD)" required>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label fs-7 fw-semibold">Tahun Masuk</label>
+                <input type="number" name="tahun_masuk" class="form-control" value="2012" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label fs-7 fw-semibold">Tahun Lulus</label>
+                <input type="number" name="tahun_lulus" class="form-control" value="2016" required>
+              </div>
+            </div>
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label fs-7 fw-semibold">IPK</label>
+                <input type="number" step="0.01" name="ipk" class="form-control" value="3.65">
+              </div>
+              <div class="col-6">
+                <label class="form-label fs-7 fw-semibold">Nomor Ijazah</label>
+                <input type="text" name="nomor_ijazah" class="form-control">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Sertifikasi -->
+  <div class="modal fade" id="modal-sertifikasi" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="form-sertifikasi">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold">Sertifikasi Pendidik</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fs-7 fw-semibold">Guru</label>
+              <select name="guru_id" id="form-sertifikasi-guru-id" class="form-select" required></select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fs-7 fw-semibold">Bidang Studi Sertifikasi</label>
+              <input type="text" name="bidang_studi" class="form-control" placeholder="Contoh: Guru Kelas SD" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fs-7 fw-semibold">Tahun Sertifikasi</label>
+              <input type="number" name="tahun_sertifikasi" class="form-control" value="2022" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fs-7 fw-semibold">LPTK Penyelenggara</label>
+              <input type="text" name="lptk_penyelenggara" class="form-control" placeholder="Contoh: Universitas Negeri Malang" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fs-7 fw-semibold">Nomor Sertifikat Pendidik</label>
+              <input type="text" name="nomor_sertifikat" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fs-7 fw-semibold">Nomor Registrasi Guru (NRG)</label>
+              <input type="text" name="nomor_registrasi_guru" class="form-control">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Jadwal -->
+  <div class="modal fade" id="modal-jadwal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="form-jadwal">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold">Jadwal Mengajar</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-2">
+              <label class="form-label fs-7 fw-semibold">Guru Pengajar</label>
+              <select name="guru_id" id="form-jadwal-guru-id" class="form-select" required></select>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label fs-7 fw-semibold">Hari</label>
+                <select name="hari" class="form-select" required>
+                  <option value="Senin">Senin</option>
+                  <option value="Selasa">Selasa</option>
+                  <option value="Rabu">Rabu</option>
+                  <option value="Kamis">Kamis</option>
+                  <option value="Jumat">Jumat</option>
+                  <option value="Sabtu">Sabtu</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label fs-7 fw-semibold">Jam Ke</label>
+                <input type="text" name="jam_ke" class="form-control" value="1 - 2" required>
+              </div>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label fs-7 fw-semibold">Waktu Mulai</label>
+                <input type="time" name="waktu_mulai" class="form-control" value="07:15" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label fs-7 fw-semibold">Waktu Selesai</label>
+                <input type="time" name="waktu_selesai" class="form-control" value="08:25" required>
+              </div>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label fs-7 fw-semibold">Kelas</label>
+                <select name="kelas" class="form-select" required>
+                  <option value="Kelas 1">Kelas 1</option>
+                  <option value="Kelas 2">Kelas 2</option>
+                  <option value="Kelas 3">Kelas 3</option>
+                  <option value="Kelas 4">Kelas 4</option>
+                  <option value="Kelas 5">Kelas 5</option>
+                  <option value="Kelas 6">Kelas 6</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label fs-7 fw-semibold">Jumlah JP</label>
+                <input type="number" name="jumlah_jp" class="form-control" value="2" min="1" required>
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label fs-7 fw-semibold">Mata Pelajaran</label>
+              <input type="text" name="mata_pelajaran" class="form-control" placeholder="Contoh: Matematika / IPAS" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Prestasi -->
+  <div class="modal fade" id="modal-prestasi" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="form-prestasi">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold">Prestasi Guru</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-2">
+              <label class="form-label fs-7 fw-semibold">Guru</label>
+              <select name="guru_id" id="form-prestasi-guru-id" class="form-select" required></select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label fs-7 fw-semibold">Kategori</label>
+              <select name="kategori" class="form-select">
+                <option value="Guru Berprestasi">Guru Berprestasi</option>
+                <option value="Pembimbing Siswa">Pembimbing Siswa</option>
+                <option value="Karya Inovasi">Karya Inovasi</option>
+                <option value="Penghargaan Dedikasi">Penghargaan Dedikasi</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label fs-7 fw-semibold">Nama Prestasi / Kegiatan</label>
+              <input type="text" name="nama_prestasi" class="form-control" required>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label fs-7 fw-semibold">Peringkat / Juara</label>
+                <input type="text" name="peringkat_juara" class="form-control" placeholder="Contoh: Juara 1" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label fs-7 fw-semibold">Tingkat</label>
+                <select name="tingkat" class="form-select">
+                  <option value="Kecamatan">Kecamatan</option>
+                  <option value="Kabupaten">Kabupaten</option>
+                  <option value="Provinsi">Provinsi</option>
+                  <option value="Nasional">Nasional</option>
+                </select>
+              </div>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label fs-7 fw-semibold">Tahun</label>
+                <input type="number" name="tahun" class="form-control" value="2025" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label fs-7 fw-semibold">Penyelenggara</label>
+                <input type="text" name="penyelenggara" class="form-control" required>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan</button>
           </div>
         </form>
       </div>

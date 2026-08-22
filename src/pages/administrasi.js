@@ -30,7 +30,7 @@ export const AdministrasiPage = {
   cetakSuratTugas() {
     const guruId = document.getElementById('surat-tugas-guru-id')?.value;
     const nomorSurat = document.getElementById('surat-tugas-nomor')?.value || '421.2/012/432.301.02/2026';
-    const keperluan = document.getElementById('surat-tugas-keperluan')?.value || 'Mengikuti Kegiatan Pelatihan Mandiri';
+    const keperluan = document.getElementById('surat-tugas-keperluan')?.value || 'Mengikuti Kegiatan Bimbingan Teknis Kurikulum Merdeka';
     const lokasi = document.getElementById('surat-tugas-lokasi')?.value || 'Dinas Pendidikan Kab. Pamekasan';
     const tanggalKegiatan = document.getElementById('surat-tugas-tanggal')?.value || new Date().toISOString().slice(0, 10);
 
@@ -86,5 +86,69 @@ export const AdministrasiPage = {
     `;
 
     ExportUtils.printA4(html, `Surat_Tugas_${guru.nama_lengkap}`);
+  },
+
+  cetakSKPembagianTugas() {
+    const sekolah = Store.getSchoolProfile();
+    const guruList = Store.getAll('guru');
+    const bebanList = Store.getAll('beban_mengajar');
+    const kepegList = Store.getAll('kepegawaian');
+
+    const html = `
+      <div style="text-align:center; margin-bottom: 20px;">
+        <h4 style="margin:0; text-decoration: underline;">KEPUTUSAN KEPALA SD NEGERI SUMBER WARU 2</h4>
+        <p style="margin:4px 0; font-size:11pt;">Nomor : 421.2/008/432.301.02/2026</p>
+        <p style="margin:4px 0; font-weight:bold;">TENTANG<br>PEMBAGIAN TUGAS GURU DALAM PROSES BELAJAR MENGAJAR ATAU BIMBINGAN<br>TAHUN PELAJARAN 2026/2027</p>
+      </div>
+
+      <p style="font-size:10pt;">Kepala SD Negeri Sumber Waru 2 Kecamatan Waru Kabupaten Pamekasan memutuskan dan menetapkan pembagian tugas mengajar bagi guru sebagai berikut:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Nama Guru / NIP</th>
+            <th>Gol</th>
+            <th>Jabatan / Tugas</th>
+            <th>Tatap Muka</th>
+            <th>Tugas Tambahan</th>
+            <th>Total JP</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${guruList.map((g, i) => {
+            const b = bebanList.find(item => item.guru_id === g.id) || {};
+            const k = kepegList.find(item => item.guru_id === g.id) || {};
+            const total = (Number(b.jp_tatap_muka) || 0) + (Number(b.jp_tugas_tambahan) || 0) + (Number(b.jp_ekskul) || 0);
+            return `
+              <tr>
+                <td style="text-align:center;">${i + 1}</td>
+                <td><strong>${Helpers.formatNamaGelar(g)}</strong><br><small>NIP. ${g.nip || '-'}</small></td>
+                <td style="text-align:center;">${k.pangkat_golongan || '-'}</td>
+                <td>${k.jabatan || 'Guru Kelas'}</td>
+                <td style="text-align:center;">${b.jp_tatap_muka || 24} JP</td>
+                <td>${b.tugas_tambahan || '-'}</td>
+                <td style="text-align:center; font-weight:bold;">${total || 24} JP</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+
+      <table class="no-border" style="width:100%; margin-top: 30px;">
+        <tr>
+          <td style="width:55%;"></td>
+          <td style="width:45%; text-align:center;">
+            Ditetapkan di : Sumber Waru<br>
+            Pada Tanggal : ${Helpers.formatDate(new Date())}<br>
+            Kepala Sekolah,<br><br><br><br>
+            <strong>${sekolah.nama_kepala_sekolah || 'FAUZAN, S.Pd.SD.'}</strong><br>
+            NIP. ${sekolah.nip_kepala_sekolah || '19720602 199605 1 001'}
+          </td>
+        </tr>
+      </table>
+    `;
+
+    ExportUtils.printA4(html, 'SK_Pembagian_Tugas_Mengajar_2026');
   }
 };
