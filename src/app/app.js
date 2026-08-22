@@ -66,6 +66,7 @@ class AppController {
       if (user) {
         this.hideLoginOverlay();
         this.updateUserUI();
+        this.applyRBAC();
       } else {
         this.showLoginOverlay();
       }
@@ -128,6 +129,19 @@ class AppController {
   }
 
   navigateTo(viewId, params = {}) {
+    // RBAC Check
+    const navLink = document.querySelector(`.nav-menu-link[data-view="${viewId}"]`);
+    const parentLi = navLink ? navLink.closest('li') : null;
+    if (parentLi && parentLi.hasAttribute('data-allowed-roles')) {
+      const allowedRoles = parentLi.getAttribute('data-allowed-roles').split(',');
+      const currentRole = Auth.getRole();
+      if (!allowedRoles.includes(currentRole)) {
+        Toast.error('Akses Ditolak', 'Anda tidak memiliki izin untuk mengakses halaman ini.');
+        if (this.currentView && this.currentView !== viewId) return;
+        viewId = 'view-dashboard'; // Fallback
+      }
+    }
+
     this.currentView = viewId;
 
     // Sembunyikan semua view container
@@ -257,6 +271,29 @@ class AppController {
     const roleEl = document.getElementById('topbar-user-role');
     if (nameEl) nameEl.textContent = p.nama_lengkap || 'Pengguna';
     if (roleEl) roleEl.textContent = (p.role || 'guru').toUpperCase();
+  }
+
+  applyRBAC() {
+    const role = Auth.getRole();
+    
+    // Sembunyikan elemen berdasarkan data-allowed-roles
+    document.querySelectorAll('[data-allowed-roles]').forEach(el => {
+      const allowedRoles = el.getAttribute('data-allowed-roles').split(',');
+      if (!allowedRoles.includes(role)) {
+        el.style.display = 'none';
+      } else {
+        el.style.display = '';
+      }
+    });
+
+    // Sembunyikan tombol dengan class rbac-restricted
+    document.querySelectorAll('.rbac-restricted').forEach(el => {
+      if (!Auth.isAdminOrOperator()) {
+        el.style.display = 'none';
+      } else {
+        el.style.display = '';
+      }
+    });
   }
 
   bindGlobalForms() {

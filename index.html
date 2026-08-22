@@ -63,7 +63,7 @@
               <span>Dashboard</span>
             </a>
           </li>
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin,operator">
             <a href="#" class="nav-menu-link" data-view="view-guru">
               <i class="bi bi-person-lines-fill"></i>
               <span>Data Guru</span>
@@ -75,19 +75,19 @@
               <span>Profil Guru (10 Tab)</span>
             </a>
           </li>
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin,operator">
             <a href="#" class="nav-menu-link" data-view="view-kepegawaian">
               <i class="bi bi-briefcase"></i>
               <span>Kepegawaian</span>
             </a>
           </li>
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin,operator">
             <a href="#" class="nav-menu-link" data-view="view-pendidikan">
               <i class="bi bi-mortarboard"></i>
               <span>Riwayat Pendidikan</span>
             </a>
           </li>
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin,operator">
             <a href="#" class="nav-menu-link" data-view="view-sertifikasi">
               <i class="bi bi-patch-check"></i>
               <span>Sertifikasi Guru</span>
@@ -97,43 +97,43 @@
 
         <div class="nav-section-title">Akademik & Kinerja</div>
         <ul class="nav-menu">
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin,operator">
             <a href="#" class="nav-menu-link" data-view="view-jadwal">
               <i class="bi bi-calendar3"></i>
               <span>Jadwal Mengajar</span>
             </a>
           </li>
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin,operator">
             <a href="#" class="nav-menu-link" data-view="view-beban">
               <i class="bi bi-clock-history"></i>
               <span>Beban Mengajar (24 JP)</span>
             </a>
           </li>
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin,operator">
             <a href="#" class="nav-menu-link" data-view="view-absensi">
               <i class="bi bi-camera-video-fill"></i>
               <span>Presensi GPS / Selfie</span>
             </a>
           </li>
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin,operator">
             <a href="#" class="nav-menu-link" data-view="view-pkg">
               <i class="bi bi-graph-up-arrow"></i>
               <span>Penilaian Kinerja (PKG)</span>
             </a>
           </li>
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin,operator">
             <a href="#" class="nav-menu-link" data-view="view-prestasi">
               <i class="bi bi-trophy"></i>
               <span>Prestasi Guru</span>
             </a>
           </li>
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin,operator">
             <a href="#" class="nav-menu-link" data-view="view-pelatihan">
               <i class="bi bi-journal-bookmark"></i>
               <span>Pelatihan & PMM</span>
             </a>
           </li>
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin,operator">
             <a href="#" class="nav-menu-link" data-view="view-dokumen">
               <i class="bi bi-folder-fill"></i>
               <span>Dokumen & Berkas</span>
@@ -143,25 +143,25 @@
 
         <div class="nav-section-title">Administrasi & Sistem</div>
         <ul class="nav-menu">
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin,operator">
             <a href="#" class="nav-menu-link" data-view="view-administrasi">
               <i class="bi bi-file-earmark-text"></i>
               <span>Surat & Administrasi</span>
             </a>
           </li>
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin,operator">
             <a href="#" class="nav-menu-link" data-view="view-idcard">
               <i class="bi bi-qr-code-scan"></i>
               <span>Cetak ID Card & QR</span>
             </a>
           </li>
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin">
             <a href="#" class="nav-menu-link" data-view="view-audit">
               <i class="bi bi-shield-check"></i>
               <span>Audit Trail (Logs)</span>
             </a>
           </li>
-          <li class="nav-menu-item">
+          <li class="nav-menu-item" data-allowed-roles="admin">
             <a href="#" class="nav-menu-link" data-view="view-pengaturan">
               <i class="bi bi-gear-wide-connected"></i>
               <span>Pengaturan & Backup</span>
@@ -306,7 +306,7 @@
             </div>
             <div class="d-flex gap-2">
               <button class="btn btn-success btn-sm" onclick="GuruPage.exportExcel()"><i class="bi bi-file-earmark-excel me-1"></i>Ekspor Excel</button>
-              <button class="btn btn-primary btn-sm" onclick="GuruPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Guru</button>
+              <button class="btn btn-primary btn-sm rbac-restricted" onclick="GuruPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Guru</button>
             </div>
           </div>
 
@@ -408,7 +408,7 @@
             </div>
             <div class="d-flex gap-2">
               <button class="btn btn-success btn-sm" onclick="KepegawaianPage.exportExcel()"><i class="bi bi-file-earmark-excel me-1"></i>Ekspor Excel</button>
-              <button class="btn btn-primary btn-sm" onclick="KepegawaianPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Data</button>
+              <button class="btn btn-primary btn-sm rbac-restricted" onclick="KepegawaianPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Data</button>
             </div>
           </div>
           <div class="card border-0 shadow-sm">
@@ -441,7 +441,7 @@
               <h4 class="fw-bold mb-1">Riwayat Pendidikan Guru</h4>
               <p class="text-muted mb-0">Kualifikasi akademik formal S1, S2, D3, dan Institusi.</p>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="PendidikanPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Pendidikan</button>
+            <button class="btn btn-primary btn-sm rbac-restricted" onclick="PendidikanPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Pendidikan</button>
           </div>
           <div class="card border-0 shadow-sm">
             <div class="table-responsive">
@@ -473,7 +473,7 @@
               <h4 class="fw-bold mb-1">Sertifikasi Pendidik</h4>
               <p class="text-muted mb-0">Sertifikat pendidik, LPTK penyelenggara, dan nomor registrasi guru.</p>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="SertifikasiPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Sertifikasi</button>
+            <button class="btn btn-primary btn-sm rbac-restricted" onclick="SertifikasiPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Sertifikasi</button>
           </div>
           <div class="card border-0 shadow-sm">
             <div class="table-responsive">
@@ -505,7 +505,7 @@
               <h4 class="fw-bold mb-1">Jadwal Mengajar</h4>
               <p class="text-muted mb-0">Pembagian jam mengajar dan alokasi kelas per minggu.</p>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="JadwalPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Jadwal</button>
+            <button class="btn btn-primary btn-sm rbac-restricted" onclick="JadwalPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Jadwal</button>
           </div>
           <div class="card border-0 shadow-sm">
             <div class="table-responsive">
@@ -540,7 +540,7 @@
             </div>
             <div class="d-flex gap-2">
               <button class="btn btn-success btn-sm" onclick="BebanMengajarPage.exportExcel()"><i class="bi bi-file-earmark-excel me-1"></i>Ekspor Excel</button>
-              <button class="btn btn-primary btn-sm" onclick="BebanMengajarPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Beban</button>
+              <button class="btn btn-primary btn-sm rbac-restricted" onclick="BebanMengajarPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Beban</button>
             </div>
           </div>
           <div class="card border-0 shadow-sm">
@@ -608,7 +608,7 @@
               <h4 class="fw-bold mb-1">Penilaian Kinerja Guru (PKG)</h4>
               <p class="text-muted mb-0">Evaluasi standar 5 aspek Kemendikbudristek &amp; Predikat Kinerja.</p>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="PKGPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Input Nilai PKG</button>
+            <button class="btn btn-primary btn-sm rbac-restricted" onclick="PKGPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Input Nilai PKG</button>
           </div>
           <div class="card border-0 shadow-sm">
             <div class="table-responsive">
@@ -641,7 +641,7 @@
               <h4 class="fw-bold mb-1">Prestasi Guru</h4>
               <p class="text-muted mb-0">Penghargaan dedikasi dan pembimbing siswa berprestasi.</p>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="PrestasiPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Prestasi</button>
+            <button class="btn btn-primary btn-sm rbac-restricted" onclick="PrestasiPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Prestasi</button>
           </div>
           <div class="card border-0 shadow-sm">
             <div class="table-responsive">
@@ -673,7 +673,7 @@
               <h4 class="fw-bold mb-1">Pelatihan &amp; PMM</h4>
               <p class="text-muted mb-0">Pelatihan Mandiri PMM, Guru Penggerak, Diklat &amp; Webinar.</p>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="PelatihanPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Pelatihan</button>
+            <button class="btn btn-primary btn-sm rbac-restricted" onclick="PelatihanPage.openAddModal()"><i class="bi bi-plus-lg me-1"></i>Tambah Pelatihan</button>
           </div>
           <div class="card border-0 shadow-sm">
             <div class="table-responsive">
@@ -705,7 +705,7 @@
               <h4 class="fw-bold mb-1">Dokumen &amp; Berkas Guru</h4>
               <p class="text-muted mb-0">Penyimpanan berkas digital di Supabase Storage dengan pengingat kadaluarsa.</p>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="DokumenPage.openAddModal()"><i class="bi bi-cloud-arrow-up me-1"></i>Unggah Dokumen</button>
+            <button class="btn btn-primary btn-sm rbac-restricted" onclick="DokumenPage.openAddModal()"><i class="bi bi-cloud-arrow-up me-1"></i>Unggah Dokumen</button>
           </div>
           <div class="card border-0 shadow-sm">
             <div class="table-responsive">
@@ -917,7 +917,7 @@
                       </div>
                     </div>
                     <div class="col-12 mt-3">
-                      <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Simpan Profil Sekolah</button>
+                      <button type="submit" class="btn btn-primary rbac-restricted"><i class="bi bi-save me-1"></i>Simpan Profil Sekolah</button>
                     </div>
                   </div>
                 </form>
@@ -952,7 +952,7 @@
                       <input type="number" name="radius_absen_meter" id="setting-radius-absen" class="form-control" min="50" max="1000">
                     </div>
                     <div class="col-12 mt-3">
-                      <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Simpan Pengaturan</button>
+                      <button type="submit" class="btn btn-primary rbac-restricted"><i class="bi bi-save me-1"></i>Simpan Pengaturan</button>
                     </div>
                   </div>
                 </form>
